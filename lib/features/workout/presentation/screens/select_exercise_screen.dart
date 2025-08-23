@@ -1,6 +1,8 @@
-import 'dart:convert';
+import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:body_calendar/features/workout/presentation/screens/add_custom_exercise_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:get_it/get_it.dart';
+
 import '../../domain/models/exercise.dart';
 
 class SelectExerciseScreen extends StatefulWidget {
@@ -15,59 +17,77 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   String _selectedTab = '분류';
   Map<String, List<Exercise>> _exercises = {};
   bool _isLoading = true;
-  Exercise? _selectedExercise;
+
+  late final ExerciseRepository _exerciseRepository;
 
   final List<String> _bodyParts = [
-    '분류', '전체', '어깨', '승모근', '가슴', '등', '삼두', '이두', 
-    '전완', '복부', '허리', '엉덩이', '하체', '종아리'
+    '분류',
+    '전체',
+    '나만의 운동',
+    '어깨',
+    '승모근',
+    '가슴',
+    '등',
+    '삼두',
+    '이두',
+    '전완',
+    '복부',
+    '허리',
+    '엉덩이',
+    '하체',
+    '종아리'
   ];
 
   @override
   void initState() {
     super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    _exerciseRepository = GetIt.I<ExerciseRepository>();
     _loadExercises();
   }
 
   Future<void> _loadExercises() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
-      final String jsonString = await rootBundle.loadString('assets/data/exercises.json');
-      final Map<String, dynamic> jsonData = json.decode(jsonString);
-      
-      setState(() {
-        _exercises = {};
-        jsonData.forEach((key, value) {
-          try {
-            if (value is List) {
-              _exercises[key] = value
-                  .map((e) => Exercise.fromJson(e as Map<String, dynamic>))
-                  .toList();
-            } else if (value is Map) {
-              if (value.containsKey('exercises')) {
-                final List<dynamic> exerciseList = value['exercises'] as List<dynamic>;
-                _exercises[key] = exerciseList
-                    .map((e) => Exercise.fromJson(e as Map<String, dynamic>))
-                    .toList();
-              }
-            }
-          } catch (e) {
-            debugPrint('Error parsing exercises for category $key: $e');
-            _exercises[key] = [];
+      final categories = await _exerciseRepository.getExerciseCategories();
+      final customExercises = await _exerciseRepository.getCustomExercises();
+
+      final Map<String, List<Exercise>> exercisesMap = {};
+      for (var category in categories) {
+        exercisesMap[category.name] = category.exercises;
+      }
+
+      // Add custom exercises to their respective categories or a general custom list
+      exercisesMap['나만의 운동'] = customExercises;
+      for (var exercise in customExercises) {
+        if (exercise.bodyPart != null && exercisesMap.containsKey(exercise.bodyPart)) {
+          if (exercisesMap[exercise.bodyPart!]!.any((e) => e.id == exercise.id) == false) {
+            exercisesMap[exercise.bodyPart!]!.add(exercise);
           }
-        });
+        }
+      }
+
+      setState(() {
+        _exercises = exercisesMap;
         _isLoading = false;
       });
     } catch (e) {
       debugPrint('Error loading exercises: $e');
       setState(() {
-        _exercises = {};
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('운동 데이터를 불러오는데 실패했습니다.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('운동 데이터를 불러오는데 실패했습니다.'),
+          ),
+        );
+      }
     }
   }
 
@@ -77,98 +97,99 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     super.dispose();
   }
 
-  void _showVariations(Exercise exercise) {
-    try {
-      if (exercise.variations == null || exercise.variations.isEmpty) {
-        Navigator.pop(context, exercise);
-        return;
-      }
+  void _navigateToAddExercise() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const AddCustomExerciseScreen()),
+    );
 
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) {
-          return DefaultTabController(
-            length: 5,
-            child: DraggableScrollableSheet(
-              initialChildSize: 0.6,
-              minChildSize: 0.4,
-              maxChildSize: 0.9,
-              expand: false,
-              builder: (context, scrollController) {
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        exercise.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+    if (result == true) {
+      _loadExercises(); // Refresh the list if an exercise was added
+    }
+  }
+
+  void _showVariations(Exercise exercise) {
+    if (exercise.isCustom || exercise.variations.isEmpty) {
+      Navigator.pop(context, exercise);
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DefaultTabController(
+          length: 5,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exercise.name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        exercise.description,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      exercise.description,
+                      style: const TextStyle(
+                        color: Colors.grey,
                       ),
-                      const SizedBox(height: 16),
-                      TabBar(
-                        isScrollable: true,
-                        labelColor: Colors.black,
-                        unselectedLabelColor: Colors.grey,
-                        tabs: const [
-                          Tab(text: '전체'),
-                          Tab(text: '덤벨'),
-                          Tab(text: '케이블'),
-                          Tab(text: '머신'),
-                          Tab(text: '밴드'),
+                    ),
+                    const SizedBox(height: 16),
+                    const TabBar(
+                      isScrollable: true,
+                      labelColor: Colors.black,
+                      unselectedLabelColor: Colors.grey,
+                      tabs: [
+                        Tab(text: '전체'),
+                        Tab(text: '덤벨'),
+                        Tab(text: '케이블'),
+                        Tab(text: '머신'),
+                        Tab(text: '밴드'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildVariationList(exercise.variations, scrollController),
+                          _buildVariationList(
+                            exercise.variations.where((v) => v.equipment == '덤벨').toList(),
+                            scrollController,
+                          ),
+                          _buildVariationList(
+                            exercise.variations.where((v) => v.equipment == '케이블').toList(),
+                            scrollController,
+                          ),
+                          _buildVariationList(
+                            exercise.variations.where((v) => v.equipment == '머신').toList(),
+                            scrollController,
+                          ),
+                          _buildVariationList(
+                            exercise.variations.where((v) => v.equipment == '밴드').toList(),
+                            scrollController,
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            _buildVariationList(exercise.variations, scrollController),
-                            _buildVariationList(
-                              exercise.variations.where((v) => v.equipment == '덤벨').toList(),
-                              scrollController,
-                            ),
-                            _buildVariationList(
-                              exercise.variations.where((v) => v.equipment == '케이블').toList(),
-                              scrollController,
-                            ),
-                            _buildVariationList(
-                              exercise.variations.where((v) => v.equipment == '머신').toList(),
-                              scrollController,
-                            ),
-                            _buildVariationList(
-                              exercise.variations.where((v) => v.equipment == '밴드').toList(),
-                              scrollController,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      );
-    } catch (e) {
-      debugPrint('Error showing variations: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('운동 변형을 불러오는데 실패했습니다.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildVariationList(List<Exercise> variations, ScrollController scrollController) {
@@ -267,6 +288,10 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
           : _searchController.text.isNotEmpty
               ? _buildSearchResults()
               : _buildSelectedTabContent(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddExercise,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -274,36 +299,25 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     if (_selectedTab == '분류') {
       return _buildCategoryButtons();
     }
-    
+
     if (_selectedTab == '전체') {
-      final allExercises = _exercises.values.expand((exercises) => exercises).toList();
+      final allExercises = _exercises.values.expand((exercises) => exercises).toSet().toList();
       return _buildExerciseList(allExercises);
     }
-    
+
     final exercises = _exercises[_selectedTab] ?? [];
     return _buildExerciseList(exercises);
   }
 
   Widget _buildSearchResults() {
-    try {
-      if (_exercises.isEmpty) {
-        return const Center(child: Text('운동 데이터를 불러오는 중입니다...'));
-      }
-      
-      final allExercises = _exercises.values.expand((exercises) => exercises).toList();
-      final searchText = _searchController.text.toLowerCase();
-      
-      final filteredExercises = allExercises.where((exercise) {
-        if (exercise.name == null || exercise.description == null) return false;
-        return exercise.name.toLowerCase().contains(searchText) ||
-               exercise.description.toLowerCase().contains(searchText);
-      }).toList();
+    final allExercises = _exercises.values.expand((exercises) => exercises).toSet().toList();
+    final searchText = _searchController.text.toLowerCase();
 
-      return _buildExerciseList(filteredExercises);
-    } catch (e) {
-      debugPrint('Error in search results: $e');
-      return const Center(child: Text('검색 중 오류가 발생했습니다.'));
-    }
+    final filteredExercises = allExercises.where((exercise) {
+      return exercise.name.toLowerCase().contains(searchText);
+    }).toList();
+
+    return _buildExerciseList(filteredExercises);
   }
 
   Widget _buildExerciseList(List<Exercise> exercises) {
@@ -397,4 +411,4 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       },
     );
   }
-} 
+}

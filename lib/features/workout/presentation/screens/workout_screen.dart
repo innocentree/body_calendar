@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
+import '../../domain/models/workout_routine.dart';
+import '../../domain/repositories/workout_routine_repository.dart';
 import 'select_exercise_screen.dart';
 import 'exercise_detail_screen.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/profile/profile_feature.dart';
+import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
 
 class WorkoutRecord {
   final int id;
@@ -74,10 +78,12 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
   int _recordCount = 0; // 총 운동 기록 횟수
   late SharedPreferences _prefs;
   int _recordDay = 0;
+  late final WorkoutRoutineRepository _workoutRoutineRepository;
 
   @override
   void initState() {
     super.initState();
+    _workoutRoutineRepository = GetIt.I<WorkoutRoutineRepository>();
     _initializePrefs();
     try {
       _tabController = TabController(length: 3, vsync: this, initialIndex: widget.sessionIndex - 1);
@@ -185,6 +191,114 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     });
   }
 
+  Future<void> _saveRoutine() async {
+    if (_workouts.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('저장할 운동이 없습니다.')),
+        );
+      }
+      return;
+    }
+
+    final TextEditingController routineNameController = TextEditingController();
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('루틴 이름 입력'),
+        content: TextField(
+          controller: routineNameController,
+          decoration: const InputDecoration(hintText: '루틴 이름'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (routineNameController.text.isNotEmpty) {
+                Navigator.pop(context, true);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('루틴 이름을 입력해주세요.')),
+                );
+              }
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && routineNameController.text.isNotEmpty) {
+      final List<Exercise> exercisesInRoutine = _workouts.map((record) => Exercise(
+        name: record.name,
+        imagePath: record.imagePath,
+        sets: record.sets,
+        weight: record.weight,
+        description: '', // WorkoutRecord doesn't have description, so leave empty or fetch from Exercise
+        equipment: record.equipment,
+        // isCustom and bodyPart are not directly available from WorkoutRecord, might need to fetch or default
+        isCustom: false, // Default to false, as it's from a workout session
+        bodyPart: null, // Not directly available, might need to fetch or default
+      )).toList();
+
+      final newRoutine = WorkoutRoutine(
+        name: routineNameController.text,
+        exercises: exercisesInRoutine,
+      );
+
+      try {
+        await _workoutRoutineRepository.addWorkoutRoutine(newRoutine);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('루틴이 성공적으로 저장되었습니다!')),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error saving routine: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('루틴 저장 중 오류가 발생했습니다.')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _loadRoutine() async {
+    final WorkoutRoutine? selectedRoutine = await Navigator.push<WorkoutRoutine?>(
+      context,
+      MaterialPageRoute(builder: (context) => const LoadRoutineScreen()),
+    );
+
+    if (selectedRoutine != null) {
+      setState(() {
+        // Clear current workouts and add exercises from the loaded routine
+        _workouts.clear();
+        for (var exercise in selectedRoutine.exercises) {
+          _workouts.add(WorkoutRecord(
+            id: DateTime.now().millisecondsSinceEpoch, // Generate new ID for each record
+            name: exercise.name,
+            imagePath: exercise.imagePath,
+            sets: exercise.sets,
+            weight: exercise.weight,
+            timestamp: DateTime.now(),
+            sessionIndex: _tabController.index + 1,
+            equipment: exercise.equipment,
+          ));
+        }
+      });
+      await _saveWorkouts();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${selectedRoutine.name} 루틴을 불러왔습니다.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -198,6 +312,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                 Text(_recordDay > 0 ? '$_recordDay번째 기록' : '', style: const TextStyle(fontSize: 14)),
               ],
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: _saveRoutine,
+                tooltip: '현재 운동을 루틴으로 저장',
+              ),
+              IconButton(
+                icon: const Icon(Icons.folder_open),
+                onPressed: _loadRoutine,
+                tooltip: '저장된 루틴 불러오기',
+              ),
+            ],
             bottom: TabBar(
               controller: _tabController,
               labelColor: Colors.black,
@@ -510,4 +636,4 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
       return '${(kg / 1000).toStringAsFixed(1)}톤';
     }
   }
-} 
+}
