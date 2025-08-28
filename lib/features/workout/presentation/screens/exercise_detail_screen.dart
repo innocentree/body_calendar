@@ -1373,10 +1373,22 @@ class _StatBox extends StatelessWidget {
     Key? key,
   }) : super(key: key);
 
+  Widget _buildComparisonArrow(double current, double reference) {
+    if (reference == 0 || current == 0) {
+      return const SizedBox.shrink();
+    }
+    if (current > reference) {
+      return const Icon(Icons.arrow_upward, color: Colors.green, size: 12);
+    } else if (current < reference) {
+      return const Icon(Icons.arrow_downward, color: Colors.red, size: 12);
+    }
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100,
+      width: 110,
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -1393,8 +1405,20 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple),
           ),
           const SizedBox(height: 2),
-          Text('이전 ${formatter(prev)}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          Text('최고 ${formatter(best)}', style: const TextStyle(fontSize: 11, color: Colors.orange)),
+          Row(
+            children: [
+              Text('이전 ${formatter(prev)}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              const SizedBox(width: 4),
+              _buildComparisonArrow(value, prev),
+            ],
+          ),
+          Row(
+            children: [
+              Text('최고 ${formatter(best)}', style: const TextStyle(fontSize: 11, color: Colors.orange)),
+              const SizedBox(width: 4),
+              _buildComparisonArrow(value, best),
+            ],
+          ),
         ],
       ),
     );
