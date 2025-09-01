@@ -24,7 +24,7 @@ jobs:
         repository: innocentree/body_calendar
         #ref: v1.0
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-        path: ./.github/actions/my-private-repo
+        path: ./.github/actions/body_calendar
 
     # 2. 자바(JDK) 설정
     # Flutter 안드로이드 빌드에 필요한 자바 환경을 설정합니다.
