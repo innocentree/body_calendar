@@ -54,7 +54,7 @@ dependencies:
 
   # 캘린더 및 날짜 관련
   table_calendar: ^3.0.9
-  intl: ^0.19.0
+  intl: ^0.20.2
 
   # 차트 및 그래프
   fl_chart: ^0.66.0
