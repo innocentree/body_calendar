@@ -43,11 +43,13 @@ jobs:
 
     # 4. Flutter 의존성 패키지 설치
     # pubspec.yaml 파일에 명시된 모든 패키지를 다운로드합니다.
+    - name: Flutter clean
+      run: flutter clean
     - name: Install dependencies
       run: flutter pub get
 
     # 5. Flutter 릴리즈 APK 빌드
-    # 릴리즈 버전의 APK 파일을 생성합니다.
+    # 릴리즈 버전의 APK 파일을 생성합니다. 
     - name: Build release APK
       run: flutter build apk --release
 
