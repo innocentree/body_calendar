@@ -1,0 +1,60 @@
+# 이 워크플로우는 'main' 브랜치에 코드가 푸시될 때마다 실행됩니다.
+name: Flutter CI/CD to Google Drive
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-upload:
+    # 워크플로우를 실행할 가상 머신 환경을 지정합니다.
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 소스 코드 체크아웃
+    # 리포지토리의 코드를 가상 머신으로 가져옵니다.
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # 2. 자바(JDK) 설정
+    # Flutter 안드로이드 빌드에 필요한 자바 환경을 설정합니다.
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+
+    # 3. Flutter SDK 설정
+    # Flutter 개발 환경을 설정합니다.
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable' # stable, beta, dev, master 중 선택
+
+    # 4. Flutter 의존성 패키지 설치
+    # pubspec.yaml 파일에 명시된 모든 패키지를 다운로드합니다.
+    - name: Install dependencies
+      run: flutter pub get
+
+    # 5. Flutter 릴리즈 APK 빌드
+    # 릴리즈 버전의 APK 파일을 생성합니다.
+    - name: Build release APK
+      run: flutter build apk --release
+
+    # 6. Google Drive에 APK 업로드
+    # 생성된 APK 파일을 지정된 Google Drive 폴더로 업로드합니다.
+    # 이 단계를 위해 GitHub Secrets에 GDRIVE_CREDENTIALS와 GDRIVE_FOLDER_ID를 설정해야 합니다.
+    - name: Upload APK to Google Drive
+      uses: robin-marques/google-drive-upload-action@v1
+      with:
+        # 서비스 계정의 인증 정보 (GitHub Secret)
+        credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
+        
+        # 업로드할 Google Drive 폴더의 ID (GitHub Secret)
+        folder-id: ${{ secrets.GDRIVE_FOLDER_ID }}
+        
+        # 업로드할 파일의 경로
+        file-path: build/app/outputs/flutter-apk/app-release.apk
+        
+        # Google Drive에 저장될 파일의 이름 (GitHub Secret)
+        file-name: ${{ secrets.APK_FILE_NAME }}
