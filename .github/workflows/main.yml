@@ -60,8 +60,8 @@ jobs:
         credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
         
         # 업로드할 Google Drive 폴더의 ID (GitHub Secret)
-        #folder-id: ${{ secrets.GDRIVE_FOLDER_ID }}
-        parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
+        folder-id: ${{ secrets.GDRIVE_FOLDER_ID }}
+        #parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
         
         # 업로드할 파일의 경로
         file-path: build/app/outputs/flutter-apk/app-release.apk
