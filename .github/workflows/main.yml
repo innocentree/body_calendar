@@ -4,7 +4,9 @@ name: Flutter CI/CD to Google Drive
 on:
   push:
     branches: [ main ]
-
+  # 수동 실행(Run workflow 버튼)을 위한 트리거 추가
+  workflow_dispatch:
+  
 jobs:
   build-and-upload:
     # 워크플로우를 실행할 가상 머신 환경을 지정합니다.
