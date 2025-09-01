@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: Colors.black),
         ),
         useMaterial3: true,
-        tabBarTheme: const TabBarTheme(
+        tabBarTheme: const TabBarThemeData( // <-- The fix is here
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorSize: TabBarIndicatorSize.tab,
@@ -67,8 +67,5 @@ class MyApp extends StatelessWidget {
       ],
       locale: const Locale('ko', 'KR'),
       home: const CalendarScreen(),
-      debugShowCheckedModeBanner: false,
-      // navigatorObservers: [routeObserver],
     );
   }
-}

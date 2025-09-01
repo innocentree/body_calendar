@@ -1,0 +1,7 @@
+feat: Flutter SDK 업데이트 및 빌드 문제 해결
+
+이 커밋은 APK 빌드 과정에서 발생한 여러 문제를 해결합니다:
+
+- `intl` 패키지 종속성 충돌 해결을 위해 Flutter SDK를 3.35.2로 업그레이드했습니다.
+- Flutter 3.35.2 API 변경 사항에 맞춰 `lib/main.dart` 및 `lib/core/theme/app_theme.dart` 파일에서 `TabBarTheme`을 `TabBarThemeData`로, `CardTheme`을 `CardThemeData`로 업데이트했습니다.
+- SDK 업그레이드 및 종속성 해결로 인해 `pubspec.lock` 및 생성된 플랫폼 파일(`linux`, `macos`, `windows`)이 업데이트되었습니다.

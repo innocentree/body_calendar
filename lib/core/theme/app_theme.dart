@@ -44,7 +44,7 @@ class AppTheme {
         labelSmall: TextStyle(color: AppColors.textSecondaryLight),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
@@ -79,7 +79,7 @@ class AppTheme {
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
     ),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: AppColors.primary,
       unselectedLabelColor: AppColors.textSecondaryLight,
       indicatorColor: AppColors.primary,
@@ -136,7 +136,7 @@ class AppTheme {
         labelSmall: TextStyle(color: AppColors.textSecondaryDark),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: const Color(0xFF2C2C2C),
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -172,7 +172,7 @@ class AppTheme {
       backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
     ),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: AppColors.primary,
       unselectedLabelColor: AppColors.textSecondaryDark,
       indicatorColor: AppColors.primary,
