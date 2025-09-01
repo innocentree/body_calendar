@@ -20,7 +20,8 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v4
       with:
-        repository: octocat/my-private-repo
+        #repository: octocat/my-private-repo
+        repository: innocentree/body_calendar
         ref: v1.0
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         path: ./.github/actions/my-private-repo
