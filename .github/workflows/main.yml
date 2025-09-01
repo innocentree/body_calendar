@@ -15,8 +15,15 @@ jobs:
     steps:
     # 1. 소스 코드 체크아웃
     # 리포지토리의 코드를 가상 머신으로 가져옵니다.
-    - name: Checkout code
-      uses: actions/checkout@v3
+    #- name: Checkout code
+    #  uses: actions/checkout@v3
+    name: Check out repository
+       uses: actions/checkout@v4
+       with:
+         repository: octocat/my-private-repo
+         ref: v1.0
+         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+         path: ./.github/actions/my-private-repo
 
     # 2. 자바(JDK) 설정
     # Flutter 안드로이드 빌드에 필요한 자바 환경을 설정합니다.
