@@ -22,7 +22,7 @@ jobs:
       with:
         #repository: octocat/my-private-repo
         repository: innocentree/body_calendar
-        ref: v1.0
+        #ref: v1.0
         token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         path: ./.github/actions/my-private-repo
 
