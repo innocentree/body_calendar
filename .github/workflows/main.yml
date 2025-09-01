@@ -18,7 +18,7 @@ jobs:
     #- name: Checkout code
     #  uses: actions/checkout@v3
     - name: Check out repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         #repository: octocat/my-private-repo
         repository: innocentree/body_calendar
