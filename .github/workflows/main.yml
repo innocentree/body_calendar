@@ -75,6 +75,6 @@ jobs:
         # 업로드할 파일 경로
         files: build/app/outputs/flutter-apk/app-release.apk
         # 릴리스 초안으로 생성
-        draft: true
+        draft: false
         # 릴리스를 최신 릴리스로 설정
         prerelease: false
