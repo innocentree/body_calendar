@@ -3,7 +3,7 @@ name: Flutter CI/CD to Github Drive
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   # 수동 실행(Run workflow 버튼)을 위한 트리거 추가
   workflow_dispatch:
 
