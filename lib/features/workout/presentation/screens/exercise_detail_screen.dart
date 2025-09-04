@@ -286,11 +286,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
       ));
       _tileControllers.add(ExpansionTileController());
 
-      // 모든 세트가 완료된 상태에서 새 세트를 추가한 경우,
-      // 현재 세트 인덱스를 새로 추가된 세트로 이동시킵니다.
-      if (allPreviousSetsCompleted && _sets.isNotEmpty) {
-        _currentSetIndex = _sets.length - 1;
-      }
+      
       _saveSets();
     });
     _updateRecordedDates();
@@ -385,9 +381,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                     Vibration.vibrate(duration: 500);
                   }
                   _audioPlayer.play(AssetSource('sounds/bell.mp3'));
-                  final nextIndex = _timerSetIndex + 1;
-                  if (nextIndex < _sets.length) {
-                    _currentSetIndex = nextIndex;
+                  final firstIncomplete = _sets.indexWhere((set) => !set.isCompleted);
+                  if (firstIncomplete != -1) {
+                    _currentSetIndex = firstIncomplete;
                   }
                 }
               });
