@@ -115,7 +115,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
   List<String> _recordedDates = [];
 
   // 드롭다운 상태 관리
-  List<bool> _expanded = [];
+  List<ExpansionTileController> _tileControllers = [];
 
   // 타이머 상태 저장용 키
   static const String _restTimerStartKey = 'rest_timer_start';
@@ -186,7 +186,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
       });
     }
     // 드롭다운 상태 초기화
-    _expanded = List.generate(_sets.length, (index) => false);
+    _tileControllers = List.generate(_sets.length, (index) => ExpansionTileController());
     await _restoreRestTimer();
   }
 
@@ -284,7 +284,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
         reps: lastSet?.reps ?? _currentReps,
         restTime: lastSet?.restTime ?? _currentRestTime,
       ));
-      _expanded.add(false);
+      _tileControllers.add(ExpansionTileController());
 
       // 모든 세트가 완료된 상태에서 새 세트를 추가한 경우,
       // 현재 세트 인덱스를 새로 추가된 세트로 이동시킵니다.
@@ -299,7 +299,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
   void _removeSet(int index) {
     setState(() {
       _sets.removeAt(index);
-      _expanded.removeAt(index);
+      _tileControllers.removeAt(index);
       if (_currentSetIndex >= _sets.length) {
         _currentSetIndex = _sets.isEmpty ? 0 : _sets.length - 1;
       }
@@ -406,6 +406,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
 
   void _startRestTimer() {
     if (_sets.isEmpty || _currentSetIndex >= _sets.length) return;
+
+    for (final controller in _tileControllers) {
+      controller.collapse();
+    }
 
     final now = DateTime.now();
     final setIndex = _currentSetIndex;
@@ -895,14 +899,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
     }
   }
 
-  void _toggleExpansion(int index) {
-    setState(() {
-      // 다른 모든 드롭다운을 닫고, 클릭한 드롭다운만 토글
-      for (int i = 0; i < _expanded.length; i++) {
-        _expanded[i] = i == index ? !_expanded[i] : false;
-      }
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1036,9 +1033,17 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                         ? Colors.blue.withOpacity(0.1)
                         : null,
                     child: ExpansionTile(
-                      initiallyExpanded: _expanded[index],
+                      controller: _tileControllers[index],
                       onExpansionChanged: (expanded) {
-                        _toggleExpansion(index);
+                        // 타일이 확장될 때, 다른 모든 타일들을 축소시킵니다.
+                        // 이를 통해 한 번에 하나의 타일만 확장된 상태를 유지합니다.
+                        if (expanded) {
+                          for (int i = 0; i < _tileControllers.length; i++) {
+                            if (i != index) {
+                              _tileControllers[i].collapse();
+                            }
+                          }
+                        }
                       },
                       leading: CircleAvatar(
                         child: Text('${index + 1}'),
