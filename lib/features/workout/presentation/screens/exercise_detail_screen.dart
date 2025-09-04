@@ -459,9 +459,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
             if (Platform.isAndroid) {
               updateOverlayFAB(totalDuration: newTimerDuration, remainingTime: remain);
             }
-            if (remain == 10 || remain == 3 || remain == 2 || remain == 1) {
+            if (remain == 10) {
               if (Platform.isAndroid || Platform.isIOS) {
-                Vibration.vibrate(duration: 100);
+                Vibration.vibrate(duration: 500);
+              }
+              _audioPlayer.play(AssetSource('sounds/beep.mp3'));
+            } else if (remain == 3 || remain == 2 || remain == 1) {
+              if (Platform.isAndroid || Platform.isIOS) {
+                Vibration.vibrate(duration: 200);
               }
               _audioPlayer.play(AssetSource('sounds/beep.mp3'));
             }
