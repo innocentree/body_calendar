@@ -1,4 +1,5 @@
 import 'package:body_calendar/core/utils/ticker.dart';
+import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,8 +29,15 @@ void main() async {
   await setupLocator(); // Initialize GetIt
   initializeDateFormatting();
   runApp(
-    BlocProvider(
-      create: (_) => TimerBloc(ticker: const Ticker()),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => TimerBloc(ticker: const Ticker()),
+        ),
+        BlocProvider(
+          create: (_) => ThemeBloc(getIt<SharedPreferences>()),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
@@ -40,41 +48,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Body Calendar',
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        primaryColor: Colors.deepPurple,
-        colorScheme: ColorScheme.light(
-          primary: Colors.deepPurple,
-          onPrimary: Colors.white,
-          background: Colors.white,
-          onBackground: Colors.black,
-        ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.black),
-          bodyMedium: TextStyle(color: Colors.black),
-        ),
-        useMaterial3: true,
-        tabBarTheme: const TabBarThemeData( // <-- The fix is here
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorSize: TabBarIndicatorSize.tab,
-        ),
-      ),
-      themeMode: ThemeMode.light,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ko', 'KR'),
-        Locale('en', 'US'),
-      ],
-      locale: const Locale('ko', 'KR'),
-      home: const CalendarScreen(),
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, state) {
+        return MaterialApp(
+          title: 'Body Calendar',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: state.themeData.brightness == Brightness.dark
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ko', 'KR'),
+            Locale('en', 'US'),
+          ],
+          locale: const Locale('ko', 'KR'),
+          home: const CalendarScreen(),
+        );
+      },
     );
   }
 }

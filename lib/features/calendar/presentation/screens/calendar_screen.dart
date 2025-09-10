@@ -1,3 +1,4 @@
+import 'package:body_calendar/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -150,6 +151,16 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
             title: const Text('캘린더'),
             actions: [
               IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: '설정',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.analytics),
                 tooltip: '통계',
                 onPressed: () {
@@ -212,8 +223,8 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                       alignment: Alignment.center,
                       child: Text(
                         '${day.day}',
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -242,7 +253,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                                     vertical: 4.0,
                                   ),
                                   decoration: BoxDecoration(
-                                    border: Border.all(),
+                                    border: Border.all(color: Theme.of(context).dividerColor),
                                     borderRadius: BorderRadius.circular(12.0),
                                   ),
                                   child: ListTile(
