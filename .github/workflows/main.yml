@@ -54,7 +54,7 @@ jobs:
     # 5. Flutter 릴리즈 APK 빌드
     # 릴리즈 버전의 APK 파일을 생성합니다. 
     - name: Build release APK
-      run: flutter build apk --release
+      run: flutter build apk --debug
 
     # 6. GitHub Releases에 APK 업로드
     # https://github.com/softprops/action-gh-release
