@@ -54,6 +54,7 @@ jobs:
     # 5. Flutter 릴리즈 APK 빌드
     # 릴리즈 버전의 APK 파일을 생성합니다. 
     - name: Build release APK
+    #  run: flutter build apk --release
       run: flutter build apk --debug
 
     # 6. GitHub Releases에 APK 업로드
@@ -75,7 +76,8 @@ jobs:
         #  - Bug fixes
         body_path: commit_message.txt
         # 업로드할 파일 경로
-        files: build/app/outputs/flutter-apk/app-release.apk
+        #files: build/app/outputs/flutter-apk/app-release.apk
+        files: build/app/outputs/flutter-apk/app-debug.apk
         # 릴리스 초안으로 생성
         draft: false
         # 릴리스를 최신 릴리스로 설정
