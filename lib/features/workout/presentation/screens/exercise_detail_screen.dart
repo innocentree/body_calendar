@@ -1,4 +1,6 @@
+import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -31,26 +33,27 @@ class ExerciseSet {
   });
 
   Map<String, dynamic> toJson() => {
-    'weight': weight,
-    'reps': reps,
-    'restTime': restTime.inSeconds,
-    'startTime': startTime?.toIso8601String(),
-    'endTime': endTime?.toIso8601String(),
-    'isCompleted': isCompleted,
-  };
+        'weight': weight,
+        'reps': reps,
+        'restTime': restTime.inSeconds,
+        'startTime': startTime?.toIso8601String(),
+        'endTime': endTime?.toIso8601String(),
+        'isCompleted': isCompleted,
+      };
 
   factory ExerciseSet.fromJson(Map<String, dynamic> json) => ExerciseSet(
-    weight: (json['weight'] is int)
-        ? (json['weight'] as int).toDouble()
-        : (json['weight'] is double)
-            ? json['weight']
-            : double.tryParse(json['weight'].toString()) ?? 0.0,
-    reps: json['reps'],
-    restTime: Duration(seconds: json['restTime']),
-    startTime: json['startTime'] != null ? DateTime.parse(json['startTime']) : null,
-    endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
-    isCompleted: json['isCompleted'],
-  );
+        weight: (json['weight'] is int)
+            ? (json['weight'] as int).toDouble()
+            : (json['weight'] is double)
+                ? json['weight']
+                : double.tryParse(json['weight'].toString()) ?? 0.0,
+        reps: json['reps'],
+        restTime: Duration(seconds: json['restTime']),
+        startTime:
+            json['startTime'] != null ? DateTime.parse(json['startTime']) : null,
+        endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
+        isCompleted: json['isCompleted'],
+      );
 
   ExerciseSet copyWith({
     double? weight,
@@ -91,36 +94,26 @@ class ExerciseDetailScreen extends StatefulWidget {
   State<ExerciseDetailScreen> createState() => _ExerciseDetailScreenState();
 }
 
-class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with WidgetsBindingObserver {
+class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
+    with WidgetsBindingObserver {
   List<ExerciseSet> _sets = [];
   double _currentWeight = 0;
   int _currentReps = 12;
   Duration _currentRestTime = const Duration(minutes: 1);
-  bool _isRestTimerRunning = false;
-  DateTime? _currentSetStartTime;
-  Timer? _timer;
-  int _elapsedSeconds = 0;
-  int _currentTimerDuration = 0;
   int _currentSetIndex = 0;
-  int _timerSetIndex = 0;
   late SharedPreferences _prefs;
-  
+
   // 증가/감소 단위 변수 수정
   double _weightStep = 5.0;
   int _repsStep = 1;
   int _restTimeStep = 30;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  
+
   DateTime? _firstRecordDate;
   List<String> _recordedDates = [];
 
   // 드롭다운 상태 관리
   List<ExpansionTileController> _tileControllers = [];
-
-  // 타이머 상태 저장용 키
-  static const String _restTimerStartKey = 'rest_timer_start';
-  static const String _restTimerDurationKey = 'rest_timer_duration';
-  static const String _restTimerSetIndexKey = 'rest_timer_set_index';
 
   @override
   void initState() {
@@ -136,38 +129,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     WakelockPlus.disable();
-    _timer?.cancel();
     _audioPlayer.dispose(); // Dispose audio player
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // 앱이 백그라운드로 갈 때
-      if (_isRestTimerRunning) {
-        showOverlayFAB(
-          exerciseName: widget.exerciseName,
-          restTime: _sets[_timerSetIndex].restTime.inSeconds,
-          onComplete: () {
-            setState(() {
-              _isRestTimerRunning = false;
-              _currentSetStartTime = null;
-              _prefs.remove(_restTimerStartKey);
-              _prefs.remove(_restTimerDurationKey);
-              _prefs.remove(_restTimerSetIndexKey);
-              _prefs.remove('rest_exercise_name');
-              _prefs.remove('rest_selected_date');
-            });
-          },
-        );
-      }
-    } else if (state == AppLifecycleState.resumed) {
-      // 앱이 다시 포그라운드로 올 때
-      if (_isRestTimerRunning) {
-        closeOverlayFAB();
-      }
-    }
   }
 
   Future<void> _initializePrefs() async {
@@ -186,8 +149,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
       });
     }
     // 드롭다운 상태 초기화
-    _tileControllers = List.generate(_sets.length, (index) => ExpansionTileController());
-    await _restoreRestTimer();
+    _tileControllers =
+        List.generate(_sets.length, (index) => ExpansionTileController());
   }
 
   Future<void> _checkAndSetFirstRecordDate() async {
@@ -286,7 +249,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
       ));
       _tileControllers.add(ExpansionTileController());
 
-      
       _saveSets();
     });
     _updateRecordedDates();
@@ -304,233 +266,27 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
     _updateRecordedDates();
   }
 
-  Future<void> _restoreRestTimer() async {
-    final startStr = _prefs.getString(_restTimerStartKey);
-    final setIndex = _prefs.getInt(_restTimerSetIndexKey);
-
-    if (startStr != null && setIndex != null) {
-      final start = DateTime.tryParse(startStr);
-      if (start != null) {
-        final elapsed = DateTime.now().difference(start).inSeconds;
-        final currentRestTime = _sets[setIndex].restTime.inSeconds;
-        final remain = currentRestTime - elapsed;
-
-        if (remain > 0) {
-          setState(() {
-            _isRestTimerRunning = true;
-            _elapsedSeconds = remain;
-            _currentTimerDuration = currentRestTime;
-            _currentSetStartTime = start;
-            _timerSetIndex = setIndex;
-          });
-
-          if (Platform.isAndroid) {
-            showOverlayFAB(
-              exerciseName: widget.exerciseName,
-              restTime: currentRestTime,
-              onComplete: () {
-                setState(() {
-                  _isRestTimerRunning = false;
-                  _currentSetStartTime = null;
-                  _prefs.remove(_restTimerStartKey);
-                  _prefs.remove(_restTimerDurationKey);
-                  _prefs.remove(_restTimerSetIndexKey);
-                  _prefs.remove('rest_exercise_name');
-                  _prefs.remove('rest_selected_date');
-                });
-              },
-            );
-          }
-
-          _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-            if (_currentSetStartTime != null) {
-              final elapsed = DateTime.now().difference(_currentSetStartTime!).inSeconds;
-              final newTimerDuration = _sets[_timerSetIndex].restTime.inSeconds;
-              final remain = newTimerDuration - elapsed;
-
-              if (newTimerDuration != _currentTimerDuration) {
-                _prefs.setInt(_restTimerDurationKey, newTimerDuration);
-              }
-
-              setState(() {
-                _currentTimerDuration = newTimerDuration;
-                if (remain > 0) {
-                  _elapsedSeconds = remain;
-                  if (Platform.isAndroid) {
-                    updateOverlayFAB(totalDuration: newTimerDuration, remainingTime: remain);
-                  }
-                  if (remain == 10 || remain == 3 || remain == 2 || remain == 1) {
-                    if (Platform.isAndroid || Platform.isIOS) {
-                      Vibration.vibrate(duration: 100);
-                    }
-                    _audioPlayer.play(AssetSource('sounds/beep.mp3'));
-                  }
-                } else {
-                  _timer?.cancel();
-                  _isRestTimerRunning = false;
-                  _currentSetStartTime = null;
-                  _prefs.remove(_restTimerStartKey);
-                  _prefs.remove(_restTimerDurationKey);
-                  _prefs.remove(_restTimerSetIndexKey);
-                  _prefs.remove('rest_exercise_name');
-                  _prefs.remove('rest_selected_date');
-                  if (Platform.isAndroid) {
-                    closeOverlayFAB();
-                  }
-                  if (Platform.isAndroid || Platform.isIOS) {
-                    Vibration.vibrate(duration: 500);
-                  }
-                  _audioPlayer.play(AssetSource('sounds/bell.mp3'));
-                  final firstIncomplete = _sets.indexWhere((set) => !set.isCompleted);
-                  if (firstIncomplete != -1) {
-                    _currentSetIndex = firstIncomplete;
-                  }
-                }
-              });
-            }
-          });
-        } else {
-          _prefs.remove(_restTimerStartKey);
-          _prefs.remove(_restTimerDurationKey);
-          _prefs.remove(_restTimerSetIndexKey);
-          _prefs.remove('rest_exercise_name');
-          _prefs.remove('rest_selected_date');
-        }
-      }
-    }
-  }
-
-  void _startRestTimer() {
-    if (_sets.isEmpty || _currentSetIndex >= _sets.length) return;
-
-    for (final controller in _tileControllers) {
-      controller.collapse();
-    }
-
-    final now = DateTime.now();
-    final setIndex = _currentSetIndex;
-    final timerDuration = _sets[setIndex].restTime.inSeconds;
-    setState(() {
-      _isRestTimerRunning = true;
-      _elapsedSeconds = timerDuration;
-      _currentTimerDuration = timerDuration;
-      _currentSetStartTime = now;
-      _timerSetIndex = setIndex;
-    });
-
-    _prefs.setString(_restTimerStartKey, now.toIso8601String());
-    _prefs.setInt(_restTimerDurationKey, timerDuration);
-    _prefs.setInt(_restTimerSetIndexKey, setIndex);
-    _prefs.setString('rest_exercise_name', widget.exerciseName);
-    _prefs.setString('rest_selected_date', widget.selectedDate.toIso8601String());
-
-    if (Platform.isAndroid) {
-      showOverlayFAB(
-        exerciseName: widget.exerciseName,
-        restTime: timerDuration,
-        onComplete: () {
-          setState(() {
-            _isRestTimerRunning = false;
-            _currentSetStartTime = null;
-            _prefs.remove(_restTimerStartKey);
-            _prefs.remove(_restTimerDurationKey);
-            _prefs.remove(_restTimerSetIndexKey);
-            _prefs.remove('rest_exercise_name');
-            _prefs.remove('rest_selected_date');
-          });
-        },
-      );
-    }
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_currentSetStartTime != null) {
-        final elapsed = DateTime.now().difference(_currentSetStartTime!).inSeconds;
-        final newTimerDuration = _sets[_timerSetIndex].restTime.inSeconds;
-        final remain = newTimerDuration - elapsed;
-
-        if (newTimerDuration != _currentTimerDuration) {
-          _prefs.setInt(_restTimerDurationKey, newTimerDuration);
-        }
-
-        setState(() {
-          _currentTimerDuration = newTimerDuration;
-          if (remain > 0) {
-            _elapsedSeconds = remain;
-            if (Platform.isAndroid) {
-              updateOverlayFAB(totalDuration: newTimerDuration, remainingTime: remain);
-            }
-            if (remain == 10) {
-              if (Platform.isAndroid || Platform.isIOS) {
-                Vibration.vibrate(duration: 500);
-              }
-              _audioPlayer.play(AssetSource('sounds/beep.mp3'));
-            } else if (remain == 3 || remain == 2 || remain == 1) {
-              if (Platform.isAndroid || Platform.isIOS) {
-                Vibration.vibrate(duration: 200);
-              }
-              _audioPlayer.play(AssetSource('sounds/beep.mp3'));
-            }
-          } else {
-            _timer?.cancel();
-            _isRestTimerRunning = false;
-            _currentSetStartTime = null;
-            _prefs.remove(_restTimerStartKey);
-            _prefs.remove(_restTimerDurationKey);
-            _prefs.remove(_restTimerSetIndexKey);
-            _prefs.remove('rest_exercise_name');
-            _prefs.remove('rest_selected_date');
-            if (Platform.isAndroid) {
-              closeOverlayFAB();
-            }
-            if (Platform.isAndroid || Platform.isIOS) {
-              Vibration.vibrate(duration: 500);
-            }
-            _audioPlayer.play(AssetSource('sounds/bell.mp3'));
-            final nextIndex = _timerSetIndex + 1;
-            if (nextIndex < _sets.length) {
-              _currentSetIndex = nextIndex;
-            }
-          }
-        });
-      }
-    });
-  }
-
-  // 타이머 강제 종료 시 저장 정보 삭제
-  void _cancelRestTimer() {
-    _timer?.cancel();
-    setState(() {
-      _isRestTimerRunning = false;
-      _elapsedSeconds = 0;
-      _currentSetStartTime = null;
-      // 다음 세트로 이동
-      if (_currentSetIndex < _sets.length - 1) {
-        _currentSetIndex++;
-      }
-    });
-    _prefs.remove(_restTimerStartKey);
-    _prefs.remove(_restTimerDurationKey);
-    _prefs.remove(_restTimerSetIndexKey);
-    _prefs.remove('rest_exercise_name');
-    _prefs.remove('rest_selected_date');
-    // 오버레이 FAB 닫기
-    if (Platform.isAndroid) {
-      closeOverlayFAB();
-    }
-  }
-
   void _completeSet() {
     if (_sets.isEmpty || _currentSetIndex >= _sets.length) return;
 
-    _timer?.cancel();
+    final timerDuration = _sets[_currentSetIndex].restTime.inSeconds;
+    context.read<TimerBloc>().add(TimerStarted(
+        duration: timerDuration,
+        exerciseName: widget.exerciseName,
+        selectedDate: widget.selectedDate));
+
     setState(() {
       _sets[_currentSetIndex] = _sets[_currentSetIndex].copyWith(
         isCompleted: true,
         endTime: DateTime.now(),
       );
       _saveSets();
+
+      final nextIndex = _currentSetIndex + 1;
+      if (nextIndex < _sets.length) {
+        _currentSetIndex = nextIndex;
+      }
     });
-    _startRestTimer();
   }
 
   String _formatDuration(int seconds) {
@@ -549,7 +305,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
     final controller = TextEditingController(text: initialValue.toString());
     // 텍스트 전체 선택을 위한 포커스 노드 추가
     final focusNode = FocusNode();
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -561,13 +317,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
           );
           focusNode.requestFocus();
         });
-        
+
         return AlertDialog(
           title: Text(title),
           content: TextField(
             controller: controller,
             focusNode: focusNode,
-            keyboardType: isDouble ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.number,
+            keyboardType: isDouble
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : TextInputType.number,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
             ),
@@ -580,7 +338,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
             ),
             TextButton(
               onPressed: () {
-                final value = isDouble ? double.tryParse(controller.text) ?? initialValue : double.tryParse(controller.text)?.toInt().toDouble() ?? initialValue;
+                final value = isDouble
+                    ? double.tryParse(controller.text) ?? initialValue
+                    : double.tryParse(controller.text)?.toInt().toDouble() ??
+                        initialValue;
                 onChanged(value);
                 Navigator.pop(context);
               },
@@ -610,7 +371,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                 children: [
                   const SizedBox(
                     width: 90,
-                    child: Text('무게(kg)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('무게(kg)',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   Row(
                     children: [
@@ -640,7 +402,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                               isDouble: true,
                             );
                           },
-                          child: Center(child: Text(tempWeight.toStringAsFixed(1))),
+                          child:
+                              Center(child: Text(tempWeight.toStringAsFixed(1))),
                         ),
                       ),
                       IconButton(
@@ -670,7 +433,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                               isDouble: true,
                             );
                           },
-                          child: Center(child: Text(_weightStep.toStringAsFixed(1))),
+                          child:
+                              Center(child: Text(_weightStep.toStringAsFixed(1))),
                         ),
                       ),
                     ],
@@ -682,7 +446,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                 children: [
                   const SizedBox(
                     width: 90,
-                    child: Text('횟수', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child:
+                        Text('횟수', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   Row(
                     children: [
@@ -752,7 +517,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                 children: [
                   const SizedBox(
                     width: 90,
-                    child: Text('휴식(초)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('휴식(초)',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   Row(
                     children: [
@@ -848,29 +614,30 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
     try {
       // 오늘 날짜의 키
       final todayKey = _getStorageKey();
-      
+
       // 오늘 날짜의 세트가 이미 있으면 불러오지 않음
       if (_prefs.containsKey(todayKey)) {
         return;
       }
 
       // 기록된 모든 날짜 가져오기
-      final recordedDates = _prefs.getStringList('recorded_dates_${widget.exerciseName}') ?? [];
+      final recordedDates =
+          _prefs.getStringList('recorded_dates_${widget.exerciseName}') ?? [];
       if (recordedDates.isEmpty) return;
 
       // 최근 날짜부터 확인
       recordedDates.sort();
-      
+
       for (final dateStr in recordedDates.reversed) {
         final key = 'exercise_sets_${widget.exerciseName}_$dateStr';
         final setsJson = _prefs.getStringList(key);
-        
+
         if (setsJson != null && setsJson.isNotEmpty) {
           // 이전 세트 정보 불러오기
           final previousSets = setsJson
               .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
               .toList();
-          
+
           if (previousSets.isNotEmpty) {
             // 마지막 세트의 정보로 현재 값 설정
             final lastSet = previousSets.last;
@@ -879,15 +646,17 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
               _currentReps = lastSet.reps;
               _currentRestTime = lastSet.restTime;
             });
-            
+
             // 이전 세트들을 현재 날짜에 복사
             setState(() {
-              _sets = previousSets.map((set) => ExerciseSet(
-                weight: set.weight,
-                reps: set.reps,
-                restTime: set.restTime,
-                isCompleted: false, // 완료 상태는 초기화
-              )).toList();
+              _sets = previousSets
+                  .map((set) => ExerciseSet(
+                        weight: set.weight,
+                        reps: set.reps,
+                        restTime: set.restTime,
+                        isCompleted: false, // 완료 상태는 초기화
+                      ))
+                  .toList();
               _currentSetIndex = 0;
             });
             _saveSets();
@@ -900,12 +669,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     try {
-      final allCompleted = _sets.isNotEmpty && _sets.every((set) => set.isCompleted);
+      final allCompleted =
+          _sets.isNotEmpty && _sets.every((set) => set.isCompleted);
 
       // === 통계 계산 ===
       // 오늘 기록
@@ -913,7 +681,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
       double todayMax1RM = 0;
       double todayTotalVolume = 0;
       for (final set in _sets) {
-        todayMaxWeight = set.weight * set.reps > todayMaxWeight ? set.weight * set.reps : todayMaxWeight;
+        todayMaxWeight = set.weight * set.reps > todayMaxWeight
+            ? set.weight * set.reps
+            : todayMaxWeight;
         final oneRM = set.weight * (1 + set.reps / 30.0);
         todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
         todayTotalVolume += set.weight * set.reps;
@@ -932,9 +702,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
         if (prevDate.isNotEmpty) {
           final prevKey = 'exercise_sets_${widget.exerciseName}_$prevDate';
           final prevSetsJson = _prefs.getStringList(prevKey) ?? [];
-          final prevSets = prevSetsJson.map((json) => ExerciseSet.fromJson(jsonDecode(json))).toList();
+          final prevSets = prevSetsJson
+              .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
+              .toList();
           for (final set in prevSets) {
-            prevMaxWeight = set.weight * set.reps > prevMaxWeight ? set.weight * set.reps : prevMaxWeight;
+            prevMaxWeight = set.weight * set.reps > prevMaxWeight
+                ? set.weight * set.reps
+                : prevMaxWeight;
             final oneRM = set.weight * (1 + set.reps / 30.0);
             prevMax1RM = oneRM > prevMax1RM ? oneRM : prevMax1RM;
             prevTotalVolume += set.weight * set.reps;
@@ -948,19 +722,26 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
       for (final date in _recordedDates) {
         final key = 'exercise_sets_${widget.exerciseName}_$date';
         final setsJson = _prefs.getStringList(key) ?? [];
-        final sets = setsJson.map((json) => ExerciseSet.fromJson(jsonDecode(json))).toList();
+        final sets = setsJson
+            .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
+            .toList();
         double localMaxWeight = 0;
         double localMax1RM = 0;
         double localTotalVolume = 0;
         for (final set in sets) {
-          localMaxWeight = set.weight * set.reps > localMaxWeight ? set.weight * set.reps : localMaxWeight;
+          localMaxWeight = set.weight * set.reps > localMaxWeight
+              ? set.weight * set.reps
+              : localMaxWeight;
           final oneRM = set.weight * (1 + set.reps / 30.0);
           localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
           localTotalVolume += set.weight * set.reps;
         }
-        bestMaxWeight = localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
+        bestMaxWeight =
+            localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
         bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
-        bestTotalVolume = localTotalVolume > bestTotalVolume ? localTotalVolume : bestTotalVolume;
+        bestTotalVolume = localTotalVolume > bestTotalVolume
+            ? localTotalVolume
+            : bestTotalVolume;
       }
 
       // === UI ===
@@ -977,9 +758,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                 (widget.recordDay > 0 ? '${widget.recordDay}번째 기록  ' : ''),
                 style: const TextStyle(fontSize: 12),
               ),
-               Text(
-                 widget.exerciseName,
-                 style: const TextStyle(fontSize: 15),
+              Text(
+                widget.exerciseName,
+                style: const TextStyle(fontSize: 15),
               ),
             ],
           ),
@@ -1071,24 +852,31 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                       ),
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
                           child: Column(
                             children: [
                               // 무게
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('무게', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const Text('무게',
+                                      style:
+                                          TextStyle(fontWeight: FontWeight.bold)),
                                   Row(
                                     children: [
                                       IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _sets[index] = _sets[index].copyWith(weight: (_sets[index].weight - _weightStep).clamp(0, 1000));
+                                            _sets[index] = _sets[index].copyWith(
+                                                weight: (_sets[index].weight -
+                                                        _weightStep)
+                                                    .clamp(0, 1000));
                                             _saveSets();
                                           });
                                         },
-                                        icon: const Icon(Icons.remove_circle_outline),
+                                        icon: const Icon(
+                                            Icons.remove_circle_outline),
                                       ),
                                       SizedBox(
                                         width: 40,
@@ -1100,24 +888,34 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                                               _sets[index].weight,
                                               (value) {
                                                 setState(() {
-                                                  _sets[index] = _sets[index].copyWith(weight: value.clamp(0, 1000));
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          weight: value.clamp(
+                                                              0, 1000));
                                                   _saveSets();
                                                 });
                                               },
                                               isDouble: true,
                                             );
                                           },
-                                          child: Center(child: Text(_sets[index].weight.toStringAsFixed(1))),
+                                          child: Center(
+                                              child: Text(_sets[index]
+                                                  .weight
+                                                  .toStringAsFixed(1))),
                                         ),
                                       ),
                                       IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _sets[index] = _sets[index].copyWith(weight: (_sets[index].weight + _weightStep).clamp(0, 1000));
+                                            _sets[index] = _sets[index].copyWith(
+                                                weight: (_sets[index].weight +
+                                                        _weightStep)
+                                                    .clamp(0, 1000));
                                             _saveSets();
                                           });
                                         },
-                                        icon: const Icon(Icons.add_circle_outline),
+                                        icon: const Icon(
+                                            Icons.add_circle_outline),
                                       ),
                                     ],
                                   ),
@@ -1127,17 +925,23 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('횟수', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const Text('횟수',
+                                      style:
+                                          TextStyle(fontWeight: FontWeight.bold)),
                                   Row(
                                     children: [
                                       IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _sets[index] = _sets[index].copyWith(reps: (_sets[index].reps - _repsStep).clamp(1, 100));
+                                            _sets[index] = _sets[index].copyWith(
+                                                reps: (_sets[index].reps -
+                                                        _repsStep)
+                                                    .clamp(1, 100));
                                             _saveSets();
                                           });
                                         },
-                                        icon: const Icon(Icons.remove_circle_outline),
+                                        icon: const Icon(
+                                            Icons.remove_circle_outline),
                                       ),
                                       SizedBox(
                                         width: 40,
@@ -1149,23 +953,33 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                                               _sets[index].reps.toDouble(),
                                               (value) {
                                                 setState(() {
-                                                  _sets[index] = _sets[index].copyWith(reps: value.toInt().clamp(1, 100));
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          reps: value
+                                                              .toInt()
+                                                              .clamp(1, 100));
                                                   _saveSets();
                                                 });
                                               },
                                             );
                                           },
-                                          child: Center(child: Text(_sets[index].reps.toString())),
+                                          child: Center(
+                                              child: Text(
+                                                  _sets[index].reps.toString())),
                                         ),
                                       ),
                                       IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _sets[index] = _sets[index].copyWith(reps: (_sets[index].reps + _repsStep).clamp(1, 100));
+                                            _sets[index] = _sets[index].copyWith(
+                                                reps: (_sets[index].reps +
+                                                        _repsStep)
+                                                    .clamp(1, 100));
                                             _saveSets();
                                           });
                                         },
-                                        icon: const Icon(Icons.add_circle_outline),
+                                        icon: const Icon(
+                                            Icons.add_circle_outline),
                                       ),
                                     ],
                                   ),
@@ -1175,17 +989,26 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('휴식(초)', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const Text('휴식(초)',
+                                      style:
+                                          TextStyle(fontWeight: FontWeight.bold)),
                                   Row(
                                     children: [
                                       IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _sets[index] = _sets[index].copyWith(restTime: Duration(seconds: (_sets[index].restTime.inSeconds - _restTimeStep).clamp(10, 300)));
+                                            _sets[index] = _sets[index].copyWith(
+                                                restTime: Duration(
+                                                    seconds: (_sets[index]
+                                                                .restTime
+                                                                .inSeconds -
+                                                            _restTimeStep)
+                                                        .clamp(10, 300)));
                                             _saveSets();
                                           });
                                         },
-                                        icon: const Icon(Icons.remove_circle_outline),
+                                        icon: const Icon(
+                                            Icons.remove_circle_outline),
                                       ),
                                       SizedBox(
                                         width: 40,
@@ -1194,26 +1017,46 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
                                             _showNumberInputDialog(
                                               context,
                                               '휴식시간 입력(초)',
-                                              _sets[index].restTime.inSeconds.toDouble(),
+                                              _sets[index]
+                                                  .restTime
+                                                  .inSeconds
+                                                  .toDouble(),
                                               (value) {
                                                 setState(() {
-                                                  _sets[index] = _sets[index].copyWith(restTime: Duration(seconds: value.toInt().clamp(10, 300)));
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          restTime: Duration(
+                                                              seconds: value
+                                                                  .toInt()
+                                                                  .clamp(
+                                                                      10, 300)));
                                                   _saveSets();
                                                 });
                                               },
                                             );
                                           },
-                                          child: Center(child: Text(_sets[index].restTime.inSeconds.toString())),
+                                          child: Center(
+                                              child: Text(_sets[index]
+                                                  .restTime
+                                                  .inSeconds
+                                                  .toString())),
                                         ),
                                       ),
                                       IconButton(
                                         onPressed: () {
                                           setState(() {
-                                            _sets[index] = _sets[index].copyWith(restTime: Duration(seconds: (_sets[index].restTime.inSeconds + _restTimeStep).clamp(10, 300)));
+                                            _sets[index] = _sets[index].copyWith(
+                                                restTime: Duration(
+                                                    seconds: (_sets[index]
+                                                                .restTime
+                                                                .inSeconds +
+                                                            _restTimeStep)
+                                                        .clamp(10, 300)));
                                             _saveSets();
                                           });
                                         },
-                                        icon: const Icon(Icons.add_circle_outline),
+                                        icon: const Icon(
+                                            Icons.add_circle_outline),
                                       ),
                                     ],
                                   ),
@@ -1235,120 +1078,116 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> with Widget
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: _addSet,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(40),
-                    ),
-                    child: const Text('세트 추가'),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_sets.isNotEmpty)
+                  children: [
                     ElevatedButton(
-                      onPressed: _isRestTimerRunning
-                          ? () {
-                              _cancelRestTimer();
-                            }
-                          : (!allCompleted ? _completeSet : null),
+                      onPressed: _addSet,
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: EdgeInsets.zero,
+                        minimumSize: const Size.fromHeight(40),
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // 1. 전체 배경: 연한 주황색
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: Container(
-                              width: double.infinity,
-                              height: 56,
-                              color: Colors.orange.withOpacity(0.2),
+                      child: const Text('세트 추가'),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_sets.isNotEmpty)
+                      BlocBuilder<TimerBloc, TimerState>(
+                        builder: (context, state) {
+                          final isRunning = state is TimerRunInProgress;
+                          final duration = state.duration;
+                          final initialDuration = isRunning ? state.initialDuration : 0;
+
+
+                          return ElevatedButton(
+                            onPressed: () {
+                              if (isRunning) {
+                                context.read<TimerBloc>().add(const TimerReset());
+                              } else if (!allCompleted) {
+                                _completeSet();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(56),
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: EdgeInsets.zero,
                             ),
-                          ),
-                          // 2. 차오르는 게이지: 진한 주황색
-                          if (_isRestTimerRunning && _sets.isNotEmpty && _timerSetIndex < _sets.length)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(28),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: FractionallySizedBox(
-                                  widthFactor: (() {
-                                    final total = _currentTimerDuration == 0 ? 1 : _currentTimerDuration;
-                                    final elapsed = total - _elapsedSeconds;
-                                    return (elapsed / total).clamp(0.0, 1.0);
-                                  })(),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // 1. 전체 배경: 연한 주황색
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(28),
                                   child: Container(
+                                    width: double.infinity,
                                     height: 56,
-                                    color: Colors.orange,
+                                    color: Colors.orange.withOpacity(0.2),
                                   ),
                                 ),
-                              ),
-                            ),
-                          // 3. 텍스트(겹치기 효과)
-                          ShaderMask(
-                            shaderCallback: (Rect bounds) {
-                              double progress = 0.0;
-                              if (_isRestTimerRunning && _sets.isNotEmpty && _timerSetIndex < _sets.length) {
-                                final total = _currentTimerDuration == 0 ? 1 : _currentTimerDuration;
-                                final elapsed = total - _elapsedSeconds;
-                                progress = (elapsed / total).clamp(0.0, 1.0);
-                              } else if (!_isRestTimerRunning && _sets.isNotEmpty && _currentSetIndex < _sets.length && _sets[_currentSetIndex].isCompleted) {
-                                progress = 1.0;
-                              }
-                              return LinearGradient(
-                                colors: [
-                                  Color(0xFFFFEACC), Color(0xFFFFEACC),
-                                  Colors.orange, Colors.orange,
-                                ],
-                                stops: [
-                                  0.0, progress, progress, 1.0
-                                ],
-                              ).createShader(bounds);
-                            },
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  if (_isRestTimerRunning)
-                                    Text(
-                                      _formatDuration(_elapsedSeconds),
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                                    ),
-                                  if (_isRestTimerRunning)
-                                    const SizedBox(width: 12),
-                                  if (_isRestTimerRunning)
-                                    const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.skip_next, color: Colors.white),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '휴식 완료',
-                                          style: TextStyle(color: Colors.white),
+                                // 2. 차오르는 게이지: 진한 주황색
+                                if (isRunning)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(28),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: FractionallySizedBox(
+                                        widthFactor: (initialDuration > 0)
+                                            ? ((initialDuration - duration) / initialDuration)
+                                                .clamp(0.0, 1.0)
+                                            : 0.0,
+                                        child: Container(
+                                          height: 56,
+                                          color: Colors.orange,
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  if (!_isRestTimerRunning)
-                                    Text(
-                                      allCompleted ? '모든 세트 완료' : '${_currentSetIndex + 1}번 세트 완료',
-                                      style: const TextStyle(fontSize: 18, color: Colors.orange),
-                                    ),
-                                ],
-                              ),
+                                  ),
+                                // 3. 텍스트
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: [
+                                      if (isRunning)
+                                        Text(
+                                          _formatDuration(duration),
+                                          style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white),
+                                        ),
+                                      if (isRunning) const SizedBox(width: 12),
+                                      if (isRunning)
+                                        const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.skip_next,
+                                                color: Colors.white),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              '휴식 완료',
+                                              style:
+                                                  TextStyle(color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      if (!isRunning)
+                                        Text(
+                                          allCompleted
+                                              ? '모든 세트 완료'
+                                              : '${_currentSetIndex + 1}번 세트 완료',
+                                          style: const TextStyle(
+                                              fontSize: 18, color: Colors.orange),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1404,23 +1243,29 @@ class _StatBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 2),
           Text(
             '${formatter(value)} $unit',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple),
           ),
           const SizedBox(height: 2),
           Row(
             children: [
-              Text('이전 ${formatter(prev)}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              Text('이전 ${formatter(prev)}',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
               const SizedBox(width: 4),
               _buildComparisonArrow(value, prev),
             ],
           ),
           Row(
             children: [
-              Text('최고 ${formatter(best)}', style: const TextStyle(fontSize: 11, color: Colors.orange)),
+              Text('최고 ${formatter(best)}',
+                  style: const TextStyle(fontSize: 11, color: Colors.orange)),
               const SizedBox(width: 4),
               _buildComparisonArrow(value, best),
             ],

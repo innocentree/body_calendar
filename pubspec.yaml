@@ -98,9 +98,6 @@ flutter:
 
   # 에셋 설정
   assets:
-    - assets/images/
-    - assets/icons/
-    - assets/animations/
     - assets/data/exercises.json
     - assets/sounds/
 

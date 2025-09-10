@@ -28,20 +28,12 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
   DateTime? _selectedDay;
   DateTime? _lastTapTime;
   Map<String, List<String>> _events = {};
-  Offset _fabOffset = const Offset(16, 16); // FAB 기본 위치 (우측 하단)
-  bool _showRestFab = false;
-  int _restRemain = 0;
-  String? _exerciseName;
-  DateTime? _selectedDate;
-  Timer? _fabTimer;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
     _loadAllEventsAndSet();
-    _checkRestTimer();
-    _fabTimer = Timer.periodic(const Duration(seconds: 1), (_) => _checkRestTimer());
   }
 
   @override
@@ -49,12 +41,10 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute);
     _loadAllEventsAndSet();
-    _checkRestTimer();
   }
 
   @override
   void dispose() {
-    _fabTimer?.cancel();
     routeObserver.unsubscribe(this);
     super.dispose();
   }
@@ -63,7 +53,6 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
   void didPopNext() {
     // 다른 화면에서 다시 돌아왔을 때 이벤트 새로고침
     _loadAllEventsAndSet();
-    _checkRestTimer();
   }
 
   Future<void> _loadAllEventsAndSet() async {
@@ -149,52 +138,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
     _focusedDay = focusedDay;
   }
 
-  Future<void> _checkRestTimer() async {
-    final prefs = await SharedPreferences.getInstance();
-    final startStr = prefs.getString('rest_timer_start');
-    final duration = prefs.getInt('rest_timer_duration') ?? 0;
-    final exerciseName = prefs.getString('rest_exercise_name');
-    final dateStr = prefs.getString('rest_selected_date');
-    //print('[캘린더] 타이머 체크: start=$startStr, duration=$duration, name=$exerciseName, date=$dateStr');
-    if (startStr != null && duration > 0 && exerciseName != null && dateStr != null) {
-      final start = DateTime.tryParse(startStr);
-      if (start != null) {
-        final elapsed = DateTime.now().difference(start).inSeconds;
-        final remain = duration - elapsed;
-        //print('[캘린더] remain=$remain');
-        if (remain > 0) {
-          //print('[캘린더] setState로 FAB 표시');
-          setState(() {
-            _showRestFab = true;
-            _restRemain = remain;
-            _exerciseName = exerciseName;
-            _selectedDate = DateTime.tryParse(dateStr);
-          });
-          return;
-        }
-      }
-    }
-    //print('[캘린더] setState로 FAB 숨김');
-    setState(() {
-      _showRestFab = false;
-    });
-  }
-
-  void _goToRestingExercise() {
-    if (_exerciseName != null && _selectedDate != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ExerciseDetailScreen(
-            exerciseName: _exerciseName!,
-            selectedDate: _selectedDate!,
-            initialWeight: 0,
-            initialSets: 1,
-          ),
-        ),
-      ).then((_) => _checkRestTimer());
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -321,7 +265,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
             ],
           ),
         ),
-        RestFabOverlay(),
+        const RestFabOverlay(),
       ],
     );
   }

@@ -1,4 +1,7 @@
+import 'package:body_calendar/core/utils/ticker.dart';
+import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'features/calendar/presentation/screens/calendar_screen.dart';
@@ -24,7 +27,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator(); // Initialize GetIt
   initializeDateFormatting();
-  runApp(const MyApp());
+  runApp(
+    BlocProvider(
+      create: (_) => TimerBloc(ticker: const Ticker()),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
