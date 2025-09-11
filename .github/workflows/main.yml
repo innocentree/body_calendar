@@ -81,6 +81,6 @@ jobs:
         # 릴리스 초안으로 생성
         draft: false
         # 릴리스를 최신 릴리스로 설정
-        prerelease: true
+        prerelease: false
         overwrite_files: true
         
