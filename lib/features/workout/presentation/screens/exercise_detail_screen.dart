@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
+import '../../domain/repositories/exercise_repository.dart';
 import 'dart:async';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'dart:io';
@@ -102,6 +104,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   Duration _currentRestTime = const Duration(minutes: 1);
   int _currentSetIndex = 0;
   late SharedPreferences _prefs;
+  Exercise? _exercise;
+  late final ExerciseRepository _exerciseRepository;
 
   // 증가/감소 단위 변수 수정
   double _weightStep = 5.0;
@@ -120,6 +124,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentWeight = widget.initialWeight.toDouble();
+    _exerciseRepository = GetIt.I<ExerciseRepository>();
+    _loadExercise();
     _initializePrefs();
     // 화면이 꺼지지 않게 설정
     WakelockPlus.enable();
@@ -131,6 +137,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     WakelockPlus.disable();
     _audioPlayer.dispose(); // Dispose audio player
     super.dispose();
+  }
+
+  Future<void> _loadExercise() async {
+    final exercise = await _exerciseRepository.getExerciseByName(widget.exerciseName);
+    setState(() {
+      _exercise = exercise;
+    });
   }
 
   Future<void> _initializePrefs() async {
@@ -366,6 +379,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_exercise?.needsWeight ?? true)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -837,7 +851,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         foregroundColor: Colors.white,
                       ),
                       title: Text(
-                        '${set.weight}kg × ${set.reps}회',
+                        _exercise?.needsWeight ?? true
+                            ? '${set.weight}kg × ${set.reps}회'
+                            : '${set.reps}회',
                         style: set.isCompleted
                             ? const TextStyle(
                                 decoration: TextDecoration.lineThrough,
@@ -857,6 +873,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           child: Column(
                             children: [
                               // 무게
+                              if (_exercise?.needsWeight ?? true)
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -870,7 +887,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           setState(() {
                                             _sets[index] = _sets[index].copyWith(
                                                 weight: (_sets[index].weight -
-                                                        _weightStep)
+                                                        _weightStep) 
                                                     .clamp(0, 1000));
                                             _saveSets();
                                           });
@@ -898,8 +915,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                               isDouble: true,
                                             );
                                           },
-                                          child: Center(
-                                              child: Text(_sets[index]
+                                          child:
+                                              Center(child: Text(_sets[index]
                                                   .weight
                                                   .toStringAsFixed(1))),
                                         ),
@@ -909,7 +926,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           setState(() {
                                             _sets[index] = _sets[index].copyWith(
                                                 weight: (_sets[index].weight +
-                                                        _weightStep)
+                                                        _weightStep) 
                                                     .clamp(0, 1000));
                                             _saveSets();
                                           });
@@ -935,7 +952,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           setState(() {
                                             _sets[index] = _sets[index].copyWith(
                                                 reps: (_sets[index].reps -
-                                                        _repsStep)
+                                                        _repsStep) 
                                                     .clamp(1, 100));
                                             _saveSets();
                                           });
@@ -963,9 +980,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                               },
                                             );
                                           },
-                                          child: Center(
-                                              child: Text(
-                                                  _sets[index].reps.toString())),
+                                          child: Center(child: Text(
+                                              _sets[index].reps.toString())),
                                         ),
                                       ),
                                       IconButton(
@@ -973,7 +989,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           setState(() {
                                             _sets[index] = _sets[index].copyWith(
                                                 reps: (_sets[index].reps +
-                                                        _repsStep)
+                                                        _repsStep) 
                                                     .clamp(1, 100));
                                             _saveSets();
                                           });
@@ -1002,7 +1018,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     seconds: (_sets[index]
                                                                 .restTime
                                                                 .inSeconds -
-                                                            _restTimeStep)
+                                                            _restTimeStep) 
                                                         .clamp(10, 300)));
                                             _saveSets();
                                           });
@@ -1035,8 +1051,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                               },
                                             );
                                           },
-                                          child: Center(
-                                              child: Text(_sets[index]
+                                          child: Center(child: Text(_sets[index]
                                                   .restTime
                                                   .inSeconds
                                                   .toString())),
@@ -1050,7 +1065,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     seconds: (_sets[index]
                                                                 .restTime
                                                                 .inSeconds +
-                                                            _restTimeStep)
+                                                            _restTimeStep) 
                                                         .clamp(10, 300)));
                                             _saveSets();
                                           });

@@ -476,6 +476,7 @@
         "imagePath": "assets/images/exercises/back/pullup.png",
         "sets": 5,
         "weight": 0,
+        "needsWeight": false,
         "description": "등과 팔 근육을 강화하는 대표적인 맨몸 운동입니다.",
         "variations": [
           {
@@ -484,6 +485,7 @@
             "imagePath": "assets/images/exercises/back/pullup_wide.png",
             "sets": 5,
             "weight": 0,
+            "needsWeight": false,
             "description": "넓은 그립으로 등 바깥쪽을 더 자극하는 풀업입니다."
           },
           {
@@ -492,7 +494,27 @@
             "imagePath": "assets/images/exercises/back/pullup_close.png",
             "sets": 5,
             "weight": 0,
+            "needsWeight": false,
             "description": "좁은 그립으로 등 안쪽을 더 자극하는 풀업입니다."
+          }
+        ]
+      },
+      {
+        "name": "중량 풀업",
+        "imagePath": "assets/images/exercises/back/pullup.png",
+        "sets": 4,
+        "weight": 10,
+        "needsWeight": true,
+        "description": "중량을 추가하여 등과 팔 근육을 더욱 강화하는 풀업 운동입니다.",
+        "variations": [
+          {
+            "name": "중량 풀업: 웨이트 벨트",
+            "equipment": "웨이트 벨트",
+            "imagePath": "assets/images/exercises/back/pullup.png",
+            "sets": 4,
+            "weight": 10,
+            "needsWeight": true,
+            "description": "웨이트 벨트에 중량을 추가하여 수행하는 풀업입니다."
           }
         ]
       },

@@ -50,4 +50,28 @@ class ExerciseRepositoryImpl implements ExerciseRepository {
         .toList();
     await _prefs.setStringList(_customExercisesKey, jsonStringList);
   }
+
+  @override
+  Future<Exercise?> getExerciseByName(String name) async {
+    final categories = await getExerciseCategories();
+    for (final category in categories) {
+      for (final exercise in category.exercises) {
+        if (exercise.name == name) {
+          return exercise;
+        }
+        for (final variation in exercise.variations) {
+          if (variation.name == name) {
+            return variation;
+          }
+        }
+      }
+    }
+    final customExercises = await getCustomExercises();
+    for (final exercise in customExercises) {
+      if (exercise.name == name) {
+        return exercise;
+      }
+    }
+    return null;
+  }
 }

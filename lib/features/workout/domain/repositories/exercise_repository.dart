@@ -4,6 +4,8 @@ import 'package:body_calendar/features/workout/domain/models/exercise_category.d
 abstract class ExerciseRepository {
   Future<List<ExerciseCategory>> getExerciseCategories();
 
+  Future<Exercise?> getExerciseByName(String name);
+
   Future<List<Exercise>> getCustomExercises();
 
   Future<void> addCustomExercise(Exercise exercise);

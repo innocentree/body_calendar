@@ -11,6 +11,7 @@ class Exercise {
   final List<Exercise> variations;
   final bool isCustom;
   final String? bodyPart;
+  final bool needsWeight;
 
   Exercise({
     String? id,
@@ -23,6 +24,7 @@ class Exercise {
     this.variations = const [],
     this.isCustom = false,
     this.bodyPart,
+    this.needsWeight = true,
   }) : id = id ?? Uuid().v4();
 
   factory Exercise.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class Exercise {
           : [],
       isCustom: json['isCustom'] as bool? ?? false,
       bodyPart: json['bodyPart'] as String?,
+      needsWeight: json['needsWeight'] as bool? ?? true,
     );
   }
 
@@ -58,6 +61,7 @@ class Exercise {
       'variations': variations.map((e) => e.toJson()).toList(),
       'isCustom': isCustom,
       'bodyPart': bodyPart,
+      'needsWeight': needsWeight,
     };
   }
-} 
+}

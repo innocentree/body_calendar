@@ -1,2 +1,2 @@
-feat: Implement automatic backup and restore feature for Android
-fix: Fix crash on Windows by adding platform check for backup/restore logic
+feat: 중량 풀업 종목 추가 및 풀업 무게 UI 수정
+fix: pubspec.yaml 버전 및 dart 파일 구문 오류 수정

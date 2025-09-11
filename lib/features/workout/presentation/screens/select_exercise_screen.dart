@@ -214,7 +214,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 Text(variation.description),
               ],
             ),
-            trailing: Text('${variation.sets}세트 ${variation.weight}kg'),
+            trailing: Text(
+              variation.needsWeight
+                  ? '${variation.sets}세트 ${variation.weight}kg'
+                  : '${variation.sets}세트',
+            ),
             onTap: () {
               Navigator.pop(context);
               Navigator.pop(context, variation);
@@ -336,7 +340,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
           child: ListTile(
             title: Text(exercise.name),
             subtitle: Text(exercise.description),
-            trailing: Text('${exercise.sets}세트 ${exercise.weight}kg'),
+            trailing: Text(
+              exercise.needsWeight
+                  ? '${exercise.sets}세트 ${exercise.weight}kg'
+                  : '${exercise.sets}세트',
+            ),
             onTap: () => _showVariations(exercise),
           ),
         );
