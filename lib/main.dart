@@ -1,13 +1,17 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'features/calendar/presentation/screens/calendar_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'dart:io' show Platform;
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
@@ -24,8 +28,44 @@ Future<void> setupLocator() async {
   getIt.registerLazySingleton<WorkoutRoutineRepository>(() => WorkoutRoutineRepositoryImpl(getIt()));
 }
 
+Future<void> _restore() async {
+  if (Platform.isAndroid) {
+    if (await Permission.storage.request().isGranted) {
+      try {
+        final directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          final backupDir = Directory('${directory.path}/body_calendar_backup');
+          final file = File('${backupDir.path}/prefs_backup.json');
+          if (await file.exists()) {
+            final json = await file.readAsString();
+            final allPrefs = jsonDecode(json) as Map<String, dynamic>;
+            final prefs = await SharedPreferences.getInstance();
+            for (final key in allPrefs.keys) {
+              final value = allPrefs[key];
+              if (value is bool) {
+                await prefs.setBool(key, value);
+              } else if (value is double) {
+                await prefs.setDouble(key, value);
+              } else if (value is int) {
+                await prefs.setInt(key, value);
+              } else if (value is String) {
+                await prefs.setString(key, value);
+              } else if (value is List) {
+                await prefs.setStringList(key, value.cast<String>());
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print('Error during auto restore: $e');
+      }
+    }
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _restore();
   await setupLocator(); // Initialize GetIt
   initializeDateFormatting();
   runApp(

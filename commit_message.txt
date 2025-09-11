@@ -1,1 +1,2 @@
-feat: Android 앱 삭제 시 데이터 보존 기능 추가
+feat: Implement automatic backup and restore feature for Android
+fix: Fix crash on Windows by adding platform check for backup/restore logic
