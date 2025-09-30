@@ -1,2 +1,4 @@
-feat: 중량 풀업 종목 추가 및 풀업 무게 UI 수정
-fix: pubspec.yaml 버전 및 dart 파일 구문 오류 수정
+feat: 코틀린 버전 2.1.0으로 업그레이드
+
+- 안드로이드 빌드 시 발생하는 코틀린 버전 경고 해결
+- `android/settings.gradle.kts` 파일의 코틀린 플러그인 버전 변경

@@ -251,8 +251,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
 
   void _addSet() {
     setState(() {
-      final allPreviousSetsCompleted = _sets.every((set) => set.isCompleted);
-
       // 이전 세트가 있으면 그 정보를 사용, 없으면 현재 설정된 값 사용
       final lastSet = _sets.isNotEmpty ? _sets.last : null;
       _sets.add(ExerciseSet(
@@ -261,6 +259,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         restTime: lastSet?.restTime ?? _currentRestTime,
       ));
       _tileControllers.add(ExpansionTileController());
+
+      final firstIncomplete = _sets.indexWhere((set) => !set.isCompleted);
+      if (firstIncomplete != -1) {
+        _currentSetIndex = firstIncomplete;
+      }
 
       _saveSets();
     });
@@ -759,7 +762,21 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       }
 
       // === UI ===
-      return Scaffold(
+      return BlocListener<TimerBloc, TimerState>(
+        listener: (context, state) {
+          if (state is TimerRunInProgress) {
+            final duration = state.duration;
+            if (duration == 10 || duration == 3 || duration == 2 || duration == 1) {
+              Vibration.vibrate(duration: 100); // Short vibration
+              _audioPlayer.play(AssetSource('sounds/beep.mp3')); // Single beep
+            }
+          } else if (state is TimerRunComplete) {
+            Vibration.vibrate(duration: 500); // Long vibration
+            _audioPlayer.play(AssetSource('sounds/bell.mp3')); // Play twice for two beeps
+            _audioPlayer.play(AssetSource('sounds/bell.mp3'));
+          }
+        },
+        child: Scaffold(
         appBar: AppBar(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1207,6 +1224,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
             ),
           ],
         ),
+      ),
       );
     } catch (e, st) {
       debugPrint('Error in build: $e\n$st');
