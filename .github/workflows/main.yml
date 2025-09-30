@@ -52,8 +52,8 @@ jobs:
         
     # 4. Flutter 의존성 패키지 설치
     # pubspec.yaml 파일에 명시된 모든 패키지를 다운로드합니다.
-    - name: Flutter clean
-      run: flutter clean
+    #- name: Flutter clean
+    #  run: flutter clean
     - name: Install dependencies
       run: flutter pub get
 
