@@ -5,6 +5,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
 android {
     namespace = "com.example.body_calendar"
     compileSdk = flutter.compileSdkVersion
@@ -39,8 +42,8 @@ android {
                  // But for this setup, we will rely on creating key.properties in CI or having it locally.
                  val keyPropsFile = rootProject.file("key.properties")
                  if (keyPropsFile.exists()) {
-                     val p = java.util.Properties()
-                     p.load(java.io.FileInputStream(keyPropsFile))
+                     val p = Properties()
+                     p.load(FileInputStream(keyPropsFile))
                      storePassword = p.getProperty("storePassword")
                      keyAlias = p.getProperty("keyAlias")
                      keyPassword = p.getProperty("keyPassword")
