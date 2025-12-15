@@ -27,7 +27,7 @@ jobs:
         repository: innocentree/body_calendar
         #ref: v1.0
         # secrets 에 토큰이 없으면 빌드 실패
-        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
 
     # 2. 자바(JDK) 설정
     # Flutter 안드로이드 빌드에 필요한 자바 환경을 설정합니다.
