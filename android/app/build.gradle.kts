@@ -30,11 +30,35 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("upload-keystore.jks") // Ensure this file exists
+            if (keystoreFile.exists()) {
+                 storeFile = keystoreFile
+                 // Load key.properties if it exists, otherwise use env vars (useful for CI if passing envs)
+                 // But for this setup, we will rely on creating key.properties in CI or having it locally.
+                 val keyPropsFile = rootProject.file("key.properties")
+                 if (keyPropsFile.exists()) {
+                     val p = java.util.Properties()
+                     p.load(java.io.FileInputStream(keyPropsFile))
+                     storePassword = p.getProperty("storePassword")
+                     keyAlias = p.getProperty("keyAlias")
+                     keyPassword = p.getProperty("keyPassword")
+                 } else {
+                     // Fallback to environment variables or throw error
+                     storePassword = System.getenv("KEY_STORE_PASSWORD")
+                     keyAlias = System.getenv("KEY_ALIAS")
+                     keyPassword = System.getenv("KEY_PASSWORD")
+                 }
+            } else {
+                println("Release keystore not found, skipping signing configuration")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

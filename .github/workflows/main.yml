@@ -57,11 +57,21 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
+    - name: Create key.properties
+      run: |
+        echo "storePassword=${{ secrets.KEY_STORE_PASSWORD }}" > android/key.properties
+        echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+        echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+        echo "storeFile=upload-keystore.jks" >> android/key.properties
+      
+    - name: Decode Keystore
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+
     # 5. Flutter 릴리즈 APK 빌드
     # 릴리즈 버전의 APK 파일을 생성합니다. 
     - name: Build release APK
       run: flutter build apk
-      #run: flutter build apk --debug
 
     # 6. GitHub Releases에 APK 업로드
     # https://github.com/softprops/action-gh-release
