@@ -4,4 +4,6 @@ abstract class WorkoutRoutineRepository {
   Future<List<WorkoutRoutine>> getWorkoutRoutines();
   Future<void> addWorkoutRoutine(WorkoutRoutine routine);
   Future<void> deleteWorkoutRoutine(String id);
+  Future<String> getRoutinesJson();
+  Future<void> restoreRoutinesFromJson(String jsonString);
 }

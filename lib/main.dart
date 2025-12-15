@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,6 +19,8 @@ import 'package:body_calendar/features/workout/domain/repositories/exercise_repo
 import 'package:body_calendar/features/workout/data/repositories/exercise_repository_impl.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_routine_repository.dart';
 import 'package:body_calendar/features/workout/data/repositories/workout_routine_repository_impl.dart';
+import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
+import 'package:body_calendar/features/workout/data/repositories/workout_repository_impl.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -26,6 +29,7 @@ Future<void> setupLocator() async {
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
   getIt.registerLazySingleton<ExerciseRepository>(() => ExerciseRepositoryImpl(getIt()));
   getIt.registerLazySingleton<WorkoutRoutineRepository>(() => WorkoutRoutineRepositoryImpl(getIt()));
+  getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepositoryImpl(getIt()));
 }
 
 Future<void> _restore() async {
@@ -107,6 +111,14 @@ class MyApp extends StatelessWidget {
             Locale('en', 'US'),
           ],
           locale: const Locale('ko', 'KR'),
+          scrollBehavior: const MaterialScrollBehavior().copyWith(
+            dragDevices: {
+              PointerDeviceKind.mouse,
+              PointerDeviceKind.touch,
+              PointerDeviceKind.stylus,
+              PointerDeviceKind.unknown,
+            },
+          ),
           home: const CalendarScreen(),
         );
       },

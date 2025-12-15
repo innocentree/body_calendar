@@ -37,4 +37,19 @@ class WorkoutRoutineRepositoryImpl implements WorkoutRoutineRepository {
         .toList();
     await _prefs.setStringList(_routinesKey, routinesJson);
   }
+
+  @override
+  Future<String> getRoutinesJson() async {
+    final routines = await getWorkoutRoutines();
+    final routinesJson =
+        routines.map((routine) => jsonEncode(routine.toJson())).toList();
+    return jsonEncode(routinesJson);
+  }
+
+  @override
+  Future<void> restoreRoutinesFromJson(String jsonString) async {
+    final List<dynamic> jsonList = jsonDecode(jsonString);
+    final List<String> routinesJson = jsonList.cast<String>();
+    await _prefs.setStringList(_routinesKey, routinesJson);
+  }
 }

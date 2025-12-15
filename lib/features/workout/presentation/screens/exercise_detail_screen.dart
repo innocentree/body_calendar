@@ -24,6 +24,8 @@ class ExerciseSet {
   final DateTime? startTime;
   final DateTime? endTime;
   final bool isCompleted;
+  final double? bodyWeight;
+  final double? assistedWeight;
 
   ExerciseSet({
     required this.weight,
@@ -32,6 +34,8 @@ class ExerciseSet {
     this.startTime,
     this.endTime,
     this.isCompleted = false,
+    this.bodyWeight,
+    this.assistedWeight,
   });
 
   Map<String, dynamic> toJson() => {
@@ -41,6 +45,8 @@ class ExerciseSet {
         'startTime': startTime?.toIso8601String(),
         'endTime': endTime?.toIso8601String(),
         'isCompleted': isCompleted,
+        'bodyWeight': bodyWeight,
+        'assistedWeight': assistedWeight,
       };
 
   factory ExerciseSet.fromJson(Map<String, dynamic> json) => ExerciseSet(
@@ -55,6 +61,12 @@ class ExerciseSet {
             json['startTime'] != null ? DateTime.parse(json['startTime']) : null,
         endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
         isCompleted: json['isCompleted'],
+        bodyWeight: (json['bodyWeight'] is int)
+            ? (json['bodyWeight'] as int).toDouble()
+            : (json['bodyWeight'] as double?),
+        assistedWeight: (json['assistedWeight'] is int)
+            ? (json['assistedWeight'] as int).toDouble()
+            : (json['assistedWeight'] as double?),
       );
 
   ExerciseSet copyWith({
@@ -64,6 +76,8 @@ class ExerciseSet {
     DateTime? startTime,
     DateTime? endTime,
     bool? isCompleted,
+    double? bodyWeight,
+    double? assistedWeight,
   }) {
     return ExerciseSet(
       weight: weight ?? this.weight,
@@ -72,6 +86,8 @@ class ExerciseSet {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       isCompleted: isCompleted ?? this.isCompleted,
+      bodyWeight: bodyWeight ?? this.bodyWeight,
+      assistedWeight: assistedWeight ?? this.assistedWeight,
     );
   }
 }
@@ -370,8 +386,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   }
 
   void _showEditSetDialog(int index) {
-    final set = _sets[index];
+    var set = _sets[index]; // Make locally mutable for dialog state
     double tempWeight = set.weight;
+    // 초기값 설정
+    if (_exercise?.isAssisted == true && set.bodyWeight == null) {
+      set = set.copyWith(bodyWeight: 70.0, assistedWeight: 0.0);
+      tempWeight = 70.0; 
+    }
     int tempReps = set.reps;
     int tempRest = set.restTime.inSeconds;
     showDialog(
@@ -382,7 +403,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_exercise?.needsWeight ?? true)
+              if ((_exercise?.needsWeight ?? true) && !(_exercise?.isAssisted ?? false))
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -453,6 +474,136 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           child:
                               Center(child: Text(_weightStep.toStringAsFixed(1))),
                         ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              if (_exercise?.isAssisted ?? false)
+              Column(
+                children: [
+                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(
+                        width: 90,
+                        child: Text('체중(kg)',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setStateDialog(() {
+                                // Default to 70 if not set
+                                double currentBodyWeight = set.bodyWeight ?? 70.0; 
+                                currentBodyWeight = (currentBodyWeight - 1.0).clamp(0, 300);
+                                set = set.copyWith(bodyWeight: currentBodyWeight);
+                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
+                              });
+                            },
+                            icon: const Icon(Icons.remove_circle_outline),
+                            constraints: BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          SizedBox(
+                            width: 40,
+                            child: GestureDetector(
+                              onTap: () {
+                                _showNumberInputDialog(
+                                  context,
+                                  '체중 입력',
+                                  set.bodyWeight ?? 70.0,
+                                  (value) {
+                                    setStateDialog(() {
+                                      set = set.copyWith(bodyWeight: value);
+                                      tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
+                                    });
+                                  },
+                                  isDouble: true,
+                                );
+                              },
+                              child:
+                                  Center(child: Text((set.bodyWeight ?? 70.0).toStringAsFixed(1))),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setStateDialog(() {
+                                double currentBodyWeight = set.bodyWeight ?? 70.0;
+                                currentBodyWeight = (currentBodyWeight + 1.0).clamp(0, 300);
+                                set = set.copyWith(bodyWeight: currentBodyWeight);
+                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
+                              });
+                            },
+                            icon: const Icon(Icons.add_circle_outline),
+                            constraints: BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                           const SizedBox(width: 48), // Spacing to align
+                        ],
+                      ),
+                    ],
+                  ),
+                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(
+                        width: 90,
+                        child: Text('보조(kg)',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setStateDialog(() {
+                                double currentAssisted = set.assistedWeight ?? 0.0;
+                                currentAssisted = (currentAssisted - _weightStep).clamp(0, 300);
+                                set = set.copyWith(assistedWeight: currentAssisted);
+                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
+                              });
+                            },
+                            icon: const Icon(Icons.remove_circle_outline),
+                            constraints: BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                          SizedBox(
+                            width: 40,
+                            child: GestureDetector(
+                              onTap: () {
+                                _showNumberInputDialog(
+                                  context,
+                                  '보조 무게 입력',
+                                  set.assistedWeight ?? 0.0,
+                                  (value) {
+                                    setStateDialog(() {
+                                      set = set.copyWith(assistedWeight: value);
+                                      tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
+                                    });
+                                  },
+                                  isDouble: true,
+                                );
+                              },
+                              child:
+                                  Center(child: Text((set.assistedWeight ?? 0.0).toStringAsFixed(1))),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setStateDialog(() {
+                                 double currentAssisted = set.assistedWeight ?? 0.0;
+                                currentAssisted = (currentAssisted + _weightStep).clamp(0, 300);
+                                set = set.copyWith(assistedWeight: currentAssisted);
+                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
+                              });
+                            },
+                            icon: const Icon(Icons.add_circle_outline),
+                            constraints: BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                           const SizedBox(width: 48), // Spacing to align
+                        ],
                       ),
                     ],
                   ),
@@ -610,7 +761,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
             TextButton(
               onPressed: () {
                 setState(() {
-                  _sets[index] = set.copyWith(
+                  _sets[index] = set.copyWith( // Use the potentially modified 'set' (with bodyWeight/assistedWeight)
                     weight: tempWeight,
                     reps: tempReps,
                     restTime: Duration(seconds: tempRest),
@@ -693,24 +844,36 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
           _sets.isNotEmpty && _sets.every((set) => set.isCompleted);
 
       // === 통계 계산 ===
+      // === 통계 계산 ===
       // 오늘 기록
       double todayMaxWeight = 0;
       double todayMax1RM = 0;
       double todayTotalVolume = 0;
+      int todayMaxReps = 0;
+      int todayTotalReps = 0;
+
       for (final set in _sets) {
-        todayMaxWeight = set.weight * set.reps > todayMaxWeight
-            ? set.weight * set.reps
-            : todayMaxWeight;
-        final oneRM = set.weight * (1 + set.reps / 30.0);
-        todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
-        todayTotalVolume += set.weight * set.reps;
+        if (_exercise?.needsWeight == true) {
+          double currentSetVolume = set.weight * set.reps;
+          todayMaxWeight = set.weight > todayMaxWeight ? set.weight : todayMaxWeight;
+          
+          final oneRM = set.weight * (1 + set.reps / 30.0);
+          todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
+          todayTotalVolume += currentSetVolume;
+        } else {
+          // Bodyweight / No Weight
+          todayMaxReps = set.reps > todayMaxReps ? set.reps : todayMaxReps;
+          todayTotalReps += set.reps;
+        }
       }
-      // 오늘 최대 무게(세트별 무게*횟수), 최대 1RM, 총 볼륨
 
       // 이전 기록(오늘 이전 날짜 중 가장 최근)
       double prevMaxWeight = 0;
       double prevMax1RM = 0;
       double prevTotalVolume = 0;
+      int prevMaxReps = 0;
+      int prevTotalReps = 0;
+
       if (_recordedDates.isNotEmpty) {
         final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
         final otherDates = _recordedDates.where((d) => d != todayStr).toList();
@@ -723,42 +886,59 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
               .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
               .toList();
           for (final set in prevSets) {
-            prevMaxWeight = set.weight * set.reps > prevMaxWeight
-                ? set.weight * set.reps
-                : prevMaxWeight;
-            final oneRM = set.weight * (1 + set.reps / 30.0);
-            prevMax1RM = oneRM > prevMax1RM ? oneRM : prevMax1RM;
-            prevTotalVolume += set.weight * set.reps;
+            if (_exercise?.needsWeight == true) {
+               prevMaxWeight = set.weight > prevMaxWeight ? set.weight : prevMaxWeight;
+               final oneRM = set.weight * (1 + set.reps / 30.0);
+               prevMax1RM = oneRM > prevMax1RM ? oneRM : prevMax1RM;
+               prevTotalVolume += set.weight * set.reps;
+            } else {
+               prevMaxReps = set.reps > prevMaxReps ? set.reps : prevMaxReps;
+               prevTotalReps += set.reps;
+            }
           }
         }
       }
+      
       // 역대 최고 기록
       double bestMaxWeight = 0;
       double bestMax1RM = 0;
       double bestTotalVolume = 0;
+      int bestMaxReps = 0;
+      int bestTotalReps = 0;
+
       for (final date in _recordedDates) {
         final key = 'exercise_sets_${widget.exerciseName}_$date';
         final setsJson = _prefs.getStringList(key) ?? [];
         final sets = setsJson
             .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
             .toList();
+            
         double localMaxWeight = 0;
         double localMax1RM = 0;
         double localTotalVolume = 0;
+        int localMaxReps = 0;
+        int localTotalReps = 0;
+
         for (final set in sets) {
-          localMaxWeight = set.weight * set.reps > localMaxWeight
-              ? set.weight * set.reps
-              : localMaxWeight;
-          final oneRM = set.weight * (1 + set.reps / 30.0);
-          localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
-          localTotalVolume += set.weight * set.reps;
+           if (_exercise?.needsWeight == true) {
+              localMaxWeight = set.weight > localMaxWeight ? set.weight : localMaxWeight;
+              final oneRM = set.weight * (1 + set.reps / 30.0);
+              localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
+              localTotalVolume += set.weight * set.reps;
+           } else {
+              localMaxReps = set.reps > localMaxReps ? set.reps : localMaxReps;
+              localTotalReps += set.reps;
+           }
         }
-        bestMaxWeight =
-            localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
-        bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
-        bestTotalVolume = localTotalVolume > bestTotalVolume
-            ? localTotalVolume
-            : bestTotalVolume;
+        
+        if (_exercise?.needsWeight == true) {
+           bestMaxWeight = localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
+           bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
+           bestTotalVolume = localTotalVolume > bestTotalVolume ? localTotalVolume : bestTotalVolume;
+        } else {
+           bestMaxReps = localMaxReps > bestMaxReps ? localMaxReps : bestMaxReps;
+           bestTotalReps = localTotalReps > bestTotalReps ? localTotalReps : bestTotalReps;
+        }
       }
 
       // === UI ===
@@ -806,30 +986,49 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _StatBox(
-                        title: '최대 무게',
-                        value: todayMaxWeight,
-                        prev: prevMaxWeight,
-                        best: bestMaxWeight,
-                        unit: 'kg',
-                        formatter: (v) => v.toStringAsFixed(1),
-                      ),
-                      _StatBox(
-                        title: '최대 1RM',
-                        value: todayMax1RM,
-                        prev: prevMax1RM,
-                        best: bestMax1RM,
-                        unit: 'kg',
-                        formatter: (v) => v.toStringAsFixed(1),
-                      ),
-                      _StatBox(
-                        title: '볼륨',
-                        value: todayTotalVolume,
-                        prev: prevTotalVolume,
-                        best: bestTotalVolume,
-                        unit: 'kg',
-                        formatter: (v) => v.toStringAsFixed(0),
-                      ),
+                      if (_exercise?.needsWeight == true) ...[
+                        _StatBox(
+                          title: '최대 무게',
+                          value: todayMaxWeight,
+                          prev: prevMaxWeight,
+                          best: bestMaxWeight,
+                          unit: 'kg',
+                          formatter: (v) => v.toStringAsFixed(1),
+                        ),
+                        _StatBox(
+                          title: '최대 1RM',
+                          value: todayMax1RM,
+                          prev: prevMax1RM,
+                          best: bestMax1RM,
+                          unit: 'kg',
+                          formatter: (v) => v.toStringAsFixed(1),
+                        ),
+                        _StatBox(
+                          title: '볼륨',
+                          value: todayTotalVolume,
+                          prev: prevTotalVolume,
+                          best: bestTotalVolume,
+                          unit: 'kg',
+                          formatter: (v) => v.toStringAsFixed(0),
+                        ),
+                      ] else ...[
+                        _StatBox(
+                          title: '최대 횟수',
+                          value: todayMaxReps.toDouble(),
+                          prev: prevMaxReps.toDouble(),
+                          best: bestMaxReps.toDouble(),
+                          unit: '회',
+                          formatter: (v) => v.toInt().toString(),
+                        ),
+                         _StatBox(
+                          title: '총 횟수',
+                          value: todayTotalReps.toDouble(),
+                          prev: prevTotalReps.toDouble(),
+                          best: bestTotalReps.toDouble(),
+                          unit: '회',
+                          formatter: (v) => v.toInt().toString(),
+                        ),
+                      ]
                     ],
                   ),
                 ],
@@ -889,8 +1088,151 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               horizontal: 16, vertical: 8),
                           child: Column(
                             children: [
-                              // 무게
-                              if (_exercise?.needsWeight ?? true)
+                              // 보조 운동 무게 조절
+                              if (_exercise?.isAssisted ?? false)
+                              Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('체중',
+                                          style: TextStyle(fontWeight: FontWeight.bold)),
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                double currentBody = _sets[index].bodyWeight ?? 70.0;
+                                                currentBody = (currentBody - 1.0).clamp(0, 300);
+                                                double currentAssisted = _sets[index].assistedWeight ?? 0.0;
+                                                _sets[index] = _sets[index].copyWith(
+                                                  bodyWeight: currentBody,
+                                                  weight: currentBody - currentAssisted,
+                                                );
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(Icons.remove_circle_outline),
+                                          ),
+                                          SizedBox(
+                                            width: 40,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                _showNumberInputDialog(
+                                                  context,
+                                                  '체중 입력',
+                                                  _sets[index].bodyWeight ?? 70.0,
+                                                  (value) {
+                                                    setState(() {
+                                                      double currentAssisted = _sets[index].assistedWeight ?? 0.0;
+                                                      _sets[index] = _sets[index].copyWith(
+                                                        bodyWeight: value,
+                                                        weight: value - currentAssisted,
+                                                      );
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                  isDouble: true,
+                                                );
+                                              },
+                                              child: Center(
+                                                  child: Text((_sets[index].bodyWeight ?? 70.0)
+                                                      .toStringAsFixed(1))),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                double currentBody = _sets[index].bodyWeight ?? 70.0;
+                                                currentBody = (currentBody + 1.0).clamp(0, 300);
+                                                double currentAssisted = _sets[index].assistedWeight ?? 0.0;
+                                                _sets[index] = _sets[index].copyWith(
+                                                  bodyWeight: currentBody,
+                                                  weight: currentBody - currentAssisted,
+                                                );
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(Icons.add_circle_outline),
+                                          ),
+                                           const SizedBox(width: 48), // Spacing
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('보조',
+                                          style: TextStyle(fontWeight: FontWeight.bold)),
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                double currentAssisted = _sets[index].assistedWeight ?? 0.0;
+                                                currentAssisted = (currentAssisted - _weightStep).clamp(0, 300);
+                                                double currentBody = _sets[index].bodyWeight ?? 70.0;
+                                                _sets[index] = _sets[index].copyWith(
+                                                  assistedWeight: currentAssisted,
+                                                  weight: currentBody - currentAssisted,
+                                                );
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(Icons.remove_circle_outline),
+                                          ),
+                                          SizedBox(
+                                            width: 40,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                _showNumberInputDialog(
+                                                  context,
+                                                  '보조 무게 입력',
+                                                  _sets[index].assistedWeight ?? 0.0,
+                                                  (value) {
+                                                    setState(() {
+                                                      double currentBody = _sets[index].bodyWeight ?? 70.0;
+                                                      _sets[index] = _sets[index].copyWith(
+                                                        assistedWeight: value,
+                                                        weight: currentBody - value,
+                                                      );
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                  isDouble: true,
+                                                );
+                                              },
+                                              child: Center(
+                                                  child: Text((_sets[index].assistedWeight ?? 0.0)
+                                                      .toStringAsFixed(1))),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                double currentAssisted = _sets[index].assistedWeight ?? 0.0;
+                                                currentAssisted = (currentAssisted + _weightStep).clamp(0, 300);
+                                                double currentBody = _sets[index].bodyWeight ?? 70.0;
+                                                _sets[index] = _sets[index].copyWith(
+                                                  assistedWeight: currentAssisted,
+                                                  weight: currentBody - currentAssisted,
+                                                );
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(Icons.add_circle_outline),
+                                          ),
+                                          const SizedBox(width: 48), // Spacing
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              
+                              // 일반 무게
+                              if ((_exercise?.needsWeight ?? true) && !(_exercise?.isAssisted ?? false))
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [

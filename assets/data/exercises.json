@@ -3,136 +3,130 @@
     "name": "어깨",
     "exercises": [
       {
-        "name": "오버헤드 프레스",
-        "imagePath": "assets/images/exercises/shoulders/overhead_press.png",
+        "name": "오버헤드 프레스: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/shoulders/barbell_overhead_press.png",
         "sets": 4,
         "weight": 40.0,
-        "description": "어깨의 전체적인 발달을 위한 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "오버헤드 프레스: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/shoulders/barbell_overhead_press.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "바벨을 사용한 기본적인 오버헤드 프레스입니다."
-          },
-          {
-            "name": "오버헤드 프레스: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/shoulders/dumbbell_overhead_press.png",
-            "sets": 4,
-            "weight": 16.0,
-            "description": "덤벨을 사용하여 각 팔을 독립적으로 운동하는 프레스입니다."
-          },
-          {
-            "name": "오버헤드 프레스: 스미스",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercises/shoulders/smith_overhead_press.png",
-            "sets": 4,
-            "weight": 35.0,
-            "description": "스미스 머신을 사용하여 안정적으로 수행하는 프레스입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 오버헤드 프레스입니다.",
+        "variations": []
       },
       {
-        "name": "레터럴 레이즈",
-        "imagePath": "assets/images/exercises/shoulders/lateral_raise.png",
+        "name": "오버헤드 프레스: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/shoulders/dumbbell_overhead_press.png",
+        "sets": 4,
+        "weight": 16.0,
+        "description": "덤벨을 사용하여 각 팔을 독립적으로 운동하는 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "오버헤드 프레스: 스미스",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/shoulders/smith_overhead_press.png",
+        "sets": 4,
+        "weight": 35.0,
+        "description": "스미스 머신을 사용하여 안정적으로 수행하는 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "레터럴 레이즈: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/shoulders/dumbbell_lateral_raise.png",
         "sets": 4,
         "weight": 8.0,
-        "description": "측면 삼각근을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "레터럴 레이즈: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/shoulders/dumbbell_lateral_raise.png",
-            "sets": 4,
-            "weight": 8.0,
-            "description": "덤벨을 사용한 기본적인 레터럴 레이즈입니다."
-          },
-          {
-            "name": "레터럴 레이즈: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/shoulders/cable_lateral_raise.png",
-            "sets": 4,
-            "weight": 5.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 측면 삼각근을 자극합니다."
-          },
-          {
-            "name": "레터럴 레이즈: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/shoulders/band_lateral_raise.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 수행하는 레터럴 레이즈입니다."
-          }
-        ]
+        "description": "덤벨을 사용한 기본적인 레터럴 레이즈입니다.",
+        "variations": []
       },
       {
-        "name": "프론트 레이즈",
-        "imagePath": "assets/images/exercises/shoulders/front_raise.png",
+        "name": "레터럴 레이즈: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/shoulders/cable_lateral_raise.png",
+        "sets": 4,
+        "weight": 5.0,
+        "description": "케이블을 사용하여 지속적인 저항으로 측면 삼각근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "레터럴 레이즈: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/shoulders/band_lateral_raise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "밴드를 사용하여 수행하는 레터럴 레이즈입니다.",
+        "variations": []
+      },
+      {
+        "name": "프론트 레이즈: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/shoulders/dumbbell_front_raise.png",
         "sets": 4,
         "weight": 8.0,
-        "description": "전면 삼각근을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "프론트 레이즈: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/shoulders/dumbbell_front_raise.png",
-            "sets": 4,
-            "weight": 8.0,
-            "description": "덤벨을 사용한 기본적인 프론트 레이즈입니다."
-          },
-          {
-            "name": "프론트 레이즈: 플레이트",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/shoulders/plate_front_raise.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "원판을 사용하여 수행하는 프론트 레이즈입니다."
-          },
-          {
-            "name": "프론트 레이즈: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/shoulders/barbell_front_raise.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "바벨을 사용하여 양팔을 동시에 들어올리는 프론트 레이즈입니다."
-          }
-        ]
+        "description": "덤벨을 사용한 기본적인 프론트 레이즈입니다.",
+        "variations": []
       },
       {
-        "name": "페이스 풀",
-        "imagePath": "assets/images/exercises/shoulders/face_pull.png",
+        "name": "프론트 레이즈: 플레이트",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/shoulders/plate_front_raise.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "원판을 사용하여 수행하는 프론트 레이즈입니다.",
+        "variations": []
+      },
+      {
+        "name": "프론트 레이즈: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/shoulders/barbell_front_raise.png",
         "sets": 4,
         "weight": 15.0,
-        "description": "후면 삼각근과 회전근개를 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "페이스 풀: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/shoulders/cable_face_pull.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "케이블을 사용한 기본적인 페이스 풀입니다."
-          },
-          {
-            "name": "페이스 풀: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/shoulders/band_face_pull.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 수행하는 페이스 풀입니다."
-          },
-          {
-            "name": "페이스 풀: TRX",
-            "equipment": "TRX",
-            "imagePath": "assets/images/exercises/shoulders/trx_face_pull.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "TRX를 사용하여 체중을 이용한 페이스 풀입니다."
-          }
-        ]
+        "description": "바벨을 사용하여 양팔을 동시에 들어올리는 프론트 레이즈입니다.",
+        "variations": []
+      },
+      {
+        "name": "페이스 풀: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/shoulders/cable_face_pull.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "케이블을 사용한 기본적인 페이스 풀입니다.",
+        "variations": []
+      },
+      {
+        "name": "페이스 풀: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/shoulders/band_face_pull.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "밴드를 사용하여 수행하는 페이스 풀입니다.",
+        "variations": []
+      },
+      {
+        "name": "페이스 풀: TRX",
+        "equipment": "TRX",
+        "imagePath": "assets/images/exercises/shoulders/trx_face_pull.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "TRX를 사용하여 체중을 이용한 페이스 풀입니다.",
+        "variations": []
+      },
+      {
+        "name": "아놀드 프레스",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 12.0,
+        "description": "전면 및 측면 삼각근을 동시에 자극하는 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "리버스 펙덱 플라이",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "후면 삼각근을 고립하여 발달시킵니다.",
+        "variations": []
       }
     ]
   },
@@ -140,37 +134,31 @@
     "name": "승모근",
     "exercises": [
       {
-        "name": "슈러그",
+        "name": "슈러그: 바벨",
+        "equipment": "바벨",
         "imagePath": "assets/images/exercise.png",
         "sets": 4,
         "weight": 50.0,
-        "description": "승모근 상부를 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "슈러그: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercise.png",
-            "sets": 4,
-            "weight": 50.0,
-            "description": "바벨을 사용한 기본적인 슈러그입니다."
-          },
-          {
-            "name": "슈러그: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercise.png",
-            "sets": 4,
-            "weight": 25.0,
-            "description": "덤벨을 사용한 슈러그입니다."
-          },
-          {
-            "name": "슈러그: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercise.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "케이블을 사용한 슈러그입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 슈러그입니다.",
+        "variations": []
+      },
+      {
+        "name": "슈러그: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 25.0,
+        "description": "덤벨을 사용한 슈러그입니다.",
+        "variations": []
+      },
+      {
+        "name": "슈러그: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 30.0,
+        "description": "케이블을 사용한 슈러그입니다.",
+        "variations": []
       },
       {
         "name": "업라이트 로우",
@@ -186,161 +174,153 @@
     "name": "가슴",
     "exercises": [
       {
-        "name": "벤치 프레스",
-        "imagePath": "assets/images/exercises/chest/bench_press.png",
+        "name": "벤치 프레스: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/chest/barbell_bench_press.png",
         "sets": 4,
         "weight": 60.0,
-        "description": "가슴의 전체적인 발달을 위한 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "벤치 프레스: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/chest/barbell_bench_press.png",
-            "sets": 4,
-            "weight": 60.0,
-            "description": "바벨을 사용한 기본적인 벤치 프레스입니다."
-          },
-          {
-            "name": "벤치 프레스: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/chest/dumbbell_bench_press.png",
-            "sets": 4,
-            "weight": 24.0,
-            "description": "덤벨을 사용하여 각 팔을 독립적으로 운동하는 프레스입니다."
-          },
-          {
-            "name": "벤치 프레스: 스미스",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercises/chest/smith_bench_press.png",
-            "sets": 4,
-            "weight": 50.0,
-            "description": "스미스 머신을 사용하여 안정적으로 수행하는 프레스입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 벤치 프레스입니다.",
+        "variations": []
       },
       {
-        "name": "인클라인 프레스",
-        "imagePath": "assets/images/exercises/chest/incline_press.png",
+        "name": "벤치 프레스: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/chest/dumbbell_bench_press.png",
+        "sets": 4,
+        "weight": 24.0,
+        "description": "덤벨을 사용하여 각 팔을 독립적으로 운동하는 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "벤치 프레스: 스미스",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/chest/smith_bench_press.png",
         "sets": 4,
         "weight": 50.0,
-        "description": "상부 가슴을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "인클라인 프레스: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/chest/barbell_incline_press.png",
-            "sets": 4,
-            "weight": 50.0,
-            "description": "바벨을 사용한 기본적인 인클라인 프레스입니다."
-          },
-          {
-            "name": "인클라인 프레스: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/chest/dumbbell_incline_press.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "덤벨을 사용하여 각 팔을 독립적으로 운동하는 인클라인 프레스입니다."
-          },
-          {
-            "name": "인클라인 프레스: 스미스",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercises/chest/smith_incline_press.png",
-            "sets": 4,
-            "weight": 45.0,
-            "description": "스미스 머신을 사용하여 안정적으로 수행하는 인클라인 프레스입니다."
-          }
-        ]
+        "description": "스미스 머신을 사용하여 안정적으로 수행하는 프레스입니다.",
+        "variations": []
       },
       {
-        "name": "딥스",
-        "imagePath": "assets/images/exercises/chest/dips.png",
+        "name": "인클라인 프레스: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/chest/barbell_incline_press.png",
+        "sets": 4,
+        "weight": 50.0,
+        "description": "바벨을 사용한 기본적인 인클라인 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "인클라인 프레스: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/chest/dumbbell_incline_press.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "덤벨을 사용하여 각 팔을 독립적으로 운동하는 인클라인 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "인클라인 프레스: 스미스",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/chest/smith_incline_press.png",
+        "sets": 4,
+        "weight": 45.0,
+        "description": "스미스 머신을 사용하여 안정적으로 수행하는 인클라인 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "딥스: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/chest/bodyweight_dips.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "가슴 하부를 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "딥스: 맨몸",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/chest/bodyweight_dips.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "맨몸으로 수행하는 기본적인 딥스입니다."
-          },
-          {
-            "name": "딥스: 어시스티드",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/chest/assisted_dips.png",
-            "sets": 4,
-            "weight": -20.0,
-            "description": "어시스트 머신을 사용하여 수행하는 딥스입니다."
-          }
-        ]
+        "description": "맨몸으로 수행하는 기본적인 딥스입니다.",
+        "variations": [],
+        "needsWeight": false
       },
       {
-        "name": "체스트 플라이",
-        "imagePath": "assets/images/exercises/chest/chest_fly.png",
+        "name": "딥스: 어시스티드",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/chest/assisted_dips.png",
+        "sets": 4,
+        "weight": -20.0,
+        "description": "어시스트 머신을 사용하여 수행하는 딥스입니다.",
+        "variations": [],
+        "isAssisted": true
+      },
+      {
+        "name": "체스트 플라이: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/chest/dumbbell_fly.png",
         "sets": 4,
         "weight": 12.0,
-        "description": "가슴의 이완과 수축을 강조하는 운동입니다.",
-        "variations": [
-          {
-            "name": "체스트 플라이: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/chest/dumbbell_fly.png",
-            "sets": 4,
-            "weight": 12.0,
-            "description": "덤벨을 사용한 기본적인 체스트 플라이입니다."
-          },
-          {
-            "name": "체스트 플라이: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/chest/cable_fly.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 가슴을 자극합니다."
-          },
-          {
-            "name": "체스트 플라이: 펙덱",
-            "equipment": "펙덱 머신",
-            "imagePath": "assets/images/exercises/chest/pec_deck_fly.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "펙덱 머신을 사용하여 안정적으로 수행하는 플라이입니다."
-          }
-        ]
+        "description": "덤벨을 사용한 기본적인 체스트 플라이입니다.",
+        "variations": []
       },
       {
-        "name": "푸시업",
-        "imagePath": "assets/images/exercises/chest/pushup.png",
+        "name": "체스트 플라이: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/chest/cable_fly.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "케이블을 사용하여 지속적인 저항으로 가슴을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "체스트 플라이: 펙덱",
+        "equipment": "펙덱 머신",
+        "imagePath": "assets/images/exercises/chest/pec_deck_fly.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "펙덱 머신을 사용하여 안정적으로 수행하는 플라이입니다.",
+        "variations": []
+      },
+      {
+        "name": "푸시업: 기본",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/chest/standard_pushup.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "체중을 이용한 기본적인 가슴 운동입니다.",
-        "variations": [
-          {
-            "name": "푸시업: 기본",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/chest/standard_pushup.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "기본적인 푸시업입니다."
-          },
-          {
-            "name": "푸시업: 인클라인",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/chest/incline_pushup.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "발을 높은 곳에 두고 수행하는 푸시업입니다."
-          },
-          {
-            "name": "푸시업: 디클라인",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/chest/decline_pushup.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "손을 높은 곳에 두고 수행하는 푸시업입니다."
-          }
-        ]
+        "description": "기본적인 푸시업입니다.",
+        "variations": [],
+        "needsWeight": false
+      },
+      {
+        "name": "푸시업: 인클라인",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/chest/incline_pushup.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "발을 높은 곳에 두고 수행하는 푸시업입니다.",
+        "variations": [],
+        "needsWeight": false
+      },
+      {
+        "name": "푸시업: 디클라인",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/chest/decline_pushup.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "손을 높은 곳에 두고 수행하는 푸시업입니다.",
+        "variations": [],
+        "needsWeight": false
+      },
+      {
+        "name": "덤벨 풀오버",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "가슴과 광배근을 동시에 자극하는 운동입니다.",
+        "variations": []
+      },
+      {
+        "name": "머신 체스트 프레스",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "머신을 사용하여 안전하게 가슴을 자극합니다.",
+        "variations": []
       }
     ]
   },
@@ -348,192 +328,171 @@
     "name": "등",
     "exercises": [
       {
-        "name": "랫 풀다운",
-        "imagePath": "assets/images/exercises/back/lat_pulldown.png",
+        "name": "랫 풀다운: 와이드 그립",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/lat_pulldown_wide.png",
         "sets": 4,
         "weight": 40,
-        "description": "등 넓이를 키우는 대표적인 운동",
-        "variations": [
-          {
-            "name": "랫 풀다운: 와이드 그립",
-            "equipment": "케이블 머신",
-            "imagePath": "assets/images/exercises/back/lat_pulldown_wide.png",
-            "sets": 4,
-            "weight": 40,
-            "description": "넓은 그립으로 등 바깥쪽을 더 자극"
-          },
-          {
-            "name": "랫 풀다운: 클로즈 그립",
-            "equipment": "케이블 머신", 
-            "imagePath": "assets/images/exercises/back/lat_pulldown_close.png",
-            "sets": 4,
-            "weight": 35,
-            "description": "좁은 그립으로 등 안쪽을 더 자극"
-          },
-          {
-            "name": "랫 풀다운: V-바",
-            "equipment": "케이블 머신",
-            "imagePath": "assets/images/exercises/back/lat_pulldown_v.png", 
-            "sets": 4,
-            "weight": 35,
-            "description": "V자 바를 사용해 등 중앙부를 집중적으로 자극"
-          }
-        ]
+        "description": "넓은 그립으로 등 바깥쪽을 더 자극",
+        "variations": []
       },
       {
-        "name": "바벨 로우",
-        "imagePath": "assets/images/exercises/back/barbell_row.png",
+        "name": "랫 풀다운: 클로즈 그립",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/lat_pulldown_close.png",
+        "sets": 4,
+        "weight": 35,
+        "description": "좁은 그립으로 등 안쪽을 더 자극",
+        "variations": []
+      },
+      {
+        "name": "랫 풀다운: V-바",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/lat_pulldown_v.png",
+        "sets": 4,
+        "weight": 35,
+        "description": "V자 바를 사용해 등 중앙부를 집중적으로 자극",
+        "variations": []
+      },
+      {
+        "name": "바벨 로우: 오버핸드 그립",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/barbell_row_overhand.png",
         "sets": 4,
         "weight": 60,
-        "description": "등 두께를 키우는 대표적인 운동",
-        "variations": [
-          {
-            "name": "바벨 로우: 오버핸드 그립",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/barbell_row_overhand.png",
-            "sets": 4,
-            "weight": 60,
-            "description": "오버핸드 그립으로 등 상부를 더 자극"
-          },
-          {
-            "name": "바벨 로우: 언더핸드 그립",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/barbell_row_underhand.png",
-            "sets": 4,
-            "weight": 55,
-            "description": "언더핸드 그립으로 등 하부와 이두근을 더 자극"
-          },
-          {
-            "name": "펜들레이 로우",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/pendlay_row.png",
-            "sets": 4,
-            "weight": 50,
-            "description": "바닥에서 시작하는 폭발적인 로우 동작으로 등 전체를 자극"
-          }
-        ]
+        "description": "오버핸드 그립으로 등 상부를 더 자극",
+        "variations": []
       },
       {
-        "name": "시티드 케이블 로우",
-        "imagePath": "assets/images/exercises/back/seated_cable_row.png", 
+        "name": "바벨 로우: 언더핸드 그립",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/barbell_row_underhand.png",
+        "sets": 4,
+        "weight": 55,
+        "description": "언더핸드 그립으로 등 하부와 이두근을 더 자극",
+        "variations": []
+      },
+      {
+        "name": "펜들레이 로우",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/pendlay_row.png",
         "sets": 4,
         "weight": 50,
-        "description": "등 중앙부를 강화하는 기본 운동",
-        "variations": [
-          {
-            "name": "시티드 케이블 로우: 와이드 그립",
-            "equipment": "케이블 머신",
-            "imagePath": "assets/images/exercises/back/seated_cable_row_wide.png",
-            "sets": 4,
-            "weight": 50,
-            "description": "넓은 그립으로 등 바깥쪽을 더 자극"
-          },
-          {
-            "name": "시티드 케이블 로우: V-바",
-            "equipment": "케이블 머신",
-            "imagePath": "assets/images/exercises/back/seated_cable_row_v.png",
-            "sets": 4,
-            "weight": 45,
-            "description": "V자 바를 사용해 등 중앙부를 집중적으로 자극"
-          },
-          {
-            "name": "시티드 케이블 로우: 로프",
-            "equipment": "케이블 머신",
-            "imagePath": "assets/images/exercises/back/seated_cable_row_rope.png",
-            "sets": 4,
-            "weight": 40,
-            "description": "로프를 사용해 더 큰 가동범위로 등을 자극"
-          }
-        ]
+        "description": "바닥에서 시작하는 폭발적인 로우 동작으로 등 전체를 자극",
+        "variations": []
       },
       {
-        "name": "원암 덤벨 로우",
-        "imagePath": "assets/images/exercises/back/one_arm_dumbbell_row.png",
+        "name": "시티드 케이블 로우: 와이드 그립",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/seated_cable_row_wide.png",
+        "sets": 4,
+        "weight": 50,
+        "description": "넓은 그립으로 등 바깥쪽을 더 자극",
+        "variations": []
+      },
+      {
+        "name": "시티드 케이블 로우: V-바",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/seated_cable_row_v.png",
+        "sets": 4,
+        "weight": 45,
+        "description": "V자 바를 사용해 등 중앙부를 집중적으로 자극",
+        "variations": []
+      },
+      {
+        "name": "시티드 케이블 로우: 로프",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/seated_cable_row_rope.png",
+        "sets": 4,
+        "weight": 40,
+        "description": "로프를 사용해 더 큰 가동범위로 등을 자극",
+        "variations": []
+      },
+      {
+        "name": "원암 덤벨 로우: 벤치 지지",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/back/one_arm_db_row_bench.png",
         "sets": 3,
         "weight": 20,
-        "description": "등의 좌우 균형을 잡아주는 운동",
-        "variations": [
-          {
-            "name": "원암 덤벨 로우: 벤치 지지",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/back/one_arm_db_row_bench.png",
-            "sets": 3,
-            "weight": 20,
-            "description": "벤치에 기대어 안정적으로 수행하는 방식"
-          },
-          {
-            "name": "원암 덤벨 로우: 스탠딩",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/back/one_arm_db_row_standing.png",
-            "sets": 3,
-            "weight": 15,
-            "description": "서서 수행하여 코어 안정성을 더 요구하는 방식"
-          }
-        ]
+        "description": "벤치에 기대어 안정적으로 수행하는 방식",
+        "variations": []
       },
       {
-        "name": "풀업",
-        "imagePath": "assets/images/exercises/back/pullup.png",
+        "name": "원암 덤벨 로우: 스탠딩",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/back/one_arm_db_row_standing.png",
+        "sets": 3,
+        "weight": 15,
+        "description": "서서 수행하여 코어 안정성을 더 요구하는 방식",
+        "variations": []
+      },
+      {
+        "name": "풀업: 와이드 그립",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/back/pullup_wide.png",
         "sets": 5,
         "weight": 0,
         "needsWeight": false,
-        "description": "등과 팔 근육을 강화하는 대표적인 맨몸 운동입니다.",
-        "variations": [
-          {
-            "name": "풀업: 와이드 그립",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/back/pullup_wide.png",
-            "sets": 5,
-            "weight": 0,
-            "needsWeight": false,
-            "description": "넓은 그립으로 등 바깥쪽을 더 자극하는 풀업입니다."
-          },
-          {
-            "name": "풀업: 클로즈 그립",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/back/pullup_close.png",
-            "sets": 5,
-            "weight": 0,
-            "needsWeight": false,
-            "description": "좁은 그립으로 등 안쪽을 더 자극하는 풀업입니다."
-          }
-        ]
+        "description": "넓은 그립으로 등 바깥쪽을 더 자극하는 풀업입니다.",
+        "variations": []
       },
       {
-        "name": "중량 풀업",
+        "name": "풀업: 클로즈 그립",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/back/pullup_close.png",
+        "sets": 5,
+        "weight": 0,
+        "needsWeight": false,
+        "description": "좁은 그립으로 등 안쪽을 더 자극하는 풀업입니다.",
+        "variations": []
+      },
+      {
+        "name": "중량 풀업: 웨이트 벨트",
+        "equipment": "웨이트 벨트",
         "imagePath": "assets/images/exercises/back/pullup.png",
         "sets": 4,
         "weight": 10,
         "needsWeight": true,
-        "description": "중량을 추가하여 등과 팔 근육을 더욱 강화하는 풀업 운동입니다.",
-        "variations": [
-          {
-            "name": "중량 풀업: 웨이트 벨트",
-            "equipment": "웨이트 벨트",
-            "imagePath": "assets/images/exercises/back/pullup.png",
-            "sets": 4,
-            "weight": 10,
-            "needsWeight": true,
-            "description": "웨이트 벨트에 중량을 추가하여 수행하는 풀업입니다."
-          }
-        ]
+        "description": "웨이트 벨트에 중량을 추가하여 수행하는 풀업입니다.",
+        "variations": []
       },
       {
-        "name": "시티드로우",
-        "imagePath": "assets/images/exercises/back/seated_row.png",
+        "name": "시티드로우: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/back/seated_row_machine.png",
         "sets": 4,
         "weight": 40,
-        "description": "등 중앙부를 집중적으로 단련하는 머신 운동입니다.",
-        "variations": [
-          {
-            "name": "시티드로우: 머신",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/back/seated_row_machine.png",
-            "sets": 4,
-            "weight": 40,
-            "description": "머신을 사용하여 안정적으로 수행하는 시티드로우입니다."
-          }
-        ]
+        "description": "머신을 사용하여 안정적으로 수행하는 시티드로우입니다.",
+        "variations": []
+      },
+      {
+        "name": "어시스트 풀업",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신의 보조를 받아 수행하는 풀업입니다.",
+        "variations": [],
+        "isAssisted": true
+      },
+      {
+        "name": "티바 로우",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "T자 형태의 바를 당겨 등 두께를 발달시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "인버티드 로우",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "철봉 아래에 매달려 수행하는 로우 동작입니다.",
+        "variations": [],
+        "needsWeight": false
       }
     ]
   },
@@ -541,128 +500,124 @@
     "name": "삼두",
     "exercises": [
       {
-        "name": "트라이셉스 푸시다운",
-        "imagePath": "assets/images/exercises/triceps/pushdown.png",
+        "name": "트라이셉스 푸시다운: 로프",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/triceps/rope_pushdown.png",
         "sets": 4,
         "weight": 25.0,
-        "description": "삼두근을 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "트라이셉스 푸시다운: 로프",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/triceps/rope_pushdown.png",
-            "sets": 4,
-            "weight": 25.0,
-            "description": "로프를 사용하여 삼두근을 더 넓은 가동범위로 자극합니다."
-          },
-          {
-            "name": "트라이셉스 푸시다운: V-바",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/triceps/v_bar_pushdown.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "V-바를 사용하여 삼두근을 집중적으로 자극합니다."
-          },
-          {
-            "name": "트라이셉스 푸시다운: 스트레이트 바",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/triceps/straight_bar_pushdown.png",
-            "sets": 4,
-            "weight": 35.0,
-            "description": "스트레이트 바를 사용하여 삼두근 전체를 골고루 자극합니다."
-          }
-        ]
+        "description": "로프를 사용하여 삼두근을 더 넓은 가동범위로 자극합니다.",
+        "variations": []
       },
       {
-        "name": "오버헤드 트라이셉스 익스텐션",
-        "imagePath": "assets/images/exercises/triceps/overhead_extension.png",
+        "name": "트라이셉스 푸시다운: V-바",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/triceps/v_bar_pushdown.png",
+        "sets": 4,
+        "weight": 30.0,
+        "description": "V-바를 사용하여 삼두근을 집중적으로 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "트라이셉스 푸시다운: 스트레이트 바",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/triceps/straight_bar_pushdown.png",
+        "sets": 4,
+        "weight": 35.0,
+        "description": "스트레이트 바를 사용하여 삼두근 전체를 골고루 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "오버헤드 익스텐션: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/triceps/db_overhead.png",
         "sets": 4,
         "weight": 20.0,
-        "description": "삼두근 장두를 집중적으로 발달시킵니다.",
-        "variations": [
-          {
-            "name": "오버헤드 익스텐션: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/triceps/db_overhead.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "덤벨을 사용하여 각 팔의 삼두근을 독립적으로 발달시킵니다."
-          },
-          {
-            "name": "오버헤드 익스텐션: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/triceps/cable_overhead.png",
-            "sets": 4,
-            "weight": 25.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 삼두근을 자극합니다."
-          },
-          {
-            "name": "오버헤드 익스텐션: 이지바",
-            "equipment": "이지바",
-            "imagePath": "assets/images/exercises/triceps/ez_bar_overhead.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "이지바를 사용하여 손목에 부담을 줄이며 삼두근을 발달시킵니다."
-          }
-        ]
+        "description": "덤벨을 사용하여 각 팔의 삼두근을 독립적으로 발달시킵니다.",
+        "variations": []
       },
       {
-        "name": "클로즈 그립 벤치 프레스",
-        "imagePath": "assets/images/exercises/triceps/close_grip_bench.png",
+        "name": "오버헤드 익스텐션: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/triceps/cable_overhead.png",
+        "sets": 4,
+        "weight": 25.0,
+        "description": "케이블을 사용하여 지속적인 저항으로 삼두근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "오버헤드 익스텐션: 이지바",
+        "equipment": "이지바",
+        "imagePath": "assets/images/exercises/triceps/ez_bar_overhead.png",
+        "sets": 4,
+        "weight": 30.0,
+        "description": "이지바를 사용하여 손목에 부담을 줄이며 삼두근을 발달시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "클로즈 그립 벤치: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/triceps/barbell_close_grip.png",
         "sets": 4,
         "weight": 40.0,
-        "description": "삼두근과 가슴을 동시에 발달시키는 복합 운동입니다.",
-        "variations": [
-          {
-            "name": "클로즈 그립 벤치: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/triceps/barbell_close_grip.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "바벨을 사용한 기본적인 클로즈 그립 벤치 프레스입니다."
-          },
-          {
-            "name": "클로즈 그립 벤치: 스미스 머신",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercises/triceps/smith_close_grip.png",
-            "sets": 4,
-            "weight": 45.0,
-            "description": "스미스 머신을 사용하여 안정적으로 수행하는 클로즈 그립 프레스입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 클로즈 그립 벤치 프레스입니다.",
+        "variations": []
       },
       {
-        "name": "트라이셉스 딥스",
-        "imagePath": "assets/images/exercises/triceps/dips.png",
+        "name": "클로즈 그립 벤치: 스미스 머신",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/triceps/smith_close_grip.png",
+        "sets": 4,
+        "weight": 45.0,
+        "description": "스미스 머신을 사용하여 안정적으로 수행하는 클로즈 그립 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "트라이셉스 딥스: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/triceps/bodyweight_dips.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "삼두근을 효과적으로 발달시키는 맨몸 운동입니다.",
-        "variations": [
-          {
-            "name": "트라이셉스 딥스: 맨몸",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/triceps/bodyweight_dips.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "자신의 체중을 이용한 기본적인 딥스입니다."
-          },
-          {
-            "name": "트라이셉스 딥스: 머신",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/triceps/assisted_dips.png",
-            "sets": 4,
-            "weight": -20.0,
-            "description": "어시스트 머신을 사용하여 보조를 받으며 수행하는 딥스입니다."
-          },
-          {
-            "name": "트라이셉스 딥스: 웨이티드",
-            "equipment": "웨이트 벨트",
-            "imagePath": "assets/images/exercises/triceps/weighted_dips.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "추가 중량을 달고 수행하는 고강도 딥스입니다."
-          }
-        ]
+        "description": "자신의 체중을 이용한 기본적인 딥스입니다.",
+        "variations": [],
+        "needsWeight": false
+      },
+      {
+        "name": "트라이셉스 딥스: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/triceps/assisted_dips.png",
+        "sets": 4,
+        "weight": -20.0,
+        "description": "어시스트 머신을 사용하여 보조를 받으며 수행하는 딥스입니다.",
+        "variations": [],
+        "isAssisted": true
+      },
+      {
+        "name": "트라이셉스 딥스: 웨이티드",
+        "equipment": "웨이트 벨트",
+        "imagePath": "assets/images/exercises/triceps/weighted_dips.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "추가 중량을 달고 수행하는 고강도 딥스입니다.",
+        "variations": []
+      },
+      {
+        "name": "라잉 트라이셉스 익스텐션",
+        "equipment": "이지바",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "누워서 삼두근을 신전시키는 '스컬 크러셔'입니다.",
+        "variations": []
+      },
+      {
+        "name": "벤치 딥스",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "벤치를 이용하여 삼두근을 자극합니다.",
+        "variations": [],
+        "needsWeight": false
       }
     ]
   },
@@ -670,128 +625,103 @@
     "name": "이두",
     "exercises": [
       {
-        "name": "바이셉스 컬",
-        "imagePath": "assets/images/exercises/biceps/curl.png",
+        "name": "바이셉스 컬: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/biceps/barbell_curl.png",
         "sets": 4,
         "weight": 30.0,
-        "description": "이두근을 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "바이셉스 컬: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/biceps/barbell_curl.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "바벨을 사용한 기본적인 이두근 운동입니다."
-          },
-          {
-            "name": "바이셉스 컬: 이지바",
-            "equipment": "이지바",
-            "imagePath": "assets/images/exercises/biceps/ez_bar_curl.png",
-            "sets": 4,
-            "weight": 25.0,
-            "description": "이지바를 사용하여 손목 부담을 줄이며 이두근을 발달시킵니다."
-          },
-          {
-            "name": "바이셉스 컬: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/biceps/dumbbell_curl.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "덤벨을 사용하여 각 팔의 이두근을 독립적으로 발달시킵니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 이두근 운동입니다.",
+        "variations": []
       },
       {
-        "name": "해머 컬",
-        "imagePath": "assets/images/exercises/biceps/hammer_curl.png",
+        "name": "바이셉스 컬: 이지바",
+        "equipment": "이지바",
+        "imagePath": "assets/images/exercises/biceps/ez_bar_curl.png",
+        "sets": 4,
+        "weight": 25.0,
+        "description": "이지바를 사용하여 손목 부담을 줄이며 이두근을 발달시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "바이셉스 컬: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/biceps/dumbbell_curl.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "덤벨을 사용하여 각 팔의 이두근을 독립적으로 발달시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "해머 컬: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/biceps/dumbbell_hammer.png",
         "sets": 4,
         "weight": 12.0,
-        "description": "이두근과 전완근을 동시에 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "해머 컬: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/biceps/dumbbell_hammer.png",
-            "sets": 4,
-            "weight": 12.0,
-            "description": "덤벨을 사용한 기본적인 해머 컬입니다."
-          },
-          {
-            "name": "해머 컬: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/biceps/cable_hammer.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 이두근을 자극합니다."
-          },
-          {
-            "name": "해머 컬: 로프",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/biceps/rope_hammer.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "로프를 사용하여 더 자연스러운 움직임으로 이두근을 자극합니다."
-          }
-        ]
+        "description": "덤벨을 사용한 기본적인 해머 컬입니다.",
+        "variations": []
       },
       {
-        "name": "프리처 컬",
-        "imagePath": "assets/images/exercises/biceps/preacher_curl.png",
+        "name": "해머 컬: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/biceps/cable_hammer.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "케이블을 사용하여 지속적인 저항으로 이두근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "해머 컬: 로프",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/biceps/rope_hammer.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "로프를 사용하여 더 자연스러운 움직임으로 이두근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "프리처 컬: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/biceps/barbell_preacher.png",
         "sets": 4,
         "weight": 20.0,
-        "description": "이두근을 고립시켜 집중적으로 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "프리처 컬: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/biceps/barbell_preacher.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "바벨을 사용한 기본적인 프리처 컬입니다."
-          },
-          {
-            "name": "프리처 컬: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/biceps/dumbbell_preacher.png",
-            "sets": 4,
-            "weight": 12.0,
-            "description": "덤벨을 사용하여 한 팔씩 집중적으로 운동합니다."
-          },
-          {
-            "name": "프리처 컬: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/biceps/cable_preacher.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 이두근을 자극합니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 프리처 컬입니다.",
+        "variations": []
       },
       {
-        "name": "인클라인 컬",
-        "imagePath": "assets/images/exercises/biceps/incline_curl.png",
+        "name": "프리처 컬: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/biceps/dumbbell_preacher.png",
+        "sets": 4,
+        "weight": 12.0,
+        "description": "덤벨을 사용하여 한 팔씩 집중적으로 운동합니다.",
+        "variations": []
+      },
+      {
+        "name": "프리처 컬: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/biceps/cable_preacher.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "케이블을 사용하여 지속적인 저항으로 이두근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "인클라인 컬: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/biceps/dumbbell_incline.png",
         "sets": 4,
         "weight": 10.0,
-        "description": "이두근을 신전된 자세에서 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "인클라인 컬: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/biceps/dumbbell_incline.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "덤벨을 사용한 기본적인 인클라인 컬입니다."
-          },
-          {
-            "name": "인클라인 컬: 해머",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/biceps/hammer_incline.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "해머 그립으로 수행하는 인클라인 컬입니다."
-          }
-        ]
+        "description": "덤벨을 사용한 기본적인 인클라인 컬입니다.",
+        "variations": []
+      },
+      {
+        "name": "인클라인 컬: 해머",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/biceps/hammer_incline.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "해머 그립으로 수행하는 인클라인 컬입니다.",
+        "variations": []
       }
     ]
   },
@@ -799,112 +729,85 @@
     "name": "전완",
     "exercises": [
       {
-        "name": "리스트 컬",
-        "imagePath": "assets/images/exercises/forearms/wrist_curl.png",
+        "name": "리스트 컬: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/forearms/barbell_wrist_curl.png",
         "sets": 4,
-        "weight": 10.0,
-        "description": "전완근을 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "리스트 컬: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/forearms/barbell_wrist_curl.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "바벨을 사용한 기본적인 손목 컬 운동입니다."
-          },
-          {
-            "name": "리스트 컬: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/forearms/dumbbell_wrist_curl.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "덤벨을 사용하여 각 손목을 독립적으로 발달시킵니다."
-          }
-        ]
+        "weight": 20.0,
+        "description": "바벨을 사용한 기본적인 손목 컬 운동입니다.",
+        "variations": []
       },
       {
-        "name": "리버스 리스트 컬",
-        "imagePath": "assets/images/exercises/forearms/reverse_wrist_curl.png",
+        "name": "리스트 컬: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/forearms/dumbbell_wrist_curl.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "덤벨을 사용하여 각 손목을 독립적으로 발달시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "리버스 리스트 컬: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/forearms/barbell_reverse_curl.png",
         "sets": 4,
         "weight": 15.0,
-        "description": "전완근 외측을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "리버스 리스트 컬: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/forearms/barbell_reverse_curl.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "바벨을 사용한 기본적인 리버스 손목 컬입니다."
-          },
-          {
-            "name": "리버스 리스트 컬: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/forearms/dumbbell_reverse_curl.png",
-            "sets": 4,
-            "weight": 8.0,
-            "description": "덤벨을 사용하여 각 손목을 독립적으로 운동합니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 리버스 손목 컬입니다.",
+        "variations": []
       },
       {
-        "name": "파머스 워크",
-        "imagePath": "assets/images/exercises/forearms/farmers_walk.png",
+        "name": "리버스 리스트 컬: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/forearms/dumbbell_reverse_curl.png",
+        "sets": 4,
+        "weight": 8.0,
+        "description": "덤벨을 사용하여 각 손목을 독립적으로 운동합니다.",
+        "variations": []
+      },
+      {
+        "name": "파머스 워크: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/forearms/dumbbell_farmers.png",
         "sets": 4,
         "weight": 30.0,
-        "description": "전완근과 그립력을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "파머스 워크: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/forearms/dumbbell_farmers.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "덤벨을 들고 걸으며 전완근을 발달시킵니다."
-          },
-          {
-            "name": "파머스 워크: 케틀벨",
-            "equipment": "케틀벨",
-            "imagePath": "assets/images/exercises/forearms/kettlebell_farmers.png",
-            "sets": 4,
-            "weight": 24.0,
-            "description": "케틀벨을 사용하여 더 불안정한 하중으로 전완근을 자극합니다."
-          },
-          {
-            "name": "파머스 워크: 플레이트",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/forearms/plate_farmers.png",
-            "sets": 4,
-            "weight": 25.0,
-            "description": "원판을 집어 걸으며 그립력을 향상시킵니다."
-          }
-        ]
+        "description": "덤벨을 들고 걸으며 전완근을 발달시킵니다.",
+        "variations": []
       },
       {
-        "name": "플레이트 핀치",
-        "imagePath": "assets/images/exercises/forearms/plate_pinch.png",
+        "name": "파머스 워크: 케틀벨",
+        "equipment": "케틀벨",
+        "imagePath": "assets/images/exercises/forearms/kettlebell_farmers.png",
+        "sets": 4,
+        "weight": 24.0,
+        "description": "케틀벨을 사용하여 더 불안정한 하중으로 전완근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "파머스 워크: 플레이트",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/forearms/plate_farmers.png",
+        "sets": 4,
+        "weight": 25.0,
+        "description": "원판을 집어 걸으며 그립력을 향상시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "플레이트 핀치: 싱글",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/forearms/single_plate_pinch.png",
         "sets": 4,
         "weight": 10.0,
-        "description": "손가락 근력과 그립력을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "플레이트 핀치: 싱글",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/forearms/single_plate_pinch.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "단일 플레이트를 사용한 기본적인 핀치 운동입니다."
-          },
-          {
-            "name": "플레이트 핀치: 더블",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/forearms/double_plate_pinch.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "두 개의 플레이트를 사용하여 더 높은 강도로 운동합니다."
-          }
-        ]
+        "description": "단일 플레이트를 사용한 기본적인 핀치 운동입니다.",
+        "variations": []
+      },
+      {
+        "name": "플레이트 핀치: 더블",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/forearms/double_plate_pinch.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "두 개의 플레이트를 사용하여 더 높은 강도로 운동합니다.",
+        "variations": []
       }
     ]
   },
@@ -912,136 +815,130 @@
     "name": "복부",
     "exercises": [
       {
-        "name": "크런치",
-        "imagePath": "assets/images/exercises/abs/crunch.png",
+        "name": "크런치: 기본",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/abs/basic_crunch.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "복직근 상부를 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "크런치: 기본",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/abs/basic_crunch.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "기본적인 크런치 동작입니다."
-          },
-          {
-            "name": "크런치: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/abs/cable_crunch.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "케이블을 사용하여 저항을 주며 복근을 자극합니다."
-          },
-          {
-            "name": "크런치: 웨이티드",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/abs/weighted_crunch.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "플레이트를 가슴에 얹고 수행하는 크런치입니다."
-          }
-        ]
+        "description": "기본적인 크런치 동작입니다.",
+        "variations": []
       },
       {
-        "name": "레그 레이즈",
-        "imagePath": "assets/images/exercises/abs/leg_raise.png",
+        "name": "크런치: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/abs/cable_crunch.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "케이블을 사용하여 저항을 주며 복근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "크런치: 웨이티드",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/abs/weighted_crunch.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "플레이트를 가슴에 얹고 수행하는 크런치입니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 레이즈: 플로어",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/abs/floor_leg_raise.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "복직근 하부를 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "레그 레이즈: 플로어",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/abs/floor_leg_raise.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "바닥에서 수행하는 기본적인 레그 레이즈입니다."
-          },
-          {
-            "name": "레그 레이즈: 행잉",
-            "equipment": "철봉",
-            "imagePath": "assets/images/exercises/abs/hanging_leg_raise.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "철봉에 매달려 수행하는 고강도 레그 레이즈입니다."
-          },
-          {
-            "name": "레그 레이즈: 캡틴스 체어",
-            "equipment": "캡틴스 체어",
-            "imagePath": "assets/images/exercises/abs/captains_chair_leg_raise.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "캡틴스 체어에서 수행하는 레그 레이즈입니다."
-          }
-        ]
+        "description": "바닥에서 수행하는 기본적인 레그 레이즈입니다.",
+        "variations": []
       },
       {
-        "name": "플랭크",
-        "imagePath": "assets/images/exercises/abs/plank.png",
+        "name": "레그 레이즈: 행잉",
+        "equipment": "철봉",
+        "imagePath": "assets/images/exercises/abs/hanging_leg_raise.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "코어 전체를 강화하는 정적 운동입니다.",
-        "variations": [
-          {
-            "name": "플랭크: 기본",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/abs/basic_plank.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "기본적인 플랭크 자세입니다."
-          },
-          {
-            "name": "플랭크: 사이드",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/abs/side_plank.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "옆으로 누워 수행하는 플랭크입니다."
-          },
-          {
-            "name": "플랭크: 웨이티드",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/abs/weighted_plank.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "등에 플레이트를 얹고 수행하는 플랭크입니다."
-          }
-        ]
+        "description": "철봉에 매달려 수행하는 고강도 레그 레이즈입니다.",
+        "variations": []
       },
       {
-        "name": "러시안 트위스트",
-        "imagePath": "assets/images/exercises/abs/russian_twist.png",
+        "name": "레그 레이즈: 캡틴스 체어",
+        "equipment": "캡틴스 체어",
+        "imagePath": "assets/images/exercises/abs/captains_chair_leg_raise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "캡틴스 체어에서 수행하는 레그 레이즈입니다.",
+        "variations": []
+      },
+      {
+        "name": "플랭크: 기본",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/abs/basic_plank.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "기본적인 플랭크 자세입니다.",
+        "variations": []
+      },
+      {
+        "name": "플랭크: 사이드",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/abs/side_plank.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "옆으로 누워 수행하는 플랭크입니다.",
+        "variations": []
+      },
+      {
+        "name": "플랭크: 웨이티드",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/abs/weighted_plank.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "등에 플레이트를 얹고 수행하는 플랭크입니다.",
+        "variations": []
+      },
+      {
+        "name": "러시안 트위스트: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/abs/bodyweight_russian_twist.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "맨몸으로 수행하는 기본 러시안 트위스트입니다.",
+        "variations": []
+      },
+      {
+        "name": "러시안 트위스트: 메디신볼",
+        "equipment": "메디신볼",
+        "imagePath": "assets/images/exercises/abs/medicine_ball_russian_twist.png",
         "sets": 4,
         "weight": 5.0,
-        "description": "복사근을 발달시키는 회전 운동입니다.",
-        "variations": [
-          {
-            "name": "러시안 트위스트: 맨몸",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/abs/bodyweight_russian_twist.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "맨몸으로 수행하는 기본 러시안 트위스트입니다."
-          },
-          {
-            "name": "러시안 트위스트: 메디신볼",
-            "equipment": "메디신볼",
-            "imagePath": "assets/images/exercises/abs/medicine_ball_russian_twist.png",
-            "sets": 4,
-            "weight": 5.0,
-            "description": "메디신볼을 사용하여 회전력을 높입니다."
-          },
-          {
-            "name": "러시안 트위스트: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/abs/cable_russian_twist.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 복사근을 자극합니다."
-          }
-        ]
+        "description": "메디신볼을 사용하여 회전력을 높입니다.",
+        "variations": []
+      },
+      {
+        "name": "러시안 트위스트: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/abs/cable_russian_twist.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "케이블을 사용하여 지속적인 저항으로 복사근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "AB 롤아웃",
+        "equipment": "AB 휠",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "AB 휠을 사용하여 복부 전체를 강하게 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "바이시클 크런치",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "자전거 타듯이 다리를 교차하며 복사근을 자극합니다.",
+        "variations": []
       }
     ]
   },
@@ -1049,128 +946,103 @@
     "name": "허리",
     "exercises": [
       {
-        "name": "데드리프트",
-        "imagePath": "assets/images/exercises/back/deadlift.png",
+        "name": "데드리프트: 컨벤셔널",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/conventional_deadlift.png",
         "sets": 4,
         "weight": 80.0,
-        "description": "척추기립근과 전신을 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "데드리프트: 컨벤셔널",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/conventional_deadlift.png",
-            "sets": 4,
-            "weight": 80.0,
-            "description": "기본적인 바벨 데드리프트입니다."
-          },
-          {
-            "name": "데드리프트: 루마니안",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/romanian_deadlift.png",
-            "sets": 4,
-            "weight": 60.0,
-            "description": "햄스트링과 허리에 집중하는 데드리프트 변형입니다."
-          },
-          {
-            "name": "데드리프트: 스모",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/sumo_deadlift.png",
-            "sets": 4,
-            "weight": 70.0,
-            "description": "넓은 스탠스로 수행하는 데드리프트입니다."
-          }
-        ]
+        "description": "기본적인 바벨 데드리프트입니다.",
+        "variations": []
       },
       {
-        "name": "굿모닝",
-        "imagePath": "assets/images/exercises/back/good_morning.png",
+        "name": "데드리프트: 루마니안",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/romanian_deadlift.png",
+        "sets": 4,
+        "weight": 60.0,
+        "description": "햄스트링과 허리에 집중하는 데드리프트 변형입니다.",
+        "variations": []
+      },
+      {
+        "name": "데드리프트: 스모",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/sumo_deadlift.png",
+        "sets": 4,
+        "weight": 70.0,
+        "description": "넓은 스탠스로 수행하는 데드리프트입니다.",
+        "variations": []
+      },
+      {
+        "name": "굿모닝: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/back/barbell_good_morning.png",
         "sets": 4,
         "weight": 30.0,
-        "description": "허리와 햄스트링을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "굿모닝: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/back/barbell_good_morning.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "바벨을 사용한 기본적인 굿모닝입니다."
-          },
-          {
-            "name": "굿모닝: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/back/band_good_morning.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 저항을 주는 굿모닝입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 굿모닝입니다.",
+        "variations": []
       },
       {
-        "name": "백 익스텐션",
-        "imagePath": "assets/images/exercises/back/back_extension.png",
+        "name": "굿모닝: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/back/band_good_morning.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "허리 근육을 고립시켜 강화하는 운동입니다.",
-        "variations": [
-          {
-            "name": "백 익스텐션: 맨몸",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/back/bodyweight_back_extension.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "맨몸으로 수행하는 기본적인 백 익스텐션입니다."
-          },
-          {
-            "name": "백 익스텐션: 웨이티드",
-            "equipment": "플레이트",
-            "imagePath": "assets/images/exercises/back/weighted_back_extension.png",
-            "sets": 4,
-            "weight": 10.0,
-            "description": "플레이트를 들고 수행하는 백 익스텐션입니다."
-          },
-          {
-            "name": "백 익스텐션: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/back/band_back_extension.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 저항을 주는 백 익스텐션입니다."
-          }
-        ]
+        "description": "밴드를 사용하여 저항을 주는 굿모닝입니다.",
+        "variations": []
       },
       {
-        "name": "슈퍼맨",
-        "imagePath": "assets/images/exercises/back/superman.png",
+        "name": "백 익스텐션: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/back/bodyweight_back_extension.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "허리와 등 하부를 강화하는 맨몸 운동입니다.",
-        "variations": [
-          {
-            "name": "슈퍼맨: 기본",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/back/basic_superman.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "기본적인 슈퍼맨 자세입니다."
-          },
-          {
-            "name": "슈퍼맨: 교차",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/back/alternating_superman.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "대각선으로 팔다리를 교차하며 수행하는 슈퍼맨입니다."
-          },
-          {
-            "name": "슈퍼맨: 홀드",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/back/superman_hold.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "자세를 유지하며 수행하는 정적인 슈퍼맨입니다."
-          }
-        ]
+        "description": "맨몸으로 수행하는 기본적인 백 익스텐션입니다.",
+        "variations": []
+      },
+      {
+        "name": "백 익스텐션: 웨이티드",
+        "equipment": "플레이트",
+        "imagePath": "assets/images/exercises/back/weighted_back_extension.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "플레이트를 들고 수행하는 백 익스텐션입니다.",
+        "variations": []
+      },
+      {
+        "name": "백 익스텐션: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/back/band_back_extension.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "밴드를 사용하여 저항을 주는 백 익스텐션입니다.",
+        "variations": []
+      },
+      {
+        "name": "슈퍼맨: 기본",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/back/basic_superman.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "기본적인 슈퍼맨 자세입니다.",
+        "variations": []
+      },
+      {
+        "name": "슈퍼맨: 교차",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/back/alternating_superman.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "대각선으로 팔다리를 교차하며 수행하는 슈퍼맨입니다.",
+        "variations": []
+      },
+      {
+        "name": "슈퍼맨: 홀드",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/back/superman_hold.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "자세를 유지하며 수행하는 정적인 슈퍼맨입니다.",
+        "variations": []
       }
     ]
   },
@@ -1178,136 +1050,112 @@
     "name": "엉덩이",
     "exercises": [
       {
-        "name": "힙 스러스트",
-        "imagePath": "assets/images/exercises/glutes/hip_thrust.png",
+        "name": "힙 스러스트: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/glutes/barbell_hip_thrust.png",
         "sets": 4,
         "weight": 60.0,
-        "description": "둔근을 발달시키는 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "힙 스러스트: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/glutes/barbell_hip_thrust.png",
-            "sets": 4,
-            "weight": 60.0,
-            "description": "바벨을 사용한 기본적인 힙 스러스트입니다."
-          },
-          {
-            "name": "힙 스러스트: 스미스",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercises/glutes/smith_hip_thrust.png",
-            "sets": 4,
-            "weight": 50.0,
-            "description": "스미스 머신을 사용하여 안정적으로 수행하는 힙 스러스트입니다."
-          },
-          {
-            "name": "힙 스러스트: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/glutes/band_hip_thrust.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 저항을 주는 힙 스러스트입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 힙 스러스트입니다.",
+        "variations": []
       },
       {
-        "name": "힙 어브덕션",
-        "imagePath": "assets/images/exercises/glutes/hip_abduction.png",
+        "name": "힙 스러스트: 스미스",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/glutes/smith_hip_thrust.png",
         "sets": 4,
-        "weight": 20.0,
-        "description": "중둔근을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "힙 어브덕션: 머신",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/glutes/machine_hip_abduction.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "머신을 사용한 기본적인 힙 어브덕션입니다."
-          },
-          {
-            "name": "힙 어브덕션: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/glutes/band_hip_abduction.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 측면으로 다리를 벌리는 운동입니다."
-          },
-          {
-            "name": "힙 어브덕션: 케이블",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/glutes/cable_hip_abduction.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "케이블을 사용하여 지속적인 저항으로 중둔근을 자극합니다."
-          }
-        ]
+        "weight": 50.0,
+        "description": "스미스 머신을 사용하여 안정적으로 수행하는 힙 스러스트입니다.",
+        "variations": []
       },
       {
-        "name": "글루트 브릿지",
-        "imagePath": "assets/images/exercises/glutes/glute_bridge.png",
+        "name": "힙 스러스트: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/glutes/band_hip_thrust.png",
         "sets": 4,
         "weight": 0.0,
-        "description": "둔근을 발달시키는 기초적인 운동입니다.",
-        "variations": [
-          {
-            "name": "글루트 브릿지: 맨몸",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/glutes/bodyweight_bridge.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "맨몸으로 수행하는 기본적인 글루트 브릿지입니다."
-          },
-          {
-            "name": "글루트 브릿지: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/glutes/band_bridge.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 저항을 주는 글루트 브릿지입니다."
-          },
-          {
-            "name": "글루트 브릿지: 한발",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/glutes/single_leg_bridge.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "한 발로 수행하여 더 큰 자극을 주는 글루트 브릿지입니다."
-          }
-        ]
+        "description": "밴드를 사용하여 저항을 주는 힙 스러스트입니다.",
+        "variations": []
       },
       {
-        "name": "케이블 킥백",
-        "imagePath": "assets/images/exercises/glutes/cable_kickback.png",
+        "name": "힙 어브덕션: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/glutes/machine_hip_abduction.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "머신을 사용한 기본적인 힙 어브덕션입니다.",
+        "variations": []
+      },
+      {
+        "name": "힙 어브덕션: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/glutes/band_hip_abduction.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "밴드를 사용하여 측면으로 다리를 벌리는 운동입니다.",
+        "variations": []
+      },
+      {
+        "name": "힙 어브덕션: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/glutes/cable_hip_abduction.png",
         "sets": 4,
         "weight": 15.0,
-        "description": "둔근을 고립시켜 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "케이블 킥백: 스탠딩",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/glutes/standing_cable_kickback.png",
-            "sets": 4,
-            "weight": 15.0,
-            "description": "서서 수행하는 기본적인 케이블 킥백입니다."
-          },
-          {
-            "name": "케이블 킥백: 크로스오버",
-            "equipment": "케이블",
-            "imagePath": "assets/images/exercises/glutes/crossover_kickback.png",
-            "sets": 4,
-            "weight": 12.0,
-            "description": "대각선 방향으로 수행하는 케이블 킥백입니다."
-          },
-          {
-            "name": "케이블 킥백: 밴드",
-            "equipment": "밴드",
-            "imagePath": "assets/images/exercises/glutes/band_kickback.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "밴드를 사용하여 수행하는 킥백 운동입니다."
-          }
-        ]
+        "description": "케이블을 사용하여 지속적인 저항으로 중둔근을 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "글루트 브릿지: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/glutes/bodyweight_bridge.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "맨몸으로 수행하는 기본적인 글루트 브릿지입니다.",
+        "variations": []
+      },
+      {
+        "name": "글루트 브릿지: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/glutes/band_bridge.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "밴드를 사용하여 저항을 주는 글루트 브릿지입니다.",
+        "variations": []
+      },
+      {
+        "name": "글루트 브릿지: 한발",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/glutes/single_leg_bridge.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "한 발로 수행하여 더 큰 자극을 주는 글루트 브릿지입니다.",
+        "variations": []
+      },
+      {
+        "name": "케이블 킥백: 스탠딩",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/glutes/standing_cable_kickback.png",
+        "sets": 4,
+        "weight": 15.0,
+        "description": "서서 수행하는 기본적인 케이블 킥백입니다.",
+        "variations": []
+      },
+      {
+        "name": "케이블 킥백: 크로스오버",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercises/glutes/crossover_kickback.png",
+        "sets": 4,
+        "weight": 12.0,
+        "description": "대각선 방향으로 수행하는 케이블 킥백입니다.",
+        "variations": []
+      },
+      {
+        "name": "케이블 킥백: 밴드",
+        "equipment": "밴드",
+        "imagePath": "assets/images/exercises/glutes/band_kickback.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "밴드를 사용하여 수행하는 킥백 운동입니다.",
+        "variations": []
       }
     ]
   },
@@ -1315,145 +1163,139 @@
     "name": "하체",
     "exercises": [
       {
-        "name": "스쿼트",
-        "imagePath": "assets/images/exercises/legs/squat.png",
+        "name": "스쿼트: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/legs/barbell_squat.png",
         "sets": 4,
         "weight": 80.0,
-        "description": "하체 전반적인 근력 발달을 위한 기본 운동입니다.",
-        "variations": [
-          {
-            "name": "스쿼트: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/legs/barbell_squat.png",
-            "sets": 4,
-            "weight": 80.0,
-            "description": "바벨을 사용한 기본적인 스쿼트입니다."
-          },
-          {
-            "name": "스쿼트: 스미스 머신",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercises/legs/smith_squat.png",
-            "sets": 4,
-            "weight": 70.0,
-            "description": "안정적인 자세로 스쿼트를 수행할 수 있습니다."
-          },
-          {
-            "name": "스쿼트: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/legs/dumbbell_squat.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "덤벨을 들고 수행하는 스쿼트입니다."
-          }
-        ]
+        "description": "바벨을 사용한 기본적인 스쿼트입니다.",
+        "variations": []
       },
       {
-        "name": "레그 프레스",
-        "imagePath": "assets/images/exercises/legs/leg_press.png",
+        "name": "스쿼트: 스미스 머신",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/legs/smith_squat.png",
         "sets": 4,
-        "weight": 120.0,
-        "description": "하체를 전반적으로 발달시키는 머신 운동입니다.",
-        "variations": [
-          {
-            "name": "레그 프레스: 45도",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/legs/45_leg_press.png",
-            "sets": 4,
-            "weight": 120.0,
-            "description": "45도 각도의 레그 프레스 머신을 사용합니다."
-          },
-          {
-            "name": "레그 프레스: 수직",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/legs/vertical_leg_press.png",
-            "sets": 4,
-            "weight": 100.0,
-            "description": "수직으로 누워서 수행하는 레그 프레스입니다."
-          }
-        ]
+        "weight": 70.0,
+        "description": "안정적인 자세로 스쿼트를 수행할 수 있습니다.",
+        "variations": []
       },
       {
-        "name": "런지",
-        "imagePath": "assets/images/exercises/legs/lunge.png",
-        "sets": 4,
-        "weight": 20.0,
-        "description": "하체의 균형과 안정성을 향상시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "런지: 맨몸",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercises/legs/bodyweight_lunge.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "맨몸으로 수행하는 기본 런지입니다."
-          },
-          {
-            "name": "런지: 덤벨",
-            "equipment": "덤벨",
-            "imagePath": "assets/images/exercises/legs/dumbbell_lunge.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "덤벨을 들고 수행하는 런지입니다."
-          },
-          {
-            "name": "런지: 바벨",
-            "equipment": "바벨",
-            "imagePath": "assets/images/exercises/legs/barbell_lunge.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "바벨을 메고 수행하는 런지입니다."
-          }
-        ]
-      },
-      {
-        "name": "레그 익스텐션",
-        "imagePath": "assets/images/exercises/legs/leg_extension.png",
-        "sets": 4,
-        "weight": 40.0,
-        "description": "대퇴사두근을 집중적으로 발달시키는 머신 운동입니다.",
-        "variations": [
-          {
-            "name": "레그 익스텐션: 양발",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/legs/both_leg_extension.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "양발을 동시에 수행하는 레그 익스텐션입니다."
-          },
-          {
-            "name": "레그 익스텐션: 한발",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/legs/single_leg_extension.png",
-            "sets": 4,
-            "weight": 20.0,
-            "description": "한 발씩 번갈아가며 수행하는 레그 익스텐션입니다."
-          }
-        ]
-      },
-      {
-        "name": "레그 컬",
-        "imagePath": "assets/images/exercises/legs/leg_curl.png",
+        "name": "스쿼트: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/legs/dumbbell_squat.png",
         "sets": 4,
         "weight": 30.0,
-        "description": "햄스트링을 집중적으로 발달시키는 머신 운동입니다.",
-        "variations": [
-          {
-            "name": "레그 컬: 라잉",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/legs/lying_leg_curl.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "엎드려서 수행하는 레그 컬입니다."
-          },
-          {
-            "name": "레그 컬: 시티드",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercises/legs/seated_leg_curl.png",
-            "sets": 4,
-            "weight": 40.0,
-            "description": "앉아서 수행하는 레그 컬입니다."
-          }
-        ]
+        "description": "덤벨을 들고 수행하는 스쿼트입니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 프레스: 45도",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/legs/45_leg_press.png",
+        "sets": 4,
+        "weight": 120.0,
+        "description": "45도 각도의 레그 프레스 머신을 사용합니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 프레스: 수직",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/legs/vertical_leg_press.png",
+        "sets": 4,
+        "weight": 100.0,
+        "description": "수직으로 누워서 수행하는 레그 프레스입니다.",
+        "variations": []
+      },
+      {
+        "name": "런지: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercises/legs/bodyweight_lunge.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "맨몸으로 수행하는 기본 런지입니다.",
+        "variations": []
+      },
+      {
+        "name": "런지: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercises/legs/dumbbell_lunge.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "덤벨을 들고 수행하는 런지입니다.",
+        "variations": []
+      },
+      {
+        "name": "런지: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercises/legs/barbell_lunge.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "바벨을 메고 수행하는 런지입니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 익스텐션: 양발",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/legs/both_leg_extension.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "양발을 동시에 수행하는 레그 익스텐션입니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 익스텐션: 한발",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/legs/single_leg_extension.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "한 발씩 번갈아가며 수행하는 레그 익스텐션입니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 컬: 라잉",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/legs/lying_leg_curl.png",
+        "sets": 4,
+        "weight": 30.0,
+        "description": "엎드려서 수행하는 레그 컬입니다.",
+        "variations": []
+      },
+      {
+        "name": "레그 컬: 시티드",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercises/legs/seated_leg_curl.png",
+        "sets": 4,
+        "weight": 40.0,
+        "description": "앉아서 수행하는 레그 컬입니다.",
+        "variations": []
+      },
+      {
+        "name": "핵 스쿼트",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 80.0,
+        "description": "등을 기대고 수행하여 허벅지 전면을 안전하게 타격합니다.",
+        "variations": []
+      },
+      {
+        "name": "불가리안 스플릿 스쿼트",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 10.0,
+        "description": "한 발을 벤치에 올리고 수행하여 둔근과 허벅지를 자극합니다.",
+        "variations": []
+      },
+      {
+        "name": "고블릿 스쿼트",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 16.0,
+        "description": "덤벨을 가슴 앞에 들고 수행하는 스쿼트입니다.",
+        "variations": []
       }
     ]
   },
@@ -1461,37 +1303,31 @@
     "name": "종아리",
     "exercises": [
       {
-        "name": "카프 레이즈",
+        "name": "카프 레이즈: 스탠딩",
+        "equipment": "맨몸",
         "imagePath": "assets/images/exercise.png",
         "sets": 4,
-        "weight": 40.0,
-        "description": "종아리 근육을 발달시키는 운동입니다.",
-        "variations": [
-          {
-            "name": "카프 레이즈: 스탠딩",
-            "equipment": "맨몸",
-            "imagePath": "assets/images/exercise.png",
-            "sets": 4,
-            "weight": 0.0,
-            "description": "서서 수행하는 기본적인 카프 레이즈입니다."
-          },
-          {
-            "name": "카프 레이즈: 시티드",
-            "equipment": "머신",
-            "imagePath": "assets/images/exercise.png",
-            "sets": 4,
-            "weight": 30.0,
-            "description": "앉아서 수행하는 카프 레이즈입니다."
-          },
-          {
-            "name": "카프 레이즈: 스미스 머신",
-            "equipment": "스미스 머신",
-            "imagePath": "assets/images/exercise.png",
-            "sets": 4,
-            "weight": 50.0,
-            "description": "스미스 머신을 사용하여 수행하는 카프 레이즈입니다."
-          }
-        ]
+        "weight": 0.0,
+        "description": "서서 수행하는 기본적인 카프 레이즈입니다.",
+        "variations": []
+      },
+      {
+        "name": "카프 레이즈: 시티드",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 30.0,
+        "description": "앉아서 수행하는 카프 레이즈입니다.",
+        "variations": []
+      },
+      {
+        "name": "카프 레이즈: 스미스 머신",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 50.0,
+        "description": "스미스 머신을 사용하여 수행하는 카프 레이즈입니다.",
+        "variations": []
       },
       {
         "name": "점프 로프",
@@ -1499,6 +1335,74 @@
         "sets": 4,
         "weight": 0.0,
         "description": "종아리 전체를 발달시키는 유산소 운동입니다.",
+        "variations": []
+      }
+    ]
+  },
+  "유산소": {
+    "name": "유산소",
+    "exercises": [
+      {
+        "name": "러닝머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 1,
+        "weight": 0.0,
+        "description": "걷기나 달리기를 통해 심폐지구력을 향상시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "실내 자전거",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 1,
+        "weight": 0.0,
+        "description": "관절 부담 없이 유산소 운동을 할 수 있습니다.",
+        "variations": []
+      },
+      {
+        "name": "일립티컬",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 1,
+        "weight": 0.0,
+        "description": "전신을 사용하여 부드럽게 유산소 운동을 합니다.",
+        "variations": []
+      },
+      {
+        "name": "로잉 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 1,
+        "weight": 0.0,
+        "description": "전신 근력과 지구력을 동시에 발달시킵니다.",
+        "variations": []
+      },
+      {
+        "name": "천국의 계단",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 1,
+        "weight": 0.0,
+        "description": "계단을 오르며 하체 근력과 심폐지구력을 기릅니다.",
+        "variations": []
+      },
+      {
+        "name": "버피",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "전신을 사용하는 고강도 유산소 운동입니다.",
+        "variations": []
+      },
+      {
+        "name": "마운틴 클라이머",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "엎드려서 달리는 동작으로 코어와 심폐지구력을 강화합니다.",
         "variations": []
       }
     ]
