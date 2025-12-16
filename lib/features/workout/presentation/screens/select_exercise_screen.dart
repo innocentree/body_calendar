@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../domain/models/exercise.dart';
+import '../../../../core/utils/hangul_utils.dart';
 
 class SelectExerciseScreen extends StatefulWidget {
   const SelectExerciseScreen({super.key});
@@ -318,7 +319,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     final searchText = _searchController.text.toLowerCase();
 
     final filteredExercises = allExercises.where((exercise) {
-      return exercise.name.toLowerCase().contains(searchText);
+      return HangulUtils.containsChoseong(exercise.name, _searchController.text);
     }).toList();
 
     return _buildExerciseList(filteredExercises);

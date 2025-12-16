@@ -141,8 +141,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     WidgetsBinding.instance.addObserver(this);
     _currentWeight = widget.initialWeight.toDouble();
     _exerciseRepository = GetIt.I<ExerciseRepository>();
-    _loadExercise();
-    _initializePrefs();
+    _loadExercise().then((_) {
+      _initializePrefs();
+    });
     // 화면이 꺼지지 않게 설정
     WakelockPlus.enable();
   }
@@ -273,6 +274,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         weight: lastSet?.weight ?? _currentWeight,
         reps: lastSet?.reps ?? _currentReps,
         restTime: lastSet?.restTime ?? _currentRestTime,
+        bodyWeight: lastSet?.bodyWeight ?? (_exercise?.isAssisted == true ? 70.0 : null),
+        assistedWeight: lastSet?.assistedWeight ?? (_exercise?.isAssisted == true ? 0.0 : null),
       ));
       _tileControllers.add(ExpansionTileController());
 
@@ -822,6 +825,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         weight: set.weight,
                         reps: set.reps,
                         restTime: set.restTime,
+                        bodyWeight: set.bodyWeight ?? (_exercise?.isAssisted == true ? 70.0 : null),
+                        assistedWeight: set.assistedWeight ??
+                            (set.bodyWeight != null
+                                ? set.bodyWeight! - set.weight
+                                : (_exercise?.isAssisted == true
+                                    ? 70.0 - set.weight
+                                    : null)),
                         isCompleted: false, // 완료 상태는 초기화
                       ))
                   .toList();
@@ -1095,8 +1105,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text('체중',
-                                          style: TextStyle(fontWeight: FontWeight.bold)),
+                                      const SizedBox(
+                                        width: 90,
+                                        child: Text('체중(kg)',
+                                            style: TextStyle(fontWeight: FontWeight.bold)),
+                                      ),
                                       Row(
                                         children: [
                                           IconButton(
@@ -1155,7 +1168,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                             },
                                             icon: const Icon(Icons.add_circle_outline),
                                           ),
-                                           const SizedBox(width: 48), // Spacing
+
                                         ],
                                       ),
                                     ],
@@ -1163,8 +1176,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Text('보조',
-                                          style: TextStyle(fontWeight: FontWeight.bold)),
+                                      const SizedBox(
+                                        width: 90,
+                                        child: Text('보조(kg)',
+                                            style: TextStyle(fontWeight: FontWeight.bold)),
+                                      ),
                                       Row(
                                         children: [
                                           IconButton(
@@ -1223,7 +1239,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                             },
                                             icon: const Icon(Icons.add_circle_outline),
                                           ),
-                                          const SizedBox(width: 48), // Spacing
+
                                         ],
                                       ),
                                     ],
@@ -1236,9 +1252,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('무게',
-                                      style:
-                                          TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(
+                                    width: 90,
+                                    child: Text('무게(kg)',
+                                        style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
                                   Row(
                                     children: [
                                       IconButton(
@@ -1301,9 +1319,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('횟수',
-                                      style:
-                                          TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(
+                                    width: 90,
+                                    child: Text('횟수',
+                                        style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
                                   Row(
                                     children: [
                                       IconButton(
@@ -1364,9 +1384,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('휴식(초)',
-                                      style:
-                                          TextStyle(fontWeight: FontWeight.bold)),
+                                  const SizedBox(
+                                    width: 90,
+                                    child: Text('휴식(초)',
+                                        style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
                                   Row(
                                     children: [
                                       IconButton(
