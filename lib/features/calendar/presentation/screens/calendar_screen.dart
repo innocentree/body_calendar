@@ -12,6 +12,8 @@ import '../../../workout/presentation/screens/statistics_screen.dart';
 import 'package:body_calendar/features/workout/presentation/screens/exercise_detail_screen.dart';
 import 'dart:async';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 // RouteObserver를 사용할 수 있도록 글로벌 변수 선언
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -24,7 +26,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
+  CalendarFormat _calendarFormat = CalendarFormat.week;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   DateTime? _lastTapTime;
@@ -141,6 +143,112 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
 
   
 
+  Widget _buildViewToggleButton(String text, CalendarFormat format) {
+    final isSelected = _calendarFormat == format;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _calendarFormat = format;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.grey,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeekCapsule(BuildContext context, DateTime day, {required bool isSelected, required bool isToday}) {
+    final events = _getEventsForDay(day);
+    final hasEvent = events.isNotEmpty;
+    
+    // Color Logic
+    final backgroundColor = isSelected 
+        ? AppColors.customSurface 
+        : (isToday ? const Color.fromARGB(255, 34, 41, 53) : Colors.transparent);
+        
+    final borderColor = (!isSelected && !isToday) 
+        ? Colors.grey[700] 
+        : null;
+        
+    final textColor = isSelected 
+        ? Colors.white 
+        : (isToday ? Colors.white : Colors.grey);
+
+    return Container(
+      width: double.infinity, // Maximize width
+      margin: const EdgeInsets.symmetric(horizontal: 7, vertical: 4), // Further reduced width (margin 5 -> 7)
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(50),
+        border: borderColor != null ? Border.all(color: borderColor, width: 1.5) : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            DateFormat.E('en_US').format(day)[0], 
+            style: TextStyle(
+              color: textColor.withOpacity(0.7),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${day.day}',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Dot
+          Container(
+             width: 6,
+             height: 6,
+             decoration: BoxDecoration(
+               color: hasEvent 
+                   ? Theme.of(context).primaryColor // Neon dot always
+                   : Colors.transparent,
+               shape: BoxShape.circle,
+               boxShadow: hasEvent
+                   ? [
+                       BoxShadow(
+                         color: Theme.of(context).primaryColor.withOpacity(0.8),
+                         blurRadius: 6,
+                         spreadRadius: 1,
+                       )
+                     ] 
+                   : null,
+             ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     //print('[캘린더] build 호출, _showRestFab=$_showRestFab, _restRemain=$_restRemain, _fabOffset=$_fabOffset');
@@ -170,69 +278,147 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                   );
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () {
-                  // 오늘 날짜로 WorkoutScreen 열기
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => WorkoutScreen(
-                        selectedDate: DateTime.now(),
-                      ),
-                    ),
-                  );
-                },
-              ),
             ],
           ),
           body: Column(
             children: [
+              // View Toggle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildViewToggleButton('월간', CalendarFormat.month),
+                    _buildViewToggleButton('주간', CalendarFormat.week),
+                  ],
+                ),
+              ),
               TableCalendar(
                 locale: 'ko_KR',
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 focusedDay: _focusedDay,
                 calendarFormat: _calendarFormat,
+                rowHeight: _calendarFormat == CalendarFormat.week ? 85 : 52,
+                daysOfWeekVisible: _calendarFormat == CalendarFormat.month,
                 selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: _onDaySelected,
                 onFormatChanged: _onFormatChanged,
                 onPageChanged: _onPageChanged,
                 eventLoader: _getEventsForDay,
-                calendarStyle: const CalendarStyle(
+                calendarStyle: CalendarStyle(
                   outsideDaysVisible: false,
-                  weekendTextStyle: TextStyle(color: Colors.red),
-                  holidayTextStyle: TextStyle(color: Colors.red),
+                  weekendTextStyle: TextStyle(color: Colors.red[300]),
+                  holidayTextStyle: TextStyle(color: Colors.red[300]),
+                  
+                  // Selected Day
                   selectedDecoration: BoxDecoration(
-                    color: Colors.purple,
+                    color: Theme.of(context).primaryColor,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).primaryColor.withOpacity(0.4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  selectedTextStyle: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  
+                  // Today
                   todayDecoration: BoxDecoration(
-                    color: Colors.purpleAccent,
+                    color: Theme.of(context).primaryColor.withOpacity(0.2),
                     shape: BoxShape.circle,
+                    border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
                   ),
+                  todayTextStyle: TextStyle(
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  
+                  // Default
+                  defaultTextStyle: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color, fontWeight: FontWeight.bold),
                 ),
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: true,
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
                   titleCentered: true,
+                  titleTextStyle: GoogleFonts.notoSansKr(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
+                  ),
+                  leftChevronIcon: Icon(Icons.chevron_left, color: Theme.of(context).iconTheme.color),
+                  rightChevronIcon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
                 ),
                 calendarBuilders: CalendarBuilders(
                   defaultBuilder: (context, day, focusedDay) {
+                    if (_calendarFormat == CalendarFormat.week) {
+                      return _buildWeekCapsule(context, day, isSelected: false, isToday: isSameDay(day, DateTime.now()));
+                    }
                     return Container(
                       margin: const EdgeInsets.all(4),
                       alignment: Alignment.center,
                       child: Text(
                         '${day.day}',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                          fontWeight: FontWeight.w500,
                         ),
+                      ),
+                    );
+                  },
+                  selectedBuilder: (context, day, focusedDay) {
+                    if (_calendarFormat == CalendarFormat.week) {
+                      return _buildWeekCapsule(context, day, isSelected: true, isToday: isSameDay(day, DateTime.now()));
+                    }
+                    return null;
+                  },
+                  todayBuilder: (context, day, focusedDay) {
+                    if (_calendarFormat == CalendarFormat.week) {
+                      return _buildWeekCapsule(context, day, isSelected: false, isToday: true);
+                    }
+                    return null;
+                  },
+                  markerBuilder: (context, day, events) {
+                    if (_calendarFormat == CalendarFormat.week) return const SizedBox.shrink(); // Force hide markers
+                    
+                    if (events.isEmpty) return null;
+                    return Positioned(
+                      bottom: 8,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: events.take(3).map((_) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.secondary,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(height: 8.0),
+              const SizedBox(height: 16.0),
               Expanded(
                 child: _selectedDay == null
                     ? const Center(child: Text('날짜를 선택해주세요'))
@@ -247,33 +433,138 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                                 )
                               ]
                             : _getEventsForDay(_selectedDay!).map((event) {
+                                final parts = event.split('#');
+                                final name = parts.first;
+                                // Use hash of name to pick a color for variety, or cycle through chartColors
+                                final randomColor = AppColors.chartColors[name.hashCode % AppColors.chartColors.length];
+                                
                                 return Container(
                                   margin: const EdgeInsets.symmetric(
                                     horizontal: 16.0,
-                                    vertical: 4.0,
+                                    vertical: 8.0,
                                   ),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Theme.of(context).dividerColor),
-                                    borderRadius: BorderRadius.circular(12.0),
+                                    color: AppColors.customSurface,
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
-                                  child: ListTile(
-                                    title: Text(event.split('#').first),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => WorkoutScreen(
-                                            selectedDate: _selectedDay!,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => WorkoutScreen(
+                                              selectedDate: _selectedDay!,
+                                            ),
                                           ),
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(20.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    name,
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Icon(Icons.chevron_right, color: Colors.grey[600]),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            const Text(
+                                              "운동 완료", 
+                                              style: TextStyle(color: Colors.grey, fontSize: 13),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            
+                                            // Progress Bar Decoration
+                                            Container(
+                                              height: 6,
+                                              width: 100, // Fixed width or flexible
+                                              decoration: BoxDecoration(
+                                                color: randomColor,
+                                                borderRadius: BorderRadius.circular(3),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: randomColor.withOpacity(0.5),
+                                                    blurRadius: 6,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      );
-                                    },
+                                      ),
+                                    ),
                                   ),
                                 );
                               }).toList(),
                       ),
               ),
             ],
+          ),
+          floatingActionButton: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).colorScheme.secondary,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).primaryColor.withOpacity(0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(32),
+                onTap: () {
+                   if (_selectedDay != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WorkoutScreen(
+                            selectedDate: _selectedDay!,
+                          ),
+                        ),
+                      );
+                   }
+                },
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.black,
+                  size: 32,
+                ),
+              ),
+            ),
           ),
         ),
         const RestFabOverlay(),

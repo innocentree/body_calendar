@@ -11,6 +11,7 @@ import 'exercise_detail_screen.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class WorkoutRecord {
   final int id;
@@ -326,8 +327,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
             ],
             bottom: TabBar(
               controller: _tabController,
-              labelColor: Colors.black,
+              labelColor: AppColors.neonLime,
               unselectedLabelColor: Colors.grey,
+              indicatorColor: AppColors.neonLime,
               tabs: const [
                 Tab(text: '1회차'),
                 Tab(text: '2회차'),
@@ -397,80 +399,95 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                           itemCount: sessionWorkouts.length,
                           itemBuilder: (context, i) {
                             final workout = sessionWorkouts[i];
-                            return Card(
+                            return Container(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: InkWell(
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ExerciseDetailScreen(
-                                        exerciseName: workout.name,
-                                        selectedDate: widget.selectedDate,
-                                        initialWeight: workout.weight.toInt(),
-                                        initialSets: workout.sets,
-                                        recordDay: _recordDay,
+                              decoration: BoxDecoration(
+                                color: AppColors.customSurface,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ExerciseDetailScreen(
+                                          exerciseName: workout.name,
+                                          selectedDate: widget.selectedDate,
+                                          initialWeight: workout.weight.toInt(),
+                                          initialSets: workout.sets,
+                                          recordDay: _recordDay,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                  _loadWorkouts();
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  workout.name,
-                                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                                if (workout.equipment.isNotEmpty)
+                                    );
+                                    _loadWorkouts();
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
                                                   Text(
-                                                    '장비: ${workout.equipment}',
-                                                    style: const TextStyle(color: Colors.grey),
+                                                    workout.name,
+                                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
+                                                  if (workout.equipment.isNotEmpty)
+                                                    Text(
+                                                      '장비: ${workout.equipment}',
+                                                      style: const TextStyle(color: Colors.grey),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Row(
+                                              children: [
+                                                Icon(Icons.fitness_center, size: 40, color: Colors.white70),
+                                                SizedBox(width: 8),
+                                                Icon(Icons.fitness_center, size: 40, color: Colors.white70),
                                               ],
                                             ),
-                                          ),
-                                          const Row(
-                                            children: [
-                                              Icon(Icons.fitness_center, size: 40),
-                                              SizedBox(width: 8),
-                                              Icon(Icons.fitness_center, size: 40),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          FutureBuilder<List<dynamic>>(
-                                            future: _getSetInfo(workout.name, widget.selectedDate),
-                                            builder: (context, snapshot) {
-                                              if (!snapshot.hasData) {
-                                                return const Text('세트 정보 불러오는 중...');
-                                              }
-                                              final sets = snapshot.data![0] as int;
-                                              final completed = snapshot.data![1] as int;
-                                              return Text('$completed/$sets 세트');
-                                            },
-                                          ),
-                                          TextButton(
-                                            onPressed: () => _deleteWorkout(workout),
-                                            child: const Text('삭제'),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            FutureBuilder<List<dynamic>>(
+                                              future: _getSetInfo(workout.name, widget.selectedDate),
+                                              builder: (context, snapshot) {
+                                                if (!snapshot.hasData) {
+                                                  return const Text('세트 정보 불러오는 중...', style: TextStyle(color: Colors.grey));
+                                                }
+                                                final sets = snapshot.data![0] as int;
+                                                final completed = snapshot.data![1] as int;
+                                                return Text('$completed/$sets 세트', style: const TextStyle(color: Colors.white70));
+                                              },
+                                            ),
+                                            TextButton(
+                                              onPressed: () => _deleteWorkout(workout),
+                                              child: const Text('삭제', style: TextStyle(color: AppColors.neonLime)),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -485,9 +502,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
           bottomNavigationBar: NavigationBar(
             destinations: [
               NavigationDestination(
-                icon: _workouts.isNotEmpty && _tabController.index == 0
-                    ? const Icon(Icons.fitness_center, color: Colors.red)
-                    : const Icon(Icons.fitness_center),
+                icon: const Icon(Icons.fitness_center),
                 label: '운동',
               ),
               const NavigationDestination(
@@ -511,9 +526,26 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               }
             },
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _addWorkout,
-            child: const Icon(Icons.add),
+          floatingActionButton: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.neonLime, AppColors.neonCyan],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.neonLime.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: FloatingActionButton(
+              onPressed: _addWorkout,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: const Icon(Icons.add, color: Colors.black),
+            ),
           ),
         ),
         RestFabOverlay(),
