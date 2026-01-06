@@ -355,6 +355,33 @@
         "variations": []
       },
       {
+        "name": "랫 풀다운: 패러럴 그립",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/lat_pulldown_parallel.png",
+        "sets": 4,
+        "weight": 35,
+        "description": "패러럴 그립을 사용하여 광배근 하부를 자극",
+        "variations": []
+      },
+      {
+        "name": "랫 풀다운: 맥그립 와이드",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/lat_pulldown_mag_wide.png",
+        "sets": 4,
+        "weight": 35,
+        "description": "맥그립 와이드 핸들을 사용하여 등 전체 너비를 자극",
+        "variations": []
+      },
+      {
+        "name": "랫 풀다운: 맥그립 클로즈",
+        "equipment": "케이블 머신",
+        "imagePath": "assets/images/exercises/back/lat_pulldown_mag_close.png",
+        "sets": 4,
+        "weight": 35,
+        "description": "맥그립 클로즈 핸들을 사용하여 등 안쪽 두께를 자극",
+        "variations": []
+      },
+      {
         "name": "바벨 로우: 오버핸드 그립",
         "equipment": "바벨",
         "imagePath": "assets/images/exercises/back/barbell_row_overhand.png",
@@ -397,6 +424,15 @@
         "sets": 4,
         "weight": 45,
         "description": "V자 바를 사용해 등 중앙부를 집중적으로 자극",
+        "variations": []
+      },
+      {
+        "name": "바벨 로우: 스미스",
+        "equipment": "스미스 머신",
+        "imagePath": "assets/images/exercises/back/smith_row.png",
+        "sets": 4,
+        "weight": 40,
+        "description": "스미스 머신을 사용하여 허리 부담을 줄이고 등에 집중",
         "variations": []
       },
       {

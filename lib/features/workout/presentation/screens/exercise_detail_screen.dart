@@ -1545,21 +1545,30 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     ),
                                   ),
                                 ),
-                                // 2. 차오르는 게이지: Neon Cyan
+                                // 2. 차오르는 게이지: Neon Cyan (Smooth Animation)
                                 if (isRunning)
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(28),
                                     child: Align(
                                       alignment: Alignment.centerLeft,
-                                      child: FractionallySizedBox(
-                                        widthFactor: (initialDuration > 0)
-                                            ? ((initialDuration - duration) / initialDuration)
-                                                .clamp(0.0, 1.0)
-                                            : 0.0,
-                                        child: Container(
-                                          height: 56,
-                                          color: AppColors.neonCyan.withOpacity(0.8),
+                                      child: TweenAnimationBuilder<double>(
+                                        tween: Tween<double>(
+                                          begin: 0.0,
+                                          end: (initialDuration > 0)
+                                              ? ((initialDuration - duration) / initialDuration).clamp(0.0, 1.0)
+                                              : 0.0,
                                         ),
+                                        duration: const Duration(seconds: 1),
+                                        curve: Curves.linear,
+                                        builder: (context, value, child) {
+                                          return FractionallySizedBox(
+                                            widthFactor: value,
+                                            child: Container(
+                                              height: 56,
+                                              color: AppColors.neonCyan.withOpacity(0.8),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),

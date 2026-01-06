@@ -45,6 +45,12 @@ class HangulUtils {
     // 만약 "가슴"을 입력했다면 "ㄱㅅ"가 되어 비교됨.
     String queryChoseong = getChoseong(query);
 
-    return targetChoseong.contains(queryChoseong);
+    if (targetChoseong.contains(queryChoseong)) return true;
+
+    // 3. 공백 무시 초성 검색
+    String targetChoseongNoSpace = targetChoseong.replaceAll(' ', '');
+    String queryChoseongNoSpace = queryChoseong.replaceAll(' ', '');
+
+    return targetChoseongNoSpace.contains(queryChoseongNoSpace);
   }
 }

@@ -13,6 +13,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
 
   String? exerciseName;
   DateTime? selectedDate;
+  DateTime? _expiresAt; // Internal tracking of expiration time
 
   TimerBloc({required Ticker ticker})
       : _ticker = ticker,
@@ -31,11 +32,19 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   }
 
   void _onStarted(TimerStarted event, Emitter<TimerState> emit) {
-    emit(TimerRunInProgress(event.duration, event.duration));
+    _expiresAt = DateTime.now().add(Duration(seconds: event.duration));
+    emit(TimerRunInProgress(event.duration, event.duration, expiresAt: _expiresAt));
     _tickerSubscription?.cancel();
     _tickerSubscription = _ticker
-        .tick(ticks: event.duration)
-        .listen((duration) => add(_TimerTicked(duration: duration)));
+        .tick(ticks: event.duration) // Ticker still ticks 1 second at a time
+        .listen((_) {
+          // Instead of relying on the ticker's count, we calculate remaining time
+          final now = DateTime.now();
+          if (_expiresAt != null) {
+            final remaining = _expiresAt!.difference(now).inSeconds;
+             add(_TimerTicked(duration: remaining < 0 ? 0 : remaining, expiresAt: _expiresAt));
+          }
+        });
     exerciseName = event.exerciseName;
     selectedDate = event.selectedDate;
   }
@@ -43,6 +52,9 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   void _onPaused(TimerPaused event, Emitter<TimerState> emit) {
     if (state is TimerRunInProgress) {
       _tickerSubscription?.pause();
+      // When paused, we lose the "flow". If needed to resume correctly, we might need to adjust logic.
+      // But user requirement is mainly about background resilience.
+      // For simple pause:
       emit(TimerRunPause(state.duration, (state as TimerRunInProgress).initialDuration));
     }
   }
@@ -50,21 +62,46 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   void _onResumed(TimerResumed event, Emitter<TimerState> emit) {
     if (state is TimerRunPause) {
       _tickerSubscription?.resume();
-      emit(TimerRunInProgress(state.duration, (state as TimerRunPause).initialDuration));
+      // On resume, strictly speaking, we might want to recalculate expiresAt if we wanted to "extend" the timer by the paused duration.
+      // However, usually "active" timer in background implies it keeps running. 
+      // If the user hit PAUSE, they expect it to stop. 
+      // If the USER hit HOME (background), we want it to keep running (handled by _onTicked checking DateTime).
+      
+      // If we are coming back from a PAUSE state (user action), we should probably reset _expiresAt based on current remaining duration?
+      // For now, let's assume "Resumed" means continuing from where we left off.
+      // Re-calculating expiresAt:
+      final remaining = state.duration;
+      _expiresAt = DateTime.now().add(Duration(seconds: remaining));
+      
+      emit(TimerRunInProgress(state.duration, (state as TimerRunPause).initialDuration, expiresAt: _expiresAt));
     }
   }
 
   void _onReset(TimerReset event, Emitter<TimerState> emit) {
     _tickerSubscription?.cancel();
+    _expiresAt = null;
     emit(const TimerInitial(0));
     exerciseName = null;
     selectedDate = null;
   }
 
   void _onTicked(_TimerTicked event, Emitter<TimerState> emit) {
+    // Determine actual remaining time based on expiresAt if available
+    int duration = event.duration;
+    
+    // Safety check if we drift heavily or calculate manually
+    if (_expiresAt != null) {
+       final remaining = _expiresAt!.difference(DateTime.now()).inSeconds;
+       // We use the larger of the two to avoid premature 0 if the tick is slightly fast? 
+       // Actually correct approach is purely time difference.
+       // However, Ticker emits periodically.
+       // The event.duration comes from our Listen calculation above.
+       duration = remaining;
+    }
+
     emit(
-      event.duration > 0
-          ? TimerRunInProgress(event.duration, (state as TimerRunInProgress).initialDuration)
+      duration > 0
+          ? TimerRunInProgress(duration, (state as TimerRunInProgress).initialDuration, expiresAt: _expiresAt)
           : const TimerRunComplete(),
     );
   }
