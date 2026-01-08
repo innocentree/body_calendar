@@ -17,6 +17,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../widgets/exercise_statistics_popup.dart';
 
 class ExerciseSet {
   final double weight;
@@ -1014,13 +1015,24 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           unit: 'kg',
                           formatter: (v) => v.toStringAsFixed(1),
                         ),
-                        _StatBox(
-                          title: '볼륨',
-                          value: todayTotalVolume,
-                          prev: prevTotalVolume,
-                          best: bestTotalVolume,
-                          unit: 'kg',
-                          formatter: (v) => v.toStringAsFixed(0),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (context) => ExerciseStatisticsPopup(
+                                exerciseName: widget.exerciseName,
+                              ),
+                            );
+                          },
+                          child: _StatBox(
+                            title: '볼륨',
+                            value: todayTotalVolume,
+                            prev: prevTotalVolume,
+                            best: bestTotalVolume,
+                            unit: 'kg',
+                            formatter: (v) => v.toStringAsFixed(0),
+                          ),
                         ),
                       ] else ...[
                         _StatBox(
