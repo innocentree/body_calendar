@@ -999,21 +999,25 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       if (_exercise?.needsWeight == true) ...[
-                        _StatBox(
-                          title: '최대 무게',
-                          value: todayMaxWeight,
-                          prev: prevMaxWeight,
-                          best: bestMaxWeight,
-                          unit: 'kg',
-                          formatter: (v) => v.toStringAsFixed(1),
-                        ),
-                        _StatBox(
-                          title: '최대 1RM',
-                          value: todayMax1RM,
-                          prev: prevMax1RM,
-                          best: bestMax1RM,
-                          unit: 'kg',
-                          formatter: (v) => v.toStringAsFixed(1),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (context) => ExerciseStatisticsPopup(
+                                exerciseName: widget.exerciseName,
+                                type: ExerciseStatisticType.maxWeight,
+                              ),
+                            );
+                          },
+                          child: _StatBox(
+                            title: '최대 무게',
+                            value: todayMaxWeight,
+                            prev: prevMaxWeight,
+                            best: bestMaxWeight,
+                            unit: 'kg',
+                            formatter: (v) => v.toStringAsFixed(1),
+                          ),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -1022,6 +1026,27 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               barrierDismissible: true,
                               builder: (context) => ExerciseStatisticsPopup(
                                 exerciseName: widget.exerciseName,
+                                type: ExerciseStatisticType.oneRM,
+                              ),
+                            );
+                          },
+                          child: _StatBox(
+                            title: '최대 1RM',
+                            value: todayMax1RM,
+                            prev: prevMax1RM,
+                            best: bestMax1RM,
+                            unit: 'kg',
+                            formatter: (v) => v.toStringAsFixed(1),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              builder: (context) => ExerciseStatisticsPopup(
+                                exerciseName: widget.exerciseName,
+                                type: ExerciseStatisticType.volume,
                               ),
                             );
                           },

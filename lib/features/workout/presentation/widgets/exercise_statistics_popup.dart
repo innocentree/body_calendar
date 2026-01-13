@@ -4,16 +4,28 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+enum ExerciseStatisticType {
+  volume,
+  maxWeight,
+  oneRM,
+}
+
 class ExerciseStatisticsPopup extends StatefulWidget {
   final String exerciseName;
-  const ExerciseStatisticsPopup({super.key, required this.exerciseName});
+  final ExerciseStatisticType type;
+  
+  const ExerciseStatisticsPopup({
+    super.key, 
+    required this.exerciseName,
+    this.type = ExerciseStatisticType.volume,
+  });
 
   @override
   State<ExerciseStatisticsPopup> createState() => _ExerciseStatisticsPopupState();
 }
 
 class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
-  Map<String, double> _dateToTotalWeight = {};
+  Map<String, double> _dateToValue = {};
   bool _loading = true;
 
   @override
@@ -25,41 +37,87 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
   Future<void> _loadStats() async {
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys().where((k) => k.startsWith('exercise_sets_${widget.exerciseName}_'));
-    final Map<String, double> dateToWeight = {};
+    final Map<String, double> dateToValue = {};
+    
     for (final key in keys) {
       final dateStr = key.split('_').last;
       final setsJson = prefs.getStringList(key) ?? [];
-      double total = 0.0;
-      for (final jsonStr in setsJson) {
-        try {
-          final set = jsonDecode(jsonStr);
-          final weight = (set['weight'] is int)
-              ? (set['weight'] as int).toDouble()
-              : (set['weight'] is double)
-                  ? set['weight']
-                  : double.tryParse(set['weight'].toString()) ?? 0.0;
-          final reps = set['reps'] ?? 0;
-          total += weight * (reps is int ? reps : int.tryParse(reps.toString()) ?? 0);
-        } catch (_) {}
+      double dailyValue = 0.0;
+      
+      // Calculate based on type
+      if (widget.type == ExerciseStatisticType.volume) {
+        double totalVolume = 0.0;
+        for (final jsonStr in setsJson) {
+           final set = _parseSet(jsonStr);
+           if (set != null) {
+              totalVolume += set.weight * set.reps;
+           }
+        }
+        dailyValue = totalVolume;
+      } else if (widget.type == ExerciseStatisticType.maxWeight) {
+        double maxWeight = 0.0;
+        for (final jsonStr in setsJson) {
+           final set = _parseSet(jsonStr);
+           if (set != null) {
+              if (set.weight > maxWeight) maxWeight = set.weight;
+           }
+        }
+        dailyValue = maxWeight;
+      } else if (widget.type == ExerciseStatisticType.oneRM) {
+        double max1RM = 0.0;
+        for (final jsonStr in setsJson) {
+           final set = _parseSet(jsonStr);
+           if (set != null) {
+              final oneRM = set.weight * (1 + set.reps / 30.0);
+              if (oneRM > max1RM) max1RM = oneRM;
+           }
+        }
+        dailyValue = max1RM;
       }
-      if (total > 0) {
-        dateToWeight[dateStr] = total;
+
+      if (dailyValue > 0) {
+        dateToValue[dateStr] = dailyValue;
       }
     }
+    
     if (!mounted) return;
     setState(() {
-      _dateToTotalWeight = dateToWeight;
+      _dateToValue = dateToValue;
       _loading = false;
     });
+  }
+
+  _SimpleSet? _parseSet(String jsonStr) {
+    try {
+      final set = jsonDecode(jsonStr);
+      final weight = (set['weight'] is int)
+          ? (set['weight'] as int).toDouble()
+          : (set['weight'] is double)
+              ? set['weight']
+              : double.tryParse(set['weight'].toString()) ?? 0.0;
+      final reps = set['reps'] ?? 0;
+      final repsInt = (reps is int ? reps : int.tryParse(reps.toString()) ?? 0);
+      return _SimpleSet(weight, repsInt);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String get _title {
+    switch (widget.type) {
+      case ExerciseStatisticType.volume: return '${widget.exerciseName} 볼륨 추이';
+      case ExerciseStatisticType.maxWeight: return '${widget.exerciseName} 최대 무게 추이';
+      case ExerciseStatisticType.oneRM: return '${widget.exerciseName} 1RM 추이';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // Sort dates
-    final dates = _dateToTotalWeight.keys.toList()..sort();
+    final dates = _dateToValue.keys.toList()..sort();
     // Get last 7 records for better visibility in popup, or all if less than 7
     final displayDates = dates.length > 7 ? dates.sublist(dates.length - 7) : dates;
-    final weights = displayDates.map((d) => _dateToTotalWeight[d] ?? 0.0).toList();
+    final values = displayDates.map((d) => _dateToValue[d] ?? 0.0).toList();
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -76,7 +134,7 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '${widget.exerciseName} 볼륨 추이',
+              _title,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -127,11 +185,13 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                             minX: 0,
                             maxX: (displayDates.length - 1).toDouble(),
                             minY: 0,
+                            // Ensure Y axis starts at 0 or appropriate min for better visualization
+                            // minY: (values.reduce(min) * 0.8), // Custom min if needed
                             lineBarsData: [
                               LineChartBarData(
                                 spots: [
-                                  for (int i = 0; i < weights.length; i++)
-                                    FlSpot(i.toDouble(), weights[i]),
+                                  for (int i = 0; i < values.length; i++)
+                                    FlSpot(i.toDouble(), values[i]),
                                 ],
                                 isCurved: true,
                                 color:Colors.deepPurpleAccent,
@@ -149,7 +209,7 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                 getTooltipItems: (touchedSpots) {
                                   return touchedSpots.map((spot) {
                                     return LineTooltipItem(
-                                      '${spot.y.toStringAsFixed(0)} kg',
+                                      '${spot.y.toStringAsFixed(1)} kg',
                                       const TextStyle(color: Colors.white),
                                     );
                                   }).toList();
@@ -170,4 +230,10 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
       ),
     );
   }
+}
+
+class _SimpleSet {
+  final double weight;
+  final int reps;
+  _SimpleSet(this.weight, this.reps);
 }

@@ -567,6 +567,55 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
             ),
           ),
         ),
+        // Return to Today Button
+        if (!isSameDay(_focusedDay, DateTime.now()))
+          Positioned(
+            left: 20,
+            bottom: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  final now = DateTime.now();
+                  setState(() {
+                    _focusedDay = now;
+                    _selectedDay = now;
+                  });
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.customSurface.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.5)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.today, color: Theme.of(context).primaryColor, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        '오늘로 이동',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         const RestFabOverlay(),
       ],
     );
