@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:window_manager/window_manager.dart';
+
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/timer/presentation/widgets/timer_overlay_manager.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +26,7 @@ import 'package:body_calendar/features/workout/domain/repositories/workout_repos
 import 'package:body_calendar/features/workout/data/repositories/workout_repository_impl.dart';
 
 final GetIt getIt = GetIt.instance;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> setupLocator() async {
   final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
@@ -69,6 +73,21 @@ Future<void> _restore() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    // 기본적인 창 옵션 설정 (필요시)
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(1280, 720),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+     windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
   await _restore();
   await setupLocator(); // Initialize GetIt
   initializeDateFormatting();
@@ -82,7 +101,7 @@ void main() async {
           create: (_) => ThemeBloc(getIt<SharedPreferences>()),
         ),
       ],
-      child: const MyApp(),
+      child: const TimerOverlayManager(child: MyApp()),
     ),
   );
 }
@@ -95,6 +114,7 @@ class MyApp extends StatelessWidget {
     return BlocBuilder<ThemeBloc, ThemeState>(
       builder: (context, state) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'Body Calendar',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
