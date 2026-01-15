@@ -1,4 +1,5 @@
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
 import 'package:body_calendar/features/workout/presentation/screens/add_custom_exercise_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -20,8 +21,9 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   bool _isLoading = true;
 
   late final ExerciseRepository _exerciseRepository;
+  late final WorkoutRepository _workoutRepository;
 
-  final List<String> _bodyParts = [
+  List<String> _bodyParts = [
     '분류',
     '전체',
     '나만의 운동',
@@ -47,23 +49,32 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
   Future<void> _initialize() async {
     _exerciseRepository = GetIt.I<ExerciseRepository>();
-    _loadExercises();
+    _workoutRepository = GetIt.I<WorkoutRepository>();
+    _loadData();
   }
 
-  Future<void> _loadExercises() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
     });
     try {
       final categories = await _exerciseRepository.getExerciseCategories();
       final customExercises = await _exerciseRepository.getCustomExercises();
+      final workouts = await _workoutRepository.getWorkouts();
 
       final Map<String, List<Exercise>> exercisesMap = {};
+      
+      // Create a map for quick body part lookup by exercise name
+      final Map<String, String> exerciseBodyPartMap = {};
+
       for (var category in categories) {
         exercisesMap[category.name] = category.exercises;
+        for (var ex in category.exercises) {
+          exerciseBodyPartMap[ex.name] = category.name;
+        }
       }
 
-      // Add custom exercises to their respective categories or a general custom list
+      // Add custom exercises
       exercisesMap['나만의 운동'] = customExercises;
       for (var exercise in customExercises) {
         if (exercise.bodyPart != null && exercisesMap.containsKey(exercise.bodyPart)) {
@@ -71,21 +82,51 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             exercisesMap[exercise.bodyPart!]!.add(exercise);
           }
         }
+        // Assuming custom exercises also have names and bodyParts we can track
+        if (exercise.bodyPart != null) {
+          exerciseBodyPartMap[exercise.name] = exercise.bodyPart!;
+        }
       }
+
+      // Calculate frequency
+      final Map<String, int> bodyPartFrequency = {};
+      for (var part in _bodyParts) {
+        bodyPartFrequency[part] = 0;
+      }
+
+      for (var workout in workouts) {
+        for (var exercise in workout.exercises) {
+          final bodyPart = exerciseBodyPartMap[exercise.name];
+          if (bodyPart != null) {
+            bodyPartFrequency[bodyPart] = (bodyPartFrequency[bodyPart] ?? 0) + 1;
+          }
+        }
+      }
+
+      // Sort body parts
+      final fixedParts = ['분류', '전체', '나만의 운동'];
+      final sortableParts = _bodyParts.where((part) => !fixedParts.contains(part)).toList();
+      
+      sortableParts.sort((a, b) {
+        final freqA = bodyPartFrequency[a] ?? 0;
+        final freqB = bodyPartFrequency[b] ?? 0;
+        return freqB.compareTo(freqA); // Descending order
+      });
 
       setState(() {
         _exercises = exercisesMap;
+        _bodyParts = [...fixedParts, ...sortableParts];
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading exercises: $e');
+      debugPrint('Error loading data: $e');
       setState(() {
         _isLoading = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('운동 데이터를 불러오는데 실패했습니다.'),
+            content: Text('데이터를 불러오는데 실패했습니다.'),
           ),
         );
       }
@@ -105,7 +146,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     );
 
     if (result == true) {
-      _loadExercises(); // Refresh the list if an exercise was added
+      _loadData(); // Refresh the list if an exercise was added
     }
   }
 
@@ -316,7 +357,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
   Widget _buildSearchResults() {
     final allExercises = _exercises.values.expand((exercises) => exercises).toSet().toList();
-    final searchText = _searchController.text.toLowerCase();
+    // final searchText = _searchController.text.toLowerCase(); // Unused
 
     final filteredExercises = allExercises.where((exercise) {
       return HangulUtils.containsChoseong(exercise.name, _searchController.text);
