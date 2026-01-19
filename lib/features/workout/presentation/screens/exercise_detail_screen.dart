@@ -137,6 +137,26 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   // 드롭다운 상태 관리
   List<ExpansionTileController> _tileControllers = [];
 
+  // PR Highlight States
+  bool _highlightMaxWeight = false;
+  bool _highlight1RM = false;
+  bool _highlightVolume = false;
+  
+  // Running Bests for PR detection
+  double _runningBestMaxWeight = 0;
+  double _runningBest1RM = 0;
+  double _runningBestVolume = 0; // Volume is cumulative? user said "Volume value updates". Usually total volume.
+  // If total volume updates, it always updates on every set?
+  // "Volume value" usually means "Total Volume for the exercise".
+  // If so, every set increases volume. So every set updates the record if today is a PR day?
+  // Maybe "Session Volume" PR.
+  // If today's volume > best volume ever.
+  // Every set adds volume, so yes, every set after crossing the threshold will trigger.
+  // Maybe user wants that. Or maybe only when crossing the threshold?
+  // "최고값을 갱신하면" -> Whenever it updates. So yes.
+  
+  double _historicalBestVolume = 0; // To track if we are in PR territory for volume
+
   @override
   void initState() {
     super.initState();
@@ -183,6 +203,58 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     // 드롭다운 상태 초기화
     _tileControllers =
         List.generate(_sets.length, (index) => ExpansionTileController());
+
+    _calculateInitialRunningBests();
+  }
+
+  Future<void> _calculateInitialRunningBests() async {
+    // Calculate bests from all recorded dates (including today if already loaded)
+    // Actually, we want to know the state *before* the next set.
+    // So just calculate the current "Global Best".
+    
+    double bestMaxWeight = 0;
+    double bestMax1RM = 0;
+    double bestTotalVolume = 0;
+
+    // Use _recordedDates (which might include today)
+    // If today is included, we need to respect today's current values.
+    
+    // Logic similar to build's best calculation
+    for (final date in _recordedDates) {
+      final key = 'exercise_sets_${widget.exerciseName}_$date';
+      final setsJson = _prefs.getStringList(key) ?? [];
+      final sets = setsJson
+          .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
+          .toList();
+          
+      double localMaxWeight = 0;
+      double localMax1RM = 0;
+      double localTotalVolume = 0;
+
+      for (final set in sets) {
+          if (_exercise?.needsWeight == true) {
+            localMaxWeight = set.weight > localMaxWeight ? set.weight : localMaxWeight;
+            final oneRM = set.weight * (1 + set.reps / 30.0);
+            localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
+            localTotalVolume += set.weight * set.reps;
+          }
+      }
+      
+      if (_exercise?.needsWeight == true) {
+          bestMaxWeight = localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
+          bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
+          bestTotalVolume = localTotalVolume > bestTotalVolume ? localTotalVolume : bestTotalVolume;
+      }
+    }
+    
+    _runningBestMaxWeight = bestMaxWeight;
+    _runningBest1RM = bestMax1RM;
+    _runningBestVolume = bestTotalVolume;
+    
+    // Also calculate historical best volume (excluding today) to see when we cross it?
+    // Actually _runningBestVolume already includes today's current total.
+    // If we add a set, volume increases.
+    // newTotal > _runningBestVolume -> Update & Highlight.
   }
 
   Future<void> _checkAndSetFirstRecordDate() async {
@@ -323,8 +395,51 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       if (nextIndex < _sets.length) {
         _currentSetIndex = nextIndex;
       }
+      
+      _checkAndHighlightPRs();
     });
   }
+
+  void _checkAndHighlightPRs() {
+      // Re-calculate today's stats based on the UPDATED sets
+      double todayMaxWeight = 0;
+      double todayMax1RM = 0;
+      double todayTotalVolume = 0;
+
+      for (final set in _sets) {
+        if (_exercise?.needsWeight == true) {
+          // Check completed sets? Or all sets as per build logic? 
+          // Build logic uses all sets. We stick to that.
+          double currentSetVolume = set.weight * set.reps;
+          todayMaxWeight = set.weight > todayMaxWeight ? set.weight : todayMaxWeight;
+          
+          final oneRM = set.weight * (1 + set.reps / 30.0);
+          todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
+          todayTotalVolume += currentSetVolume;
+        }
+      }
+
+      if (_exercise?.needsWeight == true) {
+          if (todayMaxWeight > _runningBestMaxWeight) {
+             _runningBestMaxWeight = todayMaxWeight;
+             setState(() => _highlightMaxWeight = true);
+             Timer(const Duration(seconds: 3), () => setState(() => _highlightMaxWeight = false));
+          }
+          
+          if (todayMax1RM > _runningBest1RM) {
+             _runningBest1RM = todayMax1RM;
+             setState(() => _highlight1RM = true);
+             Timer(const Duration(seconds: 3), () => setState(() => _highlight1RM = false));
+          }
+          
+          if (todayTotalVolume > _runningBestVolume) {
+             _runningBestVolume = todayTotalVolume;
+             setState(() => _highlightVolume = true);
+             Timer(const Duration(seconds: 3), () => setState(() => _highlightVolume = false));
+          }
+      }
+  }
+
 
   String _formatDuration(int seconds) {
     final minutes = seconds ~/ 60;
@@ -1017,6 +1132,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             best: bestMaxWeight,
                             unit: 'kg',
                             formatter: (v) => v.toStringAsFixed(1),
+                            isHighlighted: _highlightMaxWeight,
                           ),
                         ),
                         GestureDetector(
@@ -1037,6 +1153,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             best: bestMax1RM,
                             unit: 'kg',
                             formatter: (v) => v.toStringAsFixed(1),
+                            isHighlighted: _highlight1RM,
                           ),
                         ),
                         GestureDetector(
@@ -1057,6 +1174,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             best: bestTotalVolume,
                             unit: 'kg',
                             formatter: (v) => v.toStringAsFixed(0),
+                            isHighlighted: _highlightVolume,
                           ),
                         ),
                       ] else ...[
@@ -1676,6 +1794,7 @@ class _StatBox extends StatelessWidget {
   final double value;
   final double prev;
   final double best;
+  final bool isHighlighted;
   final String unit;
   final String Function(double) formatter;
 
@@ -1686,6 +1805,7 @@ class _StatBox extends StatelessWidget {
     required this.best,
     required this.unit,
     required this.formatter,
+    this.isHighlighted = false,
     Key? key,
   }) : super(key: key);
 
@@ -1703,13 +1823,20 @@ class _StatBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       width: 110,
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.customSurface,
         borderRadius: BorderRadius.circular(16),
+        border: isHighlighted
+            ? Border.all(color: AppColors.neonLime, width: 2)
+            : Border.all(color: Colors.transparent, width: 2),
+        boxShadow: isHighlighted 
+            ? [BoxShadow(color: AppColors.neonLime.withOpacity(0.5), blurRadius: 10)]
+            : [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

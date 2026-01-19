@@ -1,58 +1,49 @@
-export 'overlay_helper_impl.android.dart' if (dart.library.io) 'overlay_helper_impl.windows.dart';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
-import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'overlay_helper_impl.android.dart' as android;
+import 'overlay_helper_impl.windows.dart' as windows;
 
 Future<void> ensureOverlayPermission() async {
-  if (!await FlutterOverlayWindow.isPermissionGranted()) {
-    await FlutterOverlayWindow.requestPermission();
+  if (!kIsWeb && Platform.isAndroid) {
+    await android.ensureOverlayPermission();
   }
 }
 
 Future<void> showOverlayFAB({
   required String exerciseName,
   required int restTime,
-  required VoidCallback onComplete,
+  required Function() onComplete,
 }) async {
-  await ensureOverlayPermission();
-  final granted = await FlutterOverlayWindow.isPermissionGranted();
-  print('[오버레이 권한] granted: $granted');
-  if (granted) {
-    print('[오버레이] showOverlayFAB 호출됨');
-    await FlutterOverlayWindow.showOverlay(
-      enableDrag: true,
-      overlayTitle: "휴식 타이머",
-      overlayContent: "운동: $exerciseName\n남은 시간: ${_formatDuration(restTime)}",
-      flag: OverlayFlag.defaultFlag,
-      alignment: OverlayAlignment.centerRight,
-      visibility: NotificationVisibility.visibilityPublic,
-      positionGravity: PositionGravity.auto,
-      width: 160,
-      height: 160,
+  if (kIsWeb) return;
+  if (Platform.isWindows) {
+    await windows.showOverlayFAB(
+      exerciseName: exerciseName,
+      restTime: restTime,
+      onComplete: onComplete,
     );
-  } else {
-    print('[오버레이] 권한이 없어 오버레이를 띄울 수 없습니다.');
+  } else if (Platform.isAndroid) {
+    await android.showOverlayFAB(
+      exerciseName: exerciseName,
+      restTime: restTime,
+      onComplete: onComplete,
+    );
   }
 }
 
 Future<void> updateOverlayFAB({required int totalDuration, required int remainingTime}) async {
-  if (await FlutterOverlayWindow.isActive()) {
-    await FlutterOverlayWindow.shareData({
-      'totalDuration': totalDuration,
-      'remainingTime': remainingTime,
-    });
+  if (kIsWeb) return;
+  if (Platform.isWindows) {
+    await windows.updateOverlayFAB(totalDuration: totalDuration, remainingTime: remainingTime);
+  } else if (Platform.isAndroid) {
+    await android.updateOverlayFAB(totalDuration: totalDuration, remainingTime: remainingTime);
   }
 }
 
 Future<void> closeOverlayFAB() async {
-  if (await FlutterOverlayWindow.isPermissionGranted()) {
-    await FlutterOverlayWindow.closeOverlay();
+  if (kIsWeb) return;
+  if (Platform.isWindows) {
+    await windows.closeOverlayFAB();
+  } else if (Platform.isAndroid) {
+    await android.closeOverlayFAB();
   }
-}
-
-String _formatDuration(int seconds) {
-  final minutes = seconds ~/ 60;
-  final remainingSeconds = seconds % 60;
-  return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
 }

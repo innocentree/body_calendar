@@ -1,6 +1,5 @@
-시스템 오버레이 타이머(Windows 미니 모드) 구현
-
-- Windows 환경에서 앱이 포커스를 잃거나 백그라운드로 전환될 때 자동으로 미니 모드로 전환되는 기능 추가
-- `window_manager` 패키지 적용 및 초기화 로직 추가
-- 앱 생명주기 및 윈도우 포커스 감지를 위한 `TimerOverlayManager` 구현
-- Windows용 오버레이(미니 모드) UI 및 복귀 로직 구현
+안드로이드 백그라운드 타이머 오버레이 표시 문제 수정 및 운동 기록(PR) 갱신 시 시각적 효과 추가
+- main.dart: 오버레이 엔트리포인트(overlayMain) 추가
+- TimerOverlayManager: TimerBloc 상태 변경 감지하여 오버레이 데이터 갱신 로직 추가
+- TimerOverlayScreen: 오버레이 UI 구현 (dart entry point)
+- ExerciseDetailScreen: 세트 완료 시 개인 기록(최대 무게, 1RM, 볼륨) 갱신 여부 확인 및 UI 강조 효과(3초) 추가

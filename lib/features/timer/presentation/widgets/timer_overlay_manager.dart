@@ -105,6 +105,24 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager> with WidgetsB
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    return BlocListener<TimerBloc, TimerState>(
+      listener: (context, state) {
+        if (state is TimerRunInProgress) {
+          updateOverlayFAB(
+            totalDuration: state.initialDuration,
+            remainingTime: state.duration,
+          );
+        } else if (state is TimerRunPause) {
+          // 일시정지 상태도 업데이트 (필요시)
+          updateOverlayFAB(
+            totalDuration: state.initialDuration,
+            remainingTime: state.duration,
+          );
+        } else {
+             // 타이머 종료 등 다른 상태 처리
+        }
+      },
+      child: widget.child,
+    );
   }
 }

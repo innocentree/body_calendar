@@ -7,6 +7,7 @@ import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/timer/presentation/widgets/timer_overlay_manager.dart';
+import 'package:body_calendar/features/timer/presentation/screens/timer_overlay_screen.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -69,6 +70,17 @@ Future<void> _restore() async {
       }
     }
   }
+}
+
+@pragma("vm:entry-point")
+void overlayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: TimerOverlayScreen(),
+    )
+  );
 }
 
 void main() async {
