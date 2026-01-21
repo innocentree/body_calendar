@@ -1,5 +1,3 @@
-안드로이드 백그라운드 타이머 오버레이 표시 문제 수정 및 운동 기록(PR) 갱신 시 시각적 효과 추가
-- main.dart: 오버레이 엔트리포인트(overlayMain) 추가
-- TimerOverlayManager: TimerBloc 상태 변경 감지하여 오버레이 데이터 갱신 로직 추가
-- TimerOverlayScreen: 오버레이 UI 구현 (dart entry point)
-- ExerciseDetailScreen: 세트 완료 시 개인 기록(최대 무게, 1RM, 볼륨) 갱신 여부 확인 및 UI 강조 효과(3초) 추가
+빌드 오류 수정: flutter_overlay_window 버전 업그레이드
+- flutter_overlay_window 패키지 버전을 0.5.0에서 0.6.0으로 업데이트
+- overlay_helper_impl.dart의 entryPoint 파라미터 지원 호환성 확보
