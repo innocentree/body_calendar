@@ -26,7 +26,6 @@ Future<void> showOverlayFAB({
         positionGravity: PositionGravity.auto,
         width: 120,
         height: 120,
-        entryPoint: "overlayMain", // Use the new entry point
       );
       // Pass initial data
       await updateOverlayFAB(totalDuration: restTime, remainingTime: restTime);

@@ -1,3 +1,3 @@
-빌드 오류 수정: flutter_overlay_window 버전 업그레이드
-- flutter_overlay_window 패키지 버전을 0.5.0에서 0.6.0으로 업데이트
-- overlay_helper_impl.dart의 entryPoint 파라미터 지원 호환성 확보
+빌드 오류 수정: flutter_overlay_window 0.5.0으로 롤백 및 entryPoint 제거
+- flutter_overlay_window 0.6.0 버전 부재로 인해 0.5.0으로 롤백
+- 0.5.0 버전에서 지원하지 않는 entryPoint 파라미터 제거
