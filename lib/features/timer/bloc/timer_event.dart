@@ -34,6 +34,16 @@ class TimerReset extends TimerEvent {
   const TimerReset();
 }
 
+
+class TimerDurationUpdated extends TimerEvent {
+  final int duration;
+
+  const TimerDurationUpdated({required this.duration});
+
+  @override
+  List<Object?> get props => [duration];
+}
+
 class _TimerTicked extends TimerEvent {
   final int duration;
   final DateTime? expiresAt;

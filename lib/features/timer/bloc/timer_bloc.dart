@@ -22,6 +22,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     on<TimerPaused>(_onPaused);
     on<TimerResumed>(_onResumed);
     on<TimerReset>(_onReset);
+    on<TimerDurationUpdated>(_onDurationUpdated);
     on<_TimerTicked>(_onTicked);
   }
 
@@ -83,6 +84,38 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     emit(const TimerInitial(0));
     exerciseName = null;
     selectedDate = null;
+  }
+
+  void _onDurationUpdated(TimerDurationUpdated event, Emitter<TimerState> emit) {
+    if (state is TimerRunInProgress) {
+      final oldState = state as TimerRunInProgress;
+      // 현재 경과 시간 계산
+      final elapsed = oldState.initialDuration - oldState.duration;
+      // 새로운 남은 시간 계산 (새 전체 시간 - 경과 시간)
+      // 만약 줄어든 시간이 경과 시간보다 작으면 0으로 처리 (종료될 것임)
+      int newRemaining = event.duration - elapsed;
+      if (newRemaining < 0) newRemaining = 0;
+
+      // 만료 시간 재설정
+      _expiresAt = DateTime.now().add(Duration(seconds: newRemaining));
+      
+      emit(TimerRunInProgress(newRemaining, event.duration, expiresAt: _expiresAt));
+
+      // 티커가 이미 돌고 있으니 _expiresAt만 바뀌면 다음 틱에서 반영됨.
+      // 하지만 즉시 UI 갱신을 위해 틱을 한 번 발생시키는 것이 좋음.
+      add(_TimerTicked(duration: newRemaining, expiresAt: _expiresAt));
+    } else if (state is TimerRunPause) {
+       // 일시정지 상태에서 시간이 바뀌면?
+       // 경과 시간 기준으로 initialDuration만 업데이트?
+       // 복잡도를 줄이기 위해, 일시정지 중에는 반영하지 않거나,
+       // 혹은 initialDuration만 업데이트하고 duration을 재계산.
+       final oldState = state as TimerRunPause;
+       final elapsed = oldState.initialDuration - oldState.duration;
+       int newRemaining = event.duration - elapsed;
+       if (newRemaining < 0) newRemaining = 0;
+       
+       emit(TimerRunPause(newRemaining, event.duration));
+    }
   }
 
   void _onTicked(_TimerTicked event, Emitter<TimerState> emit) {

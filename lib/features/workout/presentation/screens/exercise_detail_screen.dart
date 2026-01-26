@@ -880,15 +880,21 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
             ),
             TextButton(
               onPressed: () {
+                Navigator.pop(context);
                 setState(() {
-                  _sets[index] = set.copyWith( // Use the potentially modified 'set' (with bodyWeight/assistedWeight)
+                  final newRestTime = Duration(seconds: tempRest);
+                  _sets[index] = set.copyWith( // Use the potentially modified 'set'
                     weight: tempWeight,
                     reps: tempReps,
-                    restTime: Duration(seconds: tempRest),
+                    restTime: newRestTime,
                   );
                   _saveSets();
+                  
+                  if (index == _currentSetIndex - 1) {
+                        context.read<TimerBloc>().add(
+                            TimerDurationUpdated(duration: newRestTime.inSeconds));
+                  }
                 });
-                Navigator.pop(context);
               },
               child: const Text('저장'),
             ),
@@ -1567,14 +1573,20 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                         IconButton(
                                           onPressed: () {
                                             setState(() {
-                                              _sets[index] = _sets[index].copyWith(
-                                                  restTime: Duration(
-                                                      seconds: (_sets[index]
-                                                                  .restTime
-                                                                  .inSeconds -
-                                                              _restTimeStep) 
-                                                          .clamp(10, 300)));
+                                              final newRestTime = Duration(
+                                                  seconds: (_sets[index]
+                                                              .restTime
+                                                              .inSeconds -
+                                                          _restTimeStep) 
+                                                      .clamp(10, 300));
+                                              _sets[index] = _sets[index].copyWith(restTime: newRestTime);
                                               _saveSets();
+                                              
+                                              // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
+                                              if (index == _currentSetIndex - 1) {
+                                                  context.read<TimerBloc>().add(
+                                                      TimerDurationUpdated(duration: newRestTime.inSeconds));
+                                              }
                                             });
                                           },
                                           icon: const Icon(
@@ -1592,15 +1604,18 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     .inSeconds
                                                     .toDouble(),
                                                 (value) {
+                                                (value) {
                                                   setState(() {
+                                                    final newRestTime = Duration(seconds: value.toInt()
+                                                                                              .clamp(10, 300));
                                                     _sets[index] = _sets[index]
-                                                        .copyWith(
-                                                            restTime: Duration(
-                                                                seconds: value
-                                                                    .toInt()
-                                                                    .clamp(
-                                                                        10, 300)));
+                                                        .copyWith(restTime: newRestTime);
                                                     _saveSets();
+                                                    
+                                                    if (index == _currentSetIndex - 1) {
+                                                        context.read<TimerBloc>().add(
+                                                            TimerDurationUpdated(duration: newRestTime.inSeconds));
+                                                    }
                                                   });
                                                 },
                                               );
@@ -1614,14 +1629,20 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                         IconButton(
                                           onPressed: () {
                                             setState(() {
-                                              _sets[index] = _sets[index].copyWith(
-                                                  restTime: Duration(
-                                                      seconds: (_sets[index]
-                                                                  .restTime
-                                                                  .inSeconds +
-                                                              _restTimeStep) 
-                                                          .clamp(10, 300)));
+                                              final newRestTime = Duration(
+                                                  seconds: (_sets[index]
+                                                              .restTime
+                                                              .inSeconds +
+                                                          _restTimeStep) 
+                                                      .clamp(10, 300));
+                                              _sets[index] = _sets[index].copyWith(restTime: newRestTime);
                                               _saveSets();
+
+                                              // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
+                                              if (index == _currentSetIndex - 1) {
+                                                  context.read<TimerBloc>().add(
+                                                      TimerDurationUpdated(duration: newRestTime.inSeconds));
+                                              }
                                             });
                                           },
                                           icon: const Icon(

@@ -43,11 +43,21 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                CircularProgressIndicator(
-                  value: (_totalDuration > 0) ? _remainingTime / _totalDuration : 0.0,
-                  strokeWidth: 10,
-                  backgroundColor: Colors.grey.withOpacity(0.5),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 0.0,
+                    end: (_totalDuration > 0) ? _remainingTime / _totalDuration : 0.0,
+                  ),
+                  duration: const Duration(milliseconds: 1000), // Smooth transition over 1 second
+                  curve: Curves.linear, // Or Curves.easeInOut for damping effect
+                  builder: (context, value, _) {
+                    return CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 10,
+                      backgroundColor: Colors.grey.withOpacity(0.5),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                    );
+                  },
                 ),
                 Center(
                   child: Text(
