@@ -1604,7 +1604,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     .inSeconds
                                                     .toDouble(),
                                                 (value) {
-                                                (value) {
                                                   setState(() {
                                                     final newRestTime = Duration(seconds: value.toInt()
                                                                                               .clamp(10, 300));
@@ -1618,7 +1617,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     }
                                                   });
                                                 },
-                                              );
                                             },
                                             child: Center(child: Text(_sets[index]
                                                     .restTime
