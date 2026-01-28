@@ -1,5 +1,3 @@
-타이머 기능 개선 및 빌드 오류 수정:
-- 실시간 휴식 시간 변경 적용 (TimerDurationUpdated 이벤트 추가)
-- 안드로이드 오버레이 타이머 게이지 애니메이션 부드럽게 개선 (TweenAnimationBuilder 적용)
-- flutter_overlay_window 버전 호환성 문제 해결 (0.5.0으로 롤백 및 entryPoint 제거)
-- ExerciseDetailScreen 문법 오류 수정
+ExerciseDetailScreen 문법 오류 수정 (괄호 닫기 누락)
+- _showNumberInputDialog 호출 시 누락된 닫는 괄호 및 세미콜론 추가
+- 빌드 실패 원인 해결

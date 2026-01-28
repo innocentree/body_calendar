@@ -1617,6 +1617,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     }
                                                   });
                                                 },
+                                              );
                                             },
                                             child: Center(child: Text(_sets[index]
                                                     .restTime
