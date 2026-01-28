@@ -12,29 +12,28 @@ Future<void> showOverlayFAB({
   required int restTime,
   required VoidCallback onComplete,
 }) async {
-  if (_isMiniMode) return;
-  _isMiniMode = true;
-
+  // MiniMode 여부와 상관없이 윈도우 속성 강제 적용 (최소화 복구 시 크기 유지 등을 위해)
   try {
-    _savedBounds = await windowManager.getBounds();
-    // 작은 크기로 변경 (300x150)
+    if (!_isMiniMode) {
+      _isMiniMode = true;
+      _savedBounds = await windowManager.getBounds();
+      
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => const WindowsTimerOverlay(),
+        ),
+      );
+    }
+
+    // 작은 크기로 변경 (300x150) 및 항상 위 설정
     await windowManager.setMinimumSize(const Size(300, 150));
     await windowManager.setSize(const Size(300, 150));
     await windowManager.setAlignment(Alignment.bottomRight);
     await windowManager.setAlwaysOnTop(true);
-    // 타이틀바 숨기기 (선택 사항, 깔끔하게 보이려면 숨기는게 좋음)
-    // await windowManager.setTitleBarStyle(TitleBarStyle.hidden); 
-    // -> TitleBarStyle 변경은 앱 재시작 필요할 수 있으므로 주의. 
-    // 여기서는 단순히 내용만 변경.
-
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (context) => const WindowsTimerOverlay(),
-      ),
-    );
   } catch (e) {
     debugPrint('Error entering mini mode: $e');
   }
+
 }
 
 Future<void> closeOverlayFAB() async {

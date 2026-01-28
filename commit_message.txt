@@ -1,3 +1,4 @@
-ExerciseDetailScreen 문법 오류 수정 (괄호 닫기 누락)
-- _showNumberInputDialog 호출 시 누락된 닫는 괄호 및 세미콜론 추가
-- 빌드 실패 원인 해결
+Windows 타이머 오버레이 개선 (항상 위 유지)
+- 앱 최소화 시 오버레이 모드로 자동 전환 및 창 복원 (onWindowMinimize 구현)
+- 오버레이 진입 로직 개선: 이미 미니모드여도 창 속성(크기, 항상위) 강제 적용
+- 다른 창 뒤에 가려지지 않도록 setAlwaysOnTop 강화

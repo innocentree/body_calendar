@@ -77,7 +77,17 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager> with WidgetsB
     }
   }
   
-  // onWindowMinimize 등 다른 이벤트도 고려 가능
+  @override
+  void onWindowMinimize() {
+    // 최소화 시 타이머가 돌고 있다면 오버레이 모드로 복귀 (Windows)
+    if (Platform.isWindows) {
+      final timerState = context.read<TimerBloc>().state;
+      if (timerState is TimerRunInProgress) {
+        windowManager.restore();
+        _handleStateChange(true);
+      }
+    }
+  }
 
   void _handleStateChange(bool isBackground) {
     if (!mounted) return;
