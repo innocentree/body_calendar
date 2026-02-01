@@ -38,7 +38,12 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager> with WidgetsB
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (Platform.isAndroid || Platform.isIOS) {
-      _handleStateChange(state == AppLifecycleState.paused || state == AppLifecycleState.inactive);
+      // Android: paused occurs when app is hidden (backgrounded).
+      // inactive can occur during phone calls, split screen, etc.
+      // We primarily want overlay when the app is no longer the primary focus on full screen.
+      // But 'inactive' often leads to 'paused'.
+      // Strict backgrounding is usually 'paused'.
+      _handleStateChange(state == AppLifecycleState.paused);
     }
   }
 

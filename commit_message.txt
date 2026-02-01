@@ -1,4 +1,4 @@
-Windows 타이머 오버레이 개선 (항상 위 유지)
-- 앱 최소화 시 오버레이 모드로 자동 전환 및 창 복원 (onWindowMinimize 구현)
-- 오버레이 진입 로직 개선: 이미 미니모드여도 창 속성(크기, 항상위) 강제 적용
-- 다른 창 뒤에 가려지지 않도록 setAlwaysOnTop 강화
+Android 오버레이 표시 문제 수정 및 Windows 항상위 기능 개선
+- Android: 앱 백그라운드 전환(Paused 상태) 시 오버레이가 확실하게 표시되도록 AppLifecycleState 체크 로직 수정 (timer_overlay_manager.dart)
+- Android: overlay_helper_impl.android.dart에서 권한 체크 및 showOverlay 파라미터 최적화 (visibilitySecret 추가)
+- Windows: 최소화 시 오버레이 복구 및 Always-on-Top 속성 강제 적용 로직 포함

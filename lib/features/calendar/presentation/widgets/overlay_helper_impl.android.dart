@@ -23,9 +23,10 @@ Future<void> showOverlayFAB({
         enableDrag: true,
         flag: OverlayFlag.defaultFlag,
         alignment: OverlayAlignment.centerRight,
+        visibility: NotificationVisibility.visibilitySecret,
         positionGravity: PositionGravity.auto,
+        height: 120, // width is deprecated or not used in some versions, relying on content
         width: 120,
-        height: 120,
       );
       // Pass initial data
       await updateOverlayFAB(totalDuration: restTime, remainingTime: restTime);
