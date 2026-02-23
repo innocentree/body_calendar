@@ -1728,7 +1728,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       alignment: Alignment.centerLeft,
                                       child: TweenAnimationBuilder<double>(
                                         tween: Tween<double>(
-                                          begin: 0.0,
                                           end: (initialDuration > 0)
                                               ? ((initialDuration - duration) / initialDuration).clamp(0.0, 1.0)
                                               : 0.0,

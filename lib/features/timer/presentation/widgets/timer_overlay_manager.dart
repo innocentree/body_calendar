@@ -135,6 +135,10 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager> with WidgetsB
           );
         } else {
              // 타이머 종료 등 다른 상태 처리
+             updateOverlayFAB(
+               totalDuration: 1,
+               remainingTime: 0,
+             );
         }
       },
       child: widget.child,

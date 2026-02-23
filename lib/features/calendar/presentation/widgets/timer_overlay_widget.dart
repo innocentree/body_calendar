@@ -45,7 +45,6 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
               children: [
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(
-                    begin: 0.0,
                     end: (_totalDuration > 0) ? _remainingTime / _totalDuration : 0.0,
                   ),
                   duration: const Duration(milliseconds: 1000), // Smooth transition over 1 second

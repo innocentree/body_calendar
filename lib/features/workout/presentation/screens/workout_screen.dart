@@ -85,7 +85,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _workoutRoutineRepository = GetIt.I<WorkoutRoutineRepository>();
-    _initializePrefs();
+    await _initializePrefs();
+    _checkAndRecommendPreviousWorkout();
     try {
       _tabController = TabController(length: 3, vsync: this, initialIndex: widget.sessionIndex - 1);
       _tabController.addListener(_handleTabSelection);
@@ -190,6 +191,110 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     setState(() {
       _recordDay = idx != -1 ? idx + 1 : 0;
     });
+  }
+
+  Future<void> _checkAndRecommendPreviousWorkout() async {
+    // 현재 세션에 이미 운동이 있으면 추천하지 않음
+    if (_workouts.isNotEmpty) return;
+
+    final today = widget.selectedDate;
+    final todayStr = DateFormat('yyyy-MM-dd').format(today);
+    
+    // 현재 주차의 월요일 찾기
+    final firstDayOfWeek = today.subtract(Duration(days: today.weekday - 1));
+    
+    // 현재 날짜가 이번 주에서 몇 번째 운동일인지 계산 (Weekly Session Index)
+    final keys = _prefs.getKeys().where((k) => k.startsWith('workouts_')).toList()..sort();
+    int currentWeeklySessionIndex = 0;
+    
+    for (final key in keys) {
+      final dateStr = key.replaceFirst('workouts_', '');
+      final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+      
+      // 이번 주 기록들 중 오늘 이전 것들 카운트
+      if (date.isAfter(firstDayOfWeek.subtract(const Duration(seconds: 1))) && 
+          date.isBefore(today)) {
+        final workoutsJson = _prefs.getStringList(key) ?? [];
+        if (workoutsJson.isNotEmpty) {
+           currentWeeklySessionIndex++;
+        }
+      }
+    }
+
+    // 지난 주의 동일한 세션 인덱스 찾기
+    final lastWeekStart = firstDayOfWeek.subtract(const Duration(days: 7));
+    final lastWeekEnd = firstDayOfWeek.subtract(const Duration(seconds: 1));
+    
+    List<WorkoutRecord> recommendedWorkouts = [];
+    DateTime? recommendedDate;
+    int sessionCounter = 0;
+
+    for (final key in keys) {
+      final dateStr = key.replaceFirst('workouts_', '');
+      final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+      
+      if (date.isAfter(lastWeekStart.subtract(const Duration(seconds: 1))) && 
+          date.isBefore(lastWeekEnd.add(const Duration(days: 1)))) {
+        final workoutsJson = _prefs.getStringList(key) ?? [];
+        if (workoutsJson.isNotEmpty) {
+          if (sessionCounter == currentWeeklySessionIndex) {
+            // 해당 날짜의 전체 운동 (모든 회차 포함 여부는 고민 필요하지만, 보통 하루 전체를 추천하는 것이 직관적)
+            // 사용자 요청: "지난 주 월요일에 했던 운동 종목들을 보여주고"
+            // 여기서는 해당 날짜의 1회차 세션을 우선 추천하거나 전체를 합칠 수 있음.
+            // 일단은 현재 탭(sessionIndex)에 맞춰서 가져오는 것이 자연스러울 수 있으나, 
+            // 지난주에 해당 회차가 없었을 수도 있으므로 1회차를 기본으로 하거나 전체를 보여줌.
+            recommendedWorkouts = workoutsJson
+                .map((json) => WorkoutRecord.fromJson(jsonDecode(json)))
+                .where((w) => w.sessionIndex == 1) // 기본적으로 1회차 추천
+                .toList();
+            recommendedDate = date;
+            break;
+          }
+          sessionCounter++;
+        }
+      }
+    }
+
+    if (recommendedWorkouts.isNotEmpty && mounted) {
+      final dateStr = DateFormat('MM월 dd일').format(recommendedDate!);
+      final exerciseNames = recommendedWorkouts.map((e) => e.name).join(', ');
+
+      final bool? accept = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('지난주 운동 추천'),
+          content: Text('지난주 $dateStr에 진행했던 운동들을 추가하시겠습니까?\n\n목록: $exerciseNames'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('아니요'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('네, 추가할게요'),
+            ),
+          ],
+        ),
+      );
+
+      if (accept == true && mounted) {
+        setState(() {
+          for (var workout in recommendedWorkouts) {
+             _workouts.add(WorkoutRecord(
+                id: DateTime.now().millisecondsSinceEpoch + _workouts.length,
+                name: workout.name,
+                imagePath: workout.imagePath,
+                sets: workout.sets,
+                weight: workout.weight,
+                timestamp: DateTime.now(),
+                sessionIndex: _tabController.index + 1,
+                equipment: workout.equipment,
+             ));
+          }
+        });
+        await _saveWorkouts();
+      }
+    }
   }
 
   Future<void> _saveRoutine() async {

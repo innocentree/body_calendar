@@ -1,4 +1,10 @@
-Android 오버레이 표시 문제 수정 및 Windows 항상위 기능 개선
-- Android: 앱 백그라운드 전환(Paused 상태) 시 오버레이가 확실하게 표시되도록 AppLifecycleState 체크 로직 수정 (timer_overlay_manager.dart)
-- Android: overlay_helper_impl.android.dart에서 권한 체크 및 showOverlay 파라미터 최적화 (visibilitySecret 추가)
-- Windows: 최소화 시 오버레이 복구 및 Always-on-Top 속성 강제 적용 로직 포함
+휴식 타이머 버그 수정 및 이전 운동 추천 기능 구현
+
+1. 휴식 타이머 버그 수정:
+   - TimerBloc에서 휴식 시간 변경 시 initialDuration을 유지하도록 수정하여 게이지 계산 기준 고정
+   - TweenAnimationBuilder에서 begin 속성을 제거하여 부드러운 애니메이션 구현
+   - 타이머 완료 시 오버레이의 게이지가 0으로 명확히 업데이트되도록 개선
+
+2. 이전 운동 추천 기능 구현:
+   - 새로운 운동일 진입 시 지난주의 동일한 세션 기록을 기반으로 운동 추천 로직 추가
+   - 추천 팝업을 통해 사용자 선택 시 운동 목록을 자동으로 현재 세션에 추가하는 기능 구현
