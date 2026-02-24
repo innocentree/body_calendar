@@ -42,7 +42,7 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        channel: 'stable' # stable, beta, dev, master 중 선택
+        flutter-version: '3.27.1' # 특정 버전으로 고정하여 SDK 업데이트로 인한 오류 방지
 
     - name: Update version number
       run: |
