@@ -101,6 +101,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     }
   }
 
+  Future<void> _initData() async {
+    await _initializePrefs();
+    await _checkAndRecommendPreviousWorkout();
+  }
+
   Future<void> _initializePrefs() async {
     _prefs = await SharedPreferences.getInstance();
     _loadWorkouts();
