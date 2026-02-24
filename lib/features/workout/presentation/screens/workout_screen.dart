@@ -85,8 +85,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _workoutRoutineRepository = GetIt.I<WorkoutRoutineRepository>();
-    await _initializePrefs();
-    _checkAndRecommendPreviousWorkout();
+    _initData();
     try {
       _tabController = TabController(length: 3, vsync: this, initialIndex: widget.sessionIndex - 1);
       _tabController.addListener(_handleTabSelection);
