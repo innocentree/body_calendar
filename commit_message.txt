@@ -1,4 +1,5 @@
-CI 빌드 오류 최종 수정: SDK 범위 및 google_fonts 버전 조정
+CI 빌드 오류 해결: 로컬 환경과 일시 및 최신 버전 적용
 
-1. SDK 제약 조건 완화: pubspec.yaml의 environment sdk 범위를 '>=3.0.0 <4.0.0'으로 조정하여 고정된 Flutter 버전과의 호환성을 확보했습니다.
-2. google_fonts 업데이트: 'FontWeight' 상수 평가 오류가 해결된 버전인 ^7.2.1로 업데이트했습니다.
+1. Flutter SDK 일치: GitHub Actions의 Flutter 버전을 사용자의 로컬 버전인 3.35.2로 업데이트하여 환경을 일치시켰습니다.
+2. 최신 안정 버전 적용: google_fonts를 최신 안정 버전인 ^8.0.2로 업데이트하고, 이에 맞춰 SDK 제약 조건을 '>=3.5.0 <4.0.0'으로 조정했습니다.
+3. pubspec.lock 업데이트: 최신 의존성 정보를 반영했습니다.
