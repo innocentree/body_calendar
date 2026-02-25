@@ -115,9 +115,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         return freqB.compareTo(freqA); // Descending order
       });
 
-      // Extract recent exercises
+      // Extract recent exercises and recency map for sorting
       final List<Exercise> recentList = [];
       final Set<String> addedRecentNames = {};
+      final Map<String, int> exerciseRecencyMap = {}; // Lower is more recent
+      int recencyCounter = 0;
       
       // Collect all available exercises from categories and custom ones for lookup
       final Map<String, Exercise> allAvailableExercises = {};
@@ -133,16 +135,32 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       // Get all exercises from workouts, newest first
       for (var workout in workouts.reversed) {
         for (var workoutExercise in workout.exercises.reversed) {
+          if (!exerciseRecencyMap.containsKey(workoutExercise.name)) {
+            exerciseRecencyMap[workoutExercise.name] = recencyCounter++;
+          }
           if (!addedRecentNames.contains(workoutExercise.name)) {
             final fullExercise = allAvailableExercises[workoutExercise.name];
             if (fullExercise != null) {
-              recentList.add(fullExercise);
+              if (recentList.length < 10) {
+                recentList.add(fullExercise);
+              }
               addedRecentNames.add(workoutExercise.name);
             }
           }
-          if (recentList.length >= 10) break;
         }
-        if (recentList.length >= 10) break;
+      }
+
+      // Sort all exercise lists by recency
+      for (var entry in exercisesMap.entries) {
+        entry.value.sort((a, b) {
+          final recencyA = exerciseRecencyMap[a.name] ?? 999999;
+          final recencyB = exerciseRecencyMap[b.name] ?? 999999;
+          
+          if (recencyA != recencyB) {
+            return recencyA.compareTo(recencyB);
+          }
+          return a.name.compareTo(b.name);
+        });
       }
 
       setState(() {
