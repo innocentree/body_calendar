@@ -16,14 +16,16 @@ class SelectExerciseScreen extends StatefulWidget {
 
 class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedTab = '분류';
+  String _selectedTab = '최근 운동';
   Map<String, List<Exercise>> _exercises = {};
+  List<Exercise> _recentExercises = [];
   bool _isLoading = true;
 
   late final ExerciseRepository _exerciseRepository;
   late final WorkoutRepository _workoutRepository;
 
   List<String> _bodyParts = [
+    '최근 운동',
     '분류',
     '전체',
     '나만의 운동',
@@ -104,7 +106,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       }
 
       // Sort body parts
-      final fixedParts = ['분류', '전체', '나만의 운동'];
+      final fixedParts = ['분류', '최근 운동', '전체', '나만의 운동'];
       final sortableParts = _bodyParts.where((part) => !fixedParts.contains(part)).toList();
       
       sortableParts.sort((a, b) {
@@ -113,8 +115,39 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         return freqB.compareTo(freqA); // Descending order
       });
 
+      // Extract recent exercises
+      final List<Exercise> recentList = [];
+      final Set<String> addedRecentNames = {};
+      
+      // Collect all available exercises from categories and custom ones for lookup
+      final Map<String, Exercise> allAvailableExercises = {};
+      for (var list in exercisesMap.values) {
+        for (var ex in list) {
+          allAvailableExercises[ex.name] = ex;
+          for (var v in ex.variations) {
+            allAvailableExercises[v.name] = v;
+          }
+        }
+      }
+
+      // Get all exercises from workouts, newest first
+      for (var workout in workouts.reversed) {
+        for (var workoutExercise in workout.exercises.reversed) {
+          if (!addedRecentNames.contains(workoutExercise.name)) {
+            final fullExercise = allAvailableExercises[workoutExercise.name];
+            if (fullExercise != null) {
+              recentList.add(fullExercise);
+              addedRecentNames.add(workoutExercise.name);
+            }
+          }
+          if (recentList.length >= 10) break;
+        }
+        if (recentList.length >= 10) break;
+      }
+
       setState(() {
         _exercises = exercisesMap;
+        _recentExercises = recentList;
         _bodyParts = [...fixedParts, ...sortableParts];
         _isLoading = false;
       });
@@ -344,6 +377,10 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildSelectedTabContent() {
     if (_selectedTab == '분류') {
       return _buildCategoryButtons();
+    }
+
+    if (_selectedTab == '최근 운동') {
+      return _buildExerciseList(_recentExercises);
     }
 
     if (_selectedTab == '전체') {

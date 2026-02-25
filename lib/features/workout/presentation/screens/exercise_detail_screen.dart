@@ -1477,19 +1477,35 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     .toStringAsFixed(1), style: const TextStyle(color: Colors.white))),
                                           ),
                                         ),
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _sets[index] = _sets[index].copyWith(
-                                                  weight: (_sets[index].weight +
-                                                          _weightStep) 
-                                                      .clamp(0, 1000));
-                                              _saveSets();
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.add_circle_outline, color: Colors.white),
-                                        ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _sets[index] = _sets[index].copyWith(
+                                                    weight: (_sets[index].weight +
+                                                            _weightStep) 
+                                                        .clamp(0, 1000));
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.add_circle_outline, color: Colors.white),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          TextButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                final targetWeight = _sets[index].weight;
+                                                for (int i = 0; i < _sets.length; i++) {
+                                                  _sets[i] = _sets[i].copyWith(weight: targetWeight);
+                                                }
+                                                _saveSets();
+                                              });
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('모든 세트에 무게가 적용되었습니다.'), duration: Duration(seconds: 1)),
+                                              );
+                                            },
+                                            child: const Text('전체적용', style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
+                                          ),
                                       ],
                                     ),
                                   ],
@@ -1542,19 +1558,35 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                 _sets[index].reps.toString(), style: const TextStyle(color: Colors.white))),
                                           ),
                                         ),
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _sets[index] = _sets[index].copyWith(
-                                                  reps: (_sets[index].reps +
-                                                          _repsStep) 
-                                                      .clamp(1, 100));
-                                              _saveSets();
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.add_circle_outline, color: Colors.white),
-                                        ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _sets[index] = _sets[index].copyWith(
+                                                    reps: (_sets[index].reps +
+                                                            _repsStep) 
+                                                        .clamp(1, 100));
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.add_circle_outline, color: Colors.white),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          TextButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                final targetReps = _sets[index].reps;
+                                                for (int i = 0; i < _sets.length; i++) {
+                                                  _sets[i] = _sets[i].copyWith(reps: targetReps);
+                                                }
+                                                _saveSets();
+                                              });
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('모든 세트에 횟수가 적용되었습니다.'), duration: Duration(seconds: 1)),
+                                              );
+                                            },
+                                            child: const Text('전체적용', style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
+                                          ),
                                       ],
                                     ),
                                   ],
@@ -1647,6 +1679,28 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           icon: const Icon(
                                               Icons.add_circle_outline, color: Colors.white),
                                         ),
+                                          const SizedBox(width: 8),
+                                          TextButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                final targetRest = _sets[index].restTime;
+                                                for (int i = 0; i < _sets.length; i++) {
+                                                  _sets[i] = _sets[i].copyWith(restTime: targetRest);
+                                                }
+                                                _saveSets();
+                                                
+                                                // 현재 휴식 타이머가 돌고 있다면 (직전 세트가 완료됨) 업데이트
+                                                if (_currentSetIndex > 0) {
+                                                   context.read<TimerBloc>().add(
+                                                        TimerDurationUpdated(duration: targetRest.inSeconds));
+                                                }
+                                              });
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('모든 세트에 휴식 시간이 적용되었습니다.'), duration: Duration(seconds: 1)),
+                                              );
+                                            },
+                                            child: const Text('전체적용', style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
+                                          ),
                                       ],
                                     ),
                                   ],

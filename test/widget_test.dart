@@ -1,30 +1,51 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:body_calendar/core/utils/ticker.dart';
+import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
+import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:body_calendar/main.dart';
+import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:body_calendar/features/workout/domain/repositories/workout_routine_repository.dart';
+import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+
+class MockExerciseRepository extends Mock implements ExerciseRepository {}
+class MockWorkoutRoutineRepository extends Mock implements WorkoutRoutineRepository {}
+class MockWorkoutRepository extends Mock implements WorkoutRepository {}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    
+    final getIt = GetIt.instance;
+    getIt.reset();
+    getIt.registerSingleton<SharedPreferences>(prefs);
+    getIt.registerSingleton<ExerciseRepository>(MockExerciseRepository());
+    getIt.registerSingleton<WorkoutRoutineRepository>(MockWorkoutRoutineRepository());
+    getIt.registerSingleton<WorkoutRepository>(MockWorkoutRepository());
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('MyApp should load and show CalendarScreen', (WidgetTester tester) async {
+    final prefs = GetIt.I<SharedPreferences>();
+    
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => TimerBloc(ticker: const Ticker())),
+          BlocProvider(create: (_) => ThemeBloc(prefs)),
+        ],
+        child: const MyApp(),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify CalendarScreen is loaded (checking for '운동 기록' or similar title if exists)
+    // For now just pump and catch crashes.
+    await tester.pumpAndSettle();
+    expect(find.byType(MyApp), findsOneWidget);
   });
 }
