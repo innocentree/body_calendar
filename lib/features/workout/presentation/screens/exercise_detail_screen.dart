@@ -59,9 +59,11 @@ class ExerciseSet {
                 : double.tryParse(json['weight'].toString()) ?? 0.0,
         reps: json['reps'],
         restTime: Duration(seconds: json['restTime']),
-        startTime:
-            json['startTime'] != null ? DateTime.parse(json['startTime']) : null,
-        endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
+        startTime: json['startTime'] != null
+            ? DateTime.parse(json['startTime'])
+            : null,
+        endTime:
+            json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
         isCompleted: json['isCompleted'],
         bodyWeight: (json['bodyWeight'] is int)
             ? (json['bodyWeight'] as int).toDouble()
@@ -128,8 +130,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   // 증가/감소 단위 변수 수정
   double _weightStep = 5.0;
   int _repsStep = 1;
-  int _restTimeStep = 30;
+  int _restTimeStep = 10;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isLbs = false;
 
   DateTime? _firstRecordDate;
   List<String> _recordedDates = [];
@@ -141,11 +144,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   bool _highlightMaxWeight = false;
   bool _highlight1RM = false;
   bool _highlightVolume = false;
-  
+
   // Running Bests for PR detection
   double _runningBestMaxWeight = 0;
   double _runningBest1RM = 0;
-  double _runningBestVolume = 0; // Volume is cumulative? user said "Volume value updates". Usually total volume.
+  double _runningBestVolume =
+      0; // Volume is cumulative? user said "Volume value updates". Usually total volume.
   // If total volume updates, it always updates on every set?
   // "Volume value" usually means "Total Volume for the exercise".
   // If so, every set increases volume. So every set updates the record if today is a PR day?
@@ -154,8 +158,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   // Every set adds volume, so yes, every set after crossing the threshold will trigger.
   // Maybe user wants that. Or maybe only when crossing the threshold?
   // "최고값을 갱신하면" -> Whenever it updates. So yes.
-  
-  double _historicalBestVolume = 0; // To track if we are in PR territory for volume
+
+  double _historicalBestVolume =
+      0; // To track if we are in PR territory for volume
 
   @override
   void initState() {
@@ -179,7 +184,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   }
 
   Future<void> _loadExercise() async {
-    final exercise = await _exerciseRepository.getExerciseByName(widget.exerciseName);
+    final exercise =
+        await _exerciseRepository.getExerciseByName(widget.exerciseName);
     setState(() {
       _exercise = exercise;
     });
@@ -187,6 +193,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
 
   Future<void> _initializePrefs() async {
     _prefs = await SharedPreferences.getInstance();
+    _isLbs = _prefs.getBool('use_lbs') ?? false;
     await _checkAndSetFirstRecordDate();
     await _loadPreviousExerciseSets();
     _loadSets();
@@ -211,14 +218,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     // Calculate bests from all recorded dates (including today if already loaded)
     // Actually, we want to know the state *before* the next set.
     // So just calculate the current "Global Best".
-    
+
     double bestMaxWeight = 0;
     double bestMax1RM = 0;
     double bestTotalVolume = 0;
 
     // Use _recordedDates (which might include today)
     // If today is included, we need to respect today's current values.
-    
+
     // Logic similar to build's best calculation
     for (final date in _recordedDates) {
       final key = 'exercise_sets_${widget.exerciseName}_$date';
@@ -226,35 +233,57 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       final sets = setsJson
           .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
           .toList();
-          
+
       double localMaxWeight = 0;
       double localMax1RM = 0;
       double localTotalVolume = 0;
 
       for (final set in sets) {
-          if (_exercise?.needsWeight == true) {
-            localMaxWeight = set.weight > localMaxWeight ? set.weight : localMaxWeight;
-            final oneRM = set.weight * (1 + set.reps / 30.0);
-            localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
-            localTotalVolume += set.weight * set.reps;
-          }
+        if (_exercise?.needsWeight == true) {
+          localMaxWeight =
+              set.weight > localMaxWeight ? set.weight : localMaxWeight;
+          final oneRM = set.weight * (1 + set.reps / 30.0);
+          localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
+          localTotalVolume += set.weight * set.reps;
+        }
       }
-      
+
       if (_exercise?.needsWeight == true) {
-          bestMaxWeight = localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
-          bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
-          bestTotalVolume = localTotalVolume > bestTotalVolume ? localTotalVolume : bestTotalVolume;
+        bestMaxWeight =
+            localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
+        bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
+        bestTotalVolume = localTotalVolume > bestTotalVolume
+            ? localTotalVolume
+            : bestTotalVolume;
       }
     }
-    
+
     _runningBestMaxWeight = bestMaxWeight;
     _runningBest1RM = bestMax1RM;
     _runningBestVolume = bestTotalVolume;
-    
-    // Also calculate historical best volume (excluding today) to see when we cross it?
-    // Actually _runningBestVolume already includes today's current total.
-    // If we add a set, volume increases.
-    // newTotal > _runningBestVolume -> Update & Highlight.
+  }
+
+  void _showTopNotification(String message) {
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => _TopNotificationWidget(
+        message: message,
+        onDismiss: () => overlayEntry.remove(),
+      ),
+    );
+    Overlay.of(context).insert(overlayEntry);
+  }
+
+  double _toDisplayWeight(double kg) => _isLbs ? kg * 2.20462 : kg;
+  double _toStorageWeight(double displayed) =>
+      _isLbs ? displayed / 2.20462 : displayed;
+  String _unitStr() => _isLbs ? 'lb' : 'kg';
+
+  void _toggleUnit() {
+    setState(() {
+      _isLbs = !_isLbs;
+      _prefs.setBool('use_lbs', _isLbs);
+    });
   }
 
   Future<void> _checkAndSetFirstRecordDate() async {
@@ -348,8 +377,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         weight: lastSet?.weight ?? _currentWeight,
         reps: lastSet?.reps ?? _currentReps,
         restTime: lastSet?.restTime ?? _currentRestTime,
-        bodyWeight: lastSet?.bodyWeight ?? (_exercise?.isAssisted == true ? 70.0 : null),
-        assistedWeight: lastSet?.assistedWeight ?? (_exercise?.isAssisted == true ? 0.0 : null),
+        bodyWeight: lastSet?.bodyWeight ??
+            (_exercise?.isAssisted == true ? 70.0 : null),
+        assistedWeight: lastSet?.assistedWeight ??
+            (_exercise?.isAssisted == true ? 0.0 : null),
       ));
       _tileControllers.add(ExpansionTileController());
 
@@ -395,51 +426,54 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       if (nextIndex < _sets.length) {
         _currentSetIndex = nextIndex;
       }
-      
+
       _checkAndHighlightPRs();
     });
   }
 
   void _checkAndHighlightPRs() {
-      // Re-calculate today's stats based on the UPDATED sets
-      double todayMaxWeight = 0;
-      double todayMax1RM = 0;
-      double todayTotalVolume = 0;
+    // Re-calculate today's stats based on the UPDATED sets
+    double todayMaxWeight = 0;
+    double todayMax1RM = 0;
+    double todayTotalVolume = 0;
 
-      for (final set in _sets) {
-        if (_exercise?.needsWeight == true) {
-          // Check completed sets? Or all sets as per build logic? 
-          // Build logic uses all sets. We stick to that.
-          double currentSetVolume = set.weight * set.reps;
-          todayMaxWeight = set.weight > todayMaxWeight ? set.weight : todayMaxWeight;
-          
-          final oneRM = set.weight * (1 + set.reps / 30.0);
-          todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
-          todayTotalVolume += currentSetVolume;
-        }
-      }
-
+    for (final set in _sets) {
       if (_exercise?.needsWeight == true) {
-          if (todayMaxWeight > _runningBestMaxWeight) {
-             _runningBestMaxWeight = todayMaxWeight;
-             setState(() => _highlightMaxWeight = true);
-             Timer(const Duration(seconds: 3), () => setState(() => _highlightMaxWeight = false));
-          }
-          
-          if (todayMax1RM > _runningBest1RM) {
-             _runningBest1RM = todayMax1RM;
-             setState(() => _highlight1RM = true);
-             Timer(const Duration(seconds: 3), () => setState(() => _highlight1RM = false));
-          }
-          
-          if (todayTotalVolume > _runningBestVolume) {
-             _runningBestVolume = todayTotalVolume;
-             setState(() => _highlightVolume = true);
-             Timer(const Duration(seconds: 3), () => setState(() => _highlightVolume = false));
-          }
-      }
-  }
+        // Check completed sets? Or all sets as per build logic?
+        // Build logic uses all sets. We stick to that.
+        double currentSetVolume = set.weight * set.reps;
+        todayMaxWeight =
+            set.weight > todayMaxWeight ? set.weight : todayMaxWeight;
 
+        final oneRM = set.weight * (1 + set.reps / 30.0);
+        todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
+        todayTotalVolume += currentSetVolume;
+      }
+    }
+
+    if (_exercise?.needsWeight == true) {
+      if (todayMaxWeight > _runningBestMaxWeight) {
+        _runningBestMaxWeight = todayMaxWeight;
+        setState(() => _highlightMaxWeight = true);
+        Timer(const Duration(seconds: 3),
+            () => setState(() => _highlightMaxWeight = false));
+      }
+
+      if (todayMax1RM > _runningBest1RM) {
+        _runningBest1RM = todayMax1RM;
+        setState(() => _highlight1RM = true);
+        Timer(const Duration(seconds: 3),
+            () => setState(() => _highlight1RM = false));
+      }
+
+      if (todayTotalVolume > _runningBestVolume) {
+        _runningBestVolume = todayTotalVolume;
+        setState(() => _highlightVolume = true);
+        Timer(const Duration(seconds: 3),
+            () => setState(() => _highlightVolume = false));
+      }
+    }
+  }
 
   String _formatDuration(int seconds) {
     final minutes = seconds ~/ 60;
@@ -511,7 +545,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     // 초기값 설정
     if (_exercise?.isAssisted == true && set.bodyWeight == null) {
       set = set.copyWith(bodyWeight: 70.0, assistedWeight: 0.0);
-      tempWeight = 70.0; 
+      tempWeight = 70.0;
     }
     int tempReps = set.reps;
     int tempRest = set.restTime.inSeconds;
@@ -523,219 +557,245 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if ((_exercise?.needsWeight ?? true) && !(_exercise?.isAssisted ?? false))
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(
-                    width: 90,
-                    child: Text('무게(kg)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setStateDialog(() {
-                            tempWeight = (tempWeight - _weightStep).clamp(0, 1000);
-                          });
-                        },
-                        icon: const Icon(Icons.remove_circle_outline),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                      SizedBox(
-                        width: 40,
-                        child: GestureDetector(
-                          onTap: () {
-                            _showNumberInputDialog(
-                              context,
-                              '무게 입력',
-                              tempWeight,
-                              (value) {
-                                setStateDialog(() {
-                                  tempWeight = value;
-                                });
-                              },
-                              isDouble: true,
-                            );
+              if ((_exercise?.needsWeight ?? true) &&
+                  !(_exercise?.isAssisted ?? false))
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(
+                      width: 90,
+                      child: Text('무게(kg)',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            setStateDialog(() {
+                              tempWeight =
+                                  (tempWeight - _weightStep).clamp(0, 1000);
+                            });
                           },
-                          child:
-                              Center(child: Text(tempWeight.toStringAsFixed(1))),
+                          icon: const Icon(Icons.remove_circle_outline),
+                          constraints: BoxConstraints(),
+                          padding: EdgeInsets.zero,
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          setStateDialog(() {
-                            tempWeight = (tempWeight + _weightStep).clamp(0, 1000);
-                          });
-                        },
-                        icon: const Icon(Icons.add_circle_outline),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: 32,
-                        child: GestureDetector(
-                          onTap: () {
-                            _showNumberInputDialog(
-                              context,
-                              '무게 단위 입력',
-                              _weightStep,
-                              (value) {
-                                setStateDialog(() {
-                                  _weightStep = value.clamp(0.5, 10.0);
-                                });
-                              },
-                              isDouble: true,
-                            );
+                        SizedBox(
+                          width: 40,
+                          child: GestureDetector(
+                            onTap: () {
+                              _showNumberInputDialog(
+                                context,
+                                '무게 입력',
+                                tempWeight,
+                                (value) {
+                                  setStateDialog(() {
+                                    tempWeight = value;
+                                  });
+                                },
+                                isDouble: true,
+                              );
+                            },
+                            child: Center(
+                                child: Text(tempWeight.toStringAsFixed(1))),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setStateDialog(() {
+                              tempWeight =
+                                  (tempWeight + _weightStep).clamp(0, 1000);
+                            });
                           },
-                          child:
-                              Center(child: Text(_weightStep.toStringAsFixed(1))),
+                          icon: const Icon(Icons.add_circle_outline),
+                          constraints: BoxConstraints(),
+                          padding: EdgeInsets.zero,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                        const SizedBox(width: 16),
+                        SizedBox(
+                          width: 32,
+                          child: GestureDetector(
+                            onTap: () {
+                              _showNumberInputDialog(
+                                context,
+                                '무게 단위 입력',
+                                _weightStep,
+                                (value) {
+                                  setStateDialog(() {
+                                    _weightStep = value.clamp(0.5, 10.0);
+                                  });
+                                },
+                                isDouble: true,
+                              );
+                            },
+                            child: Center(
+                                child: Text(_weightStep.toStringAsFixed(1))),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               if (_exercise?.isAssisted ?? false)
-              Column(
-                children: [
-                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(
-                        width: 90,
-                        child: Text('체중(kg)',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              setStateDialog(() {
-                                // Default to 70 if not set
-                                double currentBodyWeight = set.bodyWeight ?? 70.0; 
-                                currentBodyWeight = (currentBodyWeight - 1.0).clamp(0, 300);
-                                set = set.copyWith(bodyWeight: currentBodyWeight);
-                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
-                              });
-                            },
-                            icon: const Icon(Icons.remove_circle_outline),
-                            constraints: BoxConstraints(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          SizedBox(
-                            width: 40,
-                            child: GestureDetector(
-                              onTap: () {
-                                _showNumberInputDialog(
-                                  context,
-                                  '체중 입력',
-                                  set.bodyWeight ?? 70.0,
-                                  (value) {
-                                    setStateDialog(() {
-                                      set = set.copyWith(bodyWeight: value);
-                                      tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
-                                    });
-                                  },
-                                  isDouble: true,
-                                );
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(
+                          width: 90,
+                          child: Text('체중(kg)',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                setStateDialog(() {
+                                  // Default to 70 if not set
+                                  double currentBodyWeight =
+                                      set.bodyWeight ?? 70.0;
+                                  currentBodyWeight =
+                                      (currentBodyWeight - 1.0).clamp(0, 300);
+                                  set = set.copyWith(
+                                      bodyWeight: currentBodyWeight);
+                                  tempWeight = (set.bodyWeight ?? 70.0) -
+                                      (set.assistedWeight ?? 0.0);
+                                });
                               },
-                              child:
-                                  Center(child: Text((set.bodyWeight ?? 70.0).toStringAsFixed(1))),
+                              icon: const Icon(Icons.remove_circle_outline),
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.zero,
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              setStateDialog(() {
-                                double currentBodyWeight = set.bodyWeight ?? 70.0;
-                                currentBodyWeight = (currentBodyWeight + 1.0).clamp(0, 300);
-                                set = set.copyWith(bodyWeight: currentBodyWeight);
-                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
-                              });
-                            },
-                            icon: const Icon(Icons.add_circle_outline),
-                            constraints: BoxConstraints(),
-                            padding: EdgeInsets.zero,
-                          ),
-                           const SizedBox(width: 48), // Spacing to align
-                        ],
-                      ),
-                    ],
-                  ),
-                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(
-                        width: 90,
-                        child: Text('보조(kg)',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              setStateDialog(() {
-                                double currentAssisted = set.assistedWeight ?? 0.0;
-                                currentAssisted = (currentAssisted - _weightStep).clamp(0, 300);
-                                set = set.copyWith(assistedWeight: currentAssisted);
-                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
-                              });
-                            },
-                            icon: const Icon(Icons.remove_circle_outline),
-                            constraints: BoxConstraints(),
-                            padding: EdgeInsets.zero,
-                          ),
-                          SizedBox(
-                            width: 40,
-                            child: GestureDetector(
-                              onTap: () {
-                                _showNumberInputDialog(
-                                  context,
-                                  '보조 무게 입력',
-                                  set.assistedWeight ?? 0.0,
-                                  (value) {
-                                    setStateDialog(() {
-                                      set = set.copyWith(assistedWeight: value);
-                                      tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
-                                    });
-                                  },
-                                  isDouble: true,
-                                );
+                            SizedBox(
+                              width: 40,
+                              child: GestureDetector(
+                                onTap: () {
+                                  _showNumberInputDialog(
+                                    context,
+                                    '체중 입력',
+                                    set.bodyWeight ?? 70.0,
+                                    (value) {
+                                      setStateDialog(() {
+                                        set = set.copyWith(bodyWeight: value);
+                                        tempWeight = (set.bodyWeight ?? 70.0) -
+                                            (set.assistedWeight ?? 0.0);
+                                      });
+                                    },
+                                    isDouble: true,
+                                  );
+                                },
+                                child: Center(
+                                    child: Text((set.bodyWeight ?? 70.0)
+                                        .toStringAsFixed(1))),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                setStateDialog(() {
+                                  double currentBodyWeight =
+                                      set.bodyWeight ?? 70.0;
+                                  currentBodyWeight =
+                                      (currentBodyWeight + 1.0).clamp(0, 300);
+                                  set = set.copyWith(
+                                      bodyWeight: currentBodyWeight);
+                                  tempWeight = (set.bodyWeight ?? 70.0) -
+                                      (set.assistedWeight ?? 0.0);
+                                });
                               },
-                              child:
-                                  Center(child: Text((set.assistedWeight ?? 0.0).toStringAsFixed(1))),
+                              icon: const Icon(Icons.add_circle_outline),
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.zero,
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              setStateDialog(() {
-                                 double currentAssisted = set.assistedWeight ?? 0.0;
-                                currentAssisted = (currentAssisted + _weightStep).clamp(0, 300);
-                                set = set.copyWith(assistedWeight: currentAssisted);
-                                tempWeight = (set.bodyWeight ?? 70.0) - (set.assistedWeight ?? 0.0);
-                              });
-                            },
-                            icon: const Icon(Icons.add_circle_outline),
-                            constraints: BoxConstraints(),
-                            padding: EdgeInsets.zero,
-                          ),
-                           const SizedBox(width: 48), // Spacing to align
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                            const SizedBox(width: 48), // Spacing to align
+                          ],
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(
+                          width: 90,
+                          child: Text('보조(kg)',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                setStateDialog(() {
+                                  double currentAssisted =
+                                      set.assistedWeight ?? 0.0;
+                                  currentAssisted =
+                                      (currentAssisted - _weightStep)
+                                          .clamp(0, 300);
+                                  set = set.copyWith(
+                                      assistedWeight: currentAssisted);
+                                  tempWeight = (set.bodyWeight ?? 70.0) -
+                                      (set.assistedWeight ?? 0.0);
+                                });
+                              },
+                              icon: const Icon(Icons.remove_circle_outline),
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                            ),
+                            SizedBox(
+                              width: 40,
+                              child: GestureDetector(
+                                onTap: () {
+                                  _showNumberInputDialog(
+                                    context,
+                                    '보조 무게 입력',
+                                    set.assistedWeight ?? 0.0,
+                                    (value) {
+                                      setStateDialog(() {
+                                        set =
+                                            set.copyWith(assistedWeight: value);
+                                        tempWeight = (set.bodyWeight ?? 70.0) -
+                                            (set.assistedWeight ?? 0.0);
+                                      });
+                                    },
+                                    isDouble: true,
+                                  );
+                                },
+                                child: Center(
+                                    child: Text((set.assistedWeight ?? 0.0)
+                                        .toStringAsFixed(1))),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                setStateDialog(() {
+                                  double currentAssisted =
+                                      set.assistedWeight ?? 0.0;
+                                  currentAssisted =
+                                      (currentAssisted + _weightStep)
+                                          .clamp(0, 300);
+                                  set = set.copyWith(
+                                      assistedWeight: currentAssisted);
+                                  tempWeight = (set.bodyWeight ?? 70.0) -
+                                      (set.assistedWeight ?? 0.0);
+                                });
+                              },
+                              icon: const Icon(Icons.add_circle_outline),
+                              constraints: BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                            ),
+                            const SizedBox(width: 48), // Spacing to align
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const SizedBox(
                     width: 90,
-                    child:
-                        Text('횟수', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('횟수',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   Row(
                     children: [
@@ -813,7 +873,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       IconButton(
                         onPressed: () {
                           setStateDialog(() {
-                            tempRest = (tempRest - _restTimeStep).clamp(10, 300);
+                            tempRest =
+                                (tempRest - _restTimeStep).clamp(10, 300);
                           });
                         },
                         icon: const Icon(Icons.remove_circle_outline),
@@ -841,7 +902,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       IconButton(
                         onPressed: () {
                           setStateDialog(() {
-                            tempRest = (tempRest + _restTimeStep).clamp(10, 300);
+                            tempRest =
+                                (tempRest + _restTimeStep).clamp(10, 300);
                           });
                         },
                         icon: const Icon(Icons.add_circle_outline),
@@ -883,16 +945,17 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                 Navigator.pop(context);
                 setState(() {
                   final newRestTime = Duration(seconds: tempRest);
-                  _sets[index] = set.copyWith( // Use the potentially modified 'set'
+                  _sets[index] = set.copyWith(
+                    // Use the potentially modified 'set'
                     weight: tempWeight,
                     reps: tempReps,
                     restTime: newRestTime,
                   );
                   _saveSets();
-                  
+
                   if (index == _currentSetIndex - 1) {
-                        context.read<TimerBloc>().add(
-                            TimerDurationUpdated(duration: newRestTime.inSeconds));
+                    context.read<TimerBloc>().add(
+                        TimerDurationUpdated(duration: newRestTime.inSeconds));
                   }
                 });
               },
@@ -948,7 +1011,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         weight: set.weight,
                         reps: set.reps,
                         restTime: set.restTime,
-                        bodyWeight: set.bodyWeight ?? (_exercise?.isAssisted == true ? 70.0 : null),
+                        bodyWeight: set.bodyWeight ??
+                            (_exercise?.isAssisted == true ? 70.0 : null),
                         assistedWeight: set.assistedWeight ??
                             (set.bodyWeight != null
                                 ? set.bodyWeight! - set.weight
@@ -988,8 +1052,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       for (final set in _sets) {
         if (_exercise?.needsWeight == true) {
           double currentSetVolume = set.weight * set.reps;
-          todayMaxWeight = set.weight > todayMaxWeight ? set.weight : todayMaxWeight;
-          
+          todayMaxWeight =
+              set.weight > todayMaxWeight ? set.weight : todayMaxWeight;
+
           final oneRM = set.weight * (1 + set.reps / 30.0);
           todayMax1RM = oneRM > todayMax1RM ? oneRM : todayMax1RM;
           todayTotalVolume += currentSetVolume;
@@ -1020,18 +1085,19 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
               .toList();
           for (final set in prevSets) {
             if (_exercise?.needsWeight == true) {
-               prevMaxWeight = set.weight > prevMaxWeight ? set.weight : prevMaxWeight;
-               final oneRM = set.weight * (1 + set.reps / 30.0);
-               prevMax1RM = oneRM > prevMax1RM ? oneRM : prevMax1RM;
-               prevTotalVolume += set.weight * set.reps;
+              prevMaxWeight =
+                  set.weight > prevMaxWeight ? set.weight : prevMaxWeight;
+              final oneRM = set.weight * (1 + set.reps / 30.0);
+              prevMax1RM = oneRM > prevMax1RM ? oneRM : prevMax1RM;
+              prevTotalVolume += set.weight * set.reps;
             } else {
-               prevMaxReps = set.reps > prevMaxReps ? set.reps : prevMaxReps;
-               prevTotalReps += set.reps;
+              prevMaxReps = set.reps > prevMaxReps ? set.reps : prevMaxReps;
+              prevTotalReps += set.reps;
             }
           }
         }
       }
-      
+
       // 역대 최고 기록
       double bestMaxWeight = 0;
       double bestMax1RM = 0;
@@ -1045,7 +1111,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         final sets = setsJson
             .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
             .toList();
-            
+
         double localMaxWeight = 0;
         double localMax1RM = 0;
         double localTotalVolume = 0;
@@ -1053,24 +1119,29 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         int localTotalReps = 0;
 
         for (final set in sets) {
-           if (_exercise?.needsWeight == true) {
-              localMaxWeight = set.weight > localMaxWeight ? set.weight : localMaxWeight;
-              final oneRM = set.weight * (1 + set.reps / 30.0);
-              localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
-              localTotalVolume += set.weight * set.reps;
-           } else {
-              localMaxReps = set.reps > localMaxReps ? set.reps : localMaxReps;
-              localTotalReps += set.reps;
-           }
+          if (_exercise?.needsWeight == true) {
+            localMaxWeight =
+                set.weight > localMaxWeight ? set.weight : localMaxWeight;
+            final oneRM = set.weight * (1 + set.reps / 30.0);
+            localMax1RM = oneRM > localMax1RM ? oneRM : localMax1RM;
+            localTotalVolume += set.weight * set.reps;
+          } else {
+            localMaxReps = set.reps > localMaxReps ? set.reps : localMaxReps;
+            localTotalReps += set.reps;
+          }
         }
-        
+
         if (_exercise?.needsWeight == true) {
-           bestMaxWeight = localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
-           bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
-           bestTotalVolume = localTotalVolume > bestTotalVolume ? localTotalVolume : bestTotalVolume;
+          bestMaxWeight =
+              localMaxWeight > bestMaxWeight ? localMaxWeight : bestMaxWeight;
+          bestMax1RM = localMax1RM > bestMax1RM ? localMax1RM : bestMax1RM;
+          bestTotalVolume = localTotalVolume > bestTotalVolume
+              ? localTotalVolume
+              : bestTotalVolume;
         } else {
-           bestMaxReps = localMaxReps > bestMaxReps ? localMaxReps : bestMaxReps;
-           bestTotalReps = localTotalReps > bestTotalReps ? localTotalReps : bestTotalReps;
+          bestMaxReps = localMaxReps > bestMaxReps ? localMaxReps : bestMaxReps;
+          bestTotalReps =
+              localTotalReps > bestTotalReps ? localTotalReps : bestTotalReps;
         }
       }
 
@@ -1079,786 +1150,1247 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         listener: (context, state) {
           if (state is TimerRunInProgress) {
             final duration = state.duration;
-            if (duration == 10 || duration == 3 || duration == 2 || duration == 1) {
+            if (duration == 10 ||
+                duration == 3 ||
+                duration == 2 ||
+                duration == 1) {
               Vibration.vibrate(duration: 100); // Short vibration
               _audioPlayer.play(AssetSource('sounds/beep.mp3')); // Single beep
             }
           } else if (state is TimerRunComplete) {
             Vibration.vibrate(duration: 500); // Long vibration
-            _audioPlayer.play(AssetSource('sounds/bell.mp3')); // Play twice for two beeps
+            _audioPlayer.play(
+                AssetSource('sounds/bell.mp3')); // Play twice for two beeps
             _audioPlayer.play(AssetSource('sounds/bell.mp3'));
           }
         },
         child: Scaffold(
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          appBar: AppBar(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormat('yyyy-MM-dd').format(widget.selectedDate),
+                  style: const TextStyle(fontSize: 14),
+                ),
+                Text(
+                  (widget.recordDay > 0 ? '${widget.recordDay}번째 기록  ' : ''),
+                  style: const TextStyle(fontSize: 12),
+                ),
+                Text(
+                  widget.exerciseName,
+                  style: const TextStyle(fontSize: 15),
+                ),
+              ],
+            ),
+          ),
+          body: Column(
             children: [
-              Text(
-                DateFormat('yyyy-MM-dd').format(widget.selectedDate),
-                style: const TextStyle(fontSize: 14),
+              // === 오늘/이전/역대 기록 요약 ===
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        if (_exercise?.needsWeight == true) ...[
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) => ExerciseStatisticsPopup(
+                                  exerciseName: widget.exerciseName,
+                                  type: ExerciseStatisticType.maxWeight,
+                                ),
+                              );
+                            },
+                            child: _StatBox(
+                              title: '최대 무게',
+                              value: _toDisplayWeight(todayMaxWeight),
+                              prev: _toDisplayWeight(prevMaxWeight),
+                              best: _toDisplayWeight(bestMaxWeight),
+                              unit: _unitStr(),
+                              formatter: (v) => v.toStringAsFixed(1),
+                              isHighlighted: _highlightMaxWeight,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) => ExerciseStatisticsPopup(
+                                  exerciseName: widget.exerciseName,
+                                  type: ExerciseStatisticType.oneRM,
+                                ),
+                              );
+                            },
+                            child: _StatBox(
+                              title: '최대 1RM',
+                              value: _toDisplayWeight(todayMax1RM),
+                              prev: _toDisplayWeight(prevMax1RM),
+                              best: _toDisplayWeight(bestMax1RM),
+                              unit: _unitStr(),
+                              formatter: (v) => v.toStringAsFixed(1),
+                              isHighlighted: _highlight1RM,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) => ExerciseStatisticsPopup(
+                                  exerciseName: widget.exerciseName,
+                                  type: ExerciseStatisticType.volume,
+                                ),
+                              );
+                            },
+                            child: _StatBox(
+                              title: '볼륨',
+                              value: _toDisplayWeight(todayTotalVolume),
+                              prev: _toDisplayWeight(prevTotalVolume),
+                              best: _toDisplayWeight(bestTotalVolume),
+                              unit: _unitStr(),
+                              formatter: (v) => v.toStringAsFixed(0),
+                              isHighlighted: _highlightVolume,
+                            ),
+                          ),
+                        ] else ...[
+                          _StatBox(
+                            title: '최대 횟수',
+                            value: todayMaxReps.toDouble(),
+                            prev: prevMaxReps.toDouble(),
+                            best: bestMaxReps.toDouble(),
+                            unit: '회',
+                            formatter: (v) => v.toInt().toString(),
+                          ),
+                          _StatBox(
+                            title: '총 횟수',
+                            value: todayTotalReps.toDouble(),
+                            prev: prevTotalReps.toDouble(),
+                            best: bestTotalReps.toDouble(),
+                            unit: '회',
+                            formatter: (v) => v.toInt().toString(),
+                          ),
+                        ]
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              Text(
-                (widget.recordDay > 0 ? '${widget.recordDay}번째 기록  ' : ''),
-                style: const TextStyle(fontSize: 12),
+              // === 세트 목록 ===
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _sets.length,
+                  itemBuilder: (context, index) {
+                    final set = _sets[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.customSurface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: index == _currentSetIndex
+                            ? Border.all(
+                                color: AppColors.neonCyan.withOpacity(0.5),
+                                width: 1)
+                            : null,
+                      ),
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          dividerColor: Colors.transparent,
+                          iconTheme: const IconThemeData(color: Colors.white),
+                          textTheme: const TextTheme(
+                              titleMedium: TextStyle(color: Colors.white)),
+                        ),
+                        child: ExpansionTile(
+                          controller: _tileControllers[index],
+                          backgroundColor: Colors.transparent,
+                          collapsedBackgroundColor: Colors.transparent,
+                          collapsedIconColor: Colors.white,
+                          iconColor: AppColors.neonLime,
+                          onExpansionChanged: (expanded) {
+                            if (expanded) {
+                              for (int i = 0;
+                                  i < _tileControllers.length;
+                                  i++) {
+                                if (i != index) {
+                                  _tileControllers[i].collapse();
+                                }
+                              }
+                            }
+                          },
+                          leading: CircleAvatar(
+                            child: Text('${index + 1}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            backgroundColor: set.isCompleted
+                                ? AppColors.neonLime.withOpacity(0.8)
+                                : index == _currentSetIndex
+                                    ? AppColors.neonCyan
+                                    : Colors.grey.withOpacity(0.3),
+                            foregroundColor:
+                                set.isCompleted || index == _currentSetIndex
+                                    ? Colors.black
+                                    : Colors.white,
+                          ),
+                          title: Text(
+                            _exercise?.needsWeight ?? true
+                                ? '${_toDisplayWeight(set.weight).toStringAsFixed(1)}${_unitStr()} × ${set.reps}회'
+                                : '${set.reps}회',
+                            style: set.isCompleted
+                                ? const TextStyle(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey,
+                                  )
+                                : const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                          ),
+                          subtitle: Text('휴식: ${set.restTime.inSeconds}초',
+                              style: const TextStyle(color: Colors.grey)),
+                          trailing: IconButton(
+                            icon:
+                                const Icon(Icons.delete, color: Colors.white54),
+                            onPressed: () => _removeSet(index),
+                          ),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: Column(
+                                children: [
+                                  // 보조 운동 무게 조절
+                                  if (_exercise?.isAssisted ?? false)
+                                    Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const SizedBox(
+                                              width: 90,
+                                              child: Text('체중(kg)',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white)),
+                                            ),
+                                            Row(
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      double currentBody =
+                                                          _sets[index]
+                                                                  .bodyWeight ??
+                                                              70.0;
+                                                      currentBody =
+                                                          (currentBody - 1.0)
+                                                              .clamp(0, 300);
+                                                      double currentAssisted =
+                                                          _sets[index]
+                                                                  .assistedWeight ??
+                                                              0.0;
+                                                      _sets[index] =
+                                                          _sets[index].copyWith(
+                                                        bodyWeight: currentBody,
+                                                        weight: currentBody -
+                                                            currentAssisted,
+                                                      );
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                  icon: const Icon(
+                                                      Icons
+                                                          .remove_circle_outline,
+                                                      color: Colors.white),
+                                                ),
+                                                SizedBox(
+                                                  width: 40,
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      _showNumberInputDialog(
+                                                        context,
+                                                        '체중 입력',
+                                                        _sets[index]
+                                                                .bodyWeight ??
+                                                            70.0,
+                                                        (value) {
+                                                          setState(() {
+                                                            double
+                                                                currentAssisted =
+                                                                _sets[index]
+                                                                        .assistedWeight ??
+                                                                    0.0;
+                                                            _sets[index] =
+                                                                _sets[index]
+                                                                    .copyWith(
+                                                              bodyWeight: value,
+                                                              weight: value -
+                                                                  currentAssisted,
+                                                            );
+                                                            _saveSets();
+                                                          });
+                                                        },
+                                                        isDouble: true,
+                                                      );
+                                                    },
+                                                    child: Center(
+                                                        child: Text(
+                                                            (_sets[index]
+                                                                        .bodyWeight ??
+                                                                    70.0)
+                                                                .toStringAsFixed(
+                                                                    1),
+                                                            style: const TextStyle(
+                                                                color: Colors
+                                                                    .white))),
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      double currentBody =
+                                                          _sets[index]
+                                                                  .bodyWeight ??
+                                                              70.0;
+                                                      currentBody =
+                                                          (currentBody + 1.0)
+                                                              .clamp(0, 300);
+                                                      double currentAssisted =
+                                                          _sets[index]
+                                                                  .assistedWeight ??
+                                                              0.0;
+                                                      _sets[index] =
+                                                          _sets[index].copyWith(
+                                                        bodyWeight: currentBody,
+                                                        weight: currentBody -
+                                                            currentAssisted,
+                                                      );
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                  icon: const Icon(
+                                                      Icons.add_circle_outline,
+                                                      color: Colors.white),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const SizedBox(
+                                              width: 90,
+                                              child: Text('보조(kg)',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white)),
+                                            ),
+                                            Row(
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      double currentAssisted =
+                                                          _sets[index]
+                                                                  .assistedWeight ??
+                                                              0.0;
+                                                      currentAssisted =
+                                                          (currentAssisted -
+                                                                  _weightStep)
+                                                              .clamp(0, 300);
+                                                      double currentBody =
+                                                          _sets[index]
+                                                                  .bodyWeight ??
+                                                              70.0;
+                                                      _sets[index] =
+                                                          _sets[index].copyWith(
+                                                        assistedWeight:
+                                                            currentAssisted,
+                                                        weight: currentBody -
+                                                            currentAssisted,
+                                                      );
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                  icon: const Icon(
+                                                      Icons
+                                                          .remove_circle_outline,
+                                                      color: Colors.white),
+                                                ),
+                                                SizedBox(
+                                                  width: 40,
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      _showNumberInputDialog(
+                                                        context,
+                                                        '보조 무게 입력',
+                                                        _sets[index]
+                                                                .assistedWeight ??
+                                                            0.0,
+                                                        (value) {
+                                                          setState(() {
+                                                            double currentBody =
+                                                                _sets[index]
+                                                                        .bodyWeight ??
+                                                                    70.0;
+                                                            _sets[index] =
+                                                                _sets[index]
+                                                                    .copyWith(
+                                                              assistedWeight:
+                                                                  value,
+                                                              weight:
+                                                                  currentBody -
+                                                                      value,
+                                                            );
+                                                            _saveSets();
+                                                          });
+                                                        },
+                                                        isDouble: true,
+                                                      );
+                                                    },
+                                                    child: Center(
+                                                        child: Text(
+                                                            (_sets[index]
+                                                                        .assistedWeight ??
+                                                                    0.0)
+                                                                .toStringAsFixed(
+                                                                    1),
+                                                            style: const TextStyle(
+                                                                color: Colors
+                                                                    .white))),
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      double currentAssisted =
+                                                          _sets[index]
+                                                                  .assistedWeight ??
+                                                              0.0;
+                                                      currentAssisted =
+                                                          (currentAssisted +
+                                                                  _weightStep)
+                                                              .clamp(0, 300);
+                                                      double currentBody =
+                                                          _sets[index]
+                                                                  .bodyWeight ??
+                                                              70.0;
+                                                      _sets[index] =
+                                                          _sets[index].copyWith(
+                                                        assistedWeight:
+                                                            currentAssisted,
+                                                        weight: currentBody -
+                                                            currentAssisted,
+                                                      );
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                  icon: const Icon(
+                                                      Icons.add_circle_outline,
+                                                      color: Colors.white),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+
+                                  // 일반 무게
+                                  if ((_exercise?.needsWeight ?? true) &&
+                                      !(_exercise?.isAssisted ?? false))
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const SizedBox(
+                                          width: 90,
+                                          child: Text('무게(kg)',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white)),
+                                        ),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          weight: (_sets[index]
+                                                                      .weight -
+                                                                  _weightStep)
+                                                              .clamp(0, 1000));
+                                                  _saveSets();
+                                                });
+                                              },
+                                              icon: const Icon(
+                                                  Icons.remove_circle_outline,
+                                                  color: Colors.white),
+                                            ),
+                                            SizedBox(
+                                              width: 40,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  _showNumberInputDialog(
+                                                    context,
+                                                    '무게 입력',
+                                                    _sets[index].weight,
+                                                    (value) {
+                                                      setState(() {
+                                                        _sets[index] = _sets[
+                                                                index]
+                                                            .copyWith(
+                                                                weight:
+                                                                    value.clamp(
+                                                                        0,
+                                                                        1000));
+                                                        _saveSets();
+                                                      });
+                                                    },
+                                                    isDouble: true,
+                                                  );
+                                                },
+                                                child: Center(
+                                                    child: Text(
+                                                        _sets[index]
+                                                            .weight
+                                                            .toStringAsFixed(1),
+                                                        style: const TextStyle(
+                                                            color:
+                                                                Colors.white))),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          weight: (_sets[index]
+                                                                      .weight +
+                                                                  _weightStep)
+                                                              .clamp(0, 1000));
+                                                  _saveSets();
+                                                });
+                                              },
+                                              icon: const Icon(
+                                                  Icons.add_circle_outline,
+                                                  color: Colors.white),
+                                            ),
+                                            Column(
+                                              children: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      final targetWeight =
+                                                          _sets[index].weight;
+                                                      for (int i = 0;
+                                                          i < _sets.length;
+                                                          i++) {
+                                                        _sets[i] = _sets[i]
+                                                            .copyWith(
+                                                                weight:
+                                                                    targetWeight);
+                                                      }
+                                                      _saveSets();
+                                                    });
+                                                    _showTopNotification(
+                                                        '모든 세트에 무게가 적용되었습니다.');
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 4,
+                                                        vertical: 0),
+                                                  ),
+                                                  child: const Text('전체적용',
+                                                      style: TextStyle(
+                                                          color: AppColors
+                                                              .neonCyan,
+                                                          fontSize: 12)),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      final targetWeight =
+                                                          _sets[index].weight;
+                                                      for (int i = index;
+                                                          i < _sets.length;
+                                                          i++) {
+                                                        if (!_sets[i]
+                                                            .isCompleted) {
+                                                          _sets[i] = _sets[i]
+                                                              .copyWith(
+                                                                  weight:
+                                                                      targetWeight);
+                                                        }
+                                                      }
+                                                      _saveSets();
+                                                    });
+                                                    _showTopNotification(
+                                                        '이후 미완료 세트에 무게가 적용되었습니다.');
+                                                  },
+                                                  style: TextButton.styleFrom(
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 4,
+                                                        vertical: 0),
+                                                  ),
+                                                  child: const Text('이후적용',
+                                                      style: TextStyle(
+                                                          color: AppColors
+                                                              .neonCyan,
+                                                          fontSize: 12)),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  // 횟수
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const SizedBox(
+                                        width: 90,
+                                        child: Text('횟수',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white)),
+                                      ),
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _sets[index] = _sets[index]
+                                                    .copyWith(
+                                                        reps:
+                                                            (_sets[index].reps -
+                                                                    _repsStep)
+                                                                .clamp(1, 100));
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.remove_circle_outline,
+                                                color: Colors.white),
+                                          ),
+                                          SizedBox(
+                                            width: 40,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                _showNumberInputDialog(
+                                                  context,
+                                                  '횟수 입력',
+                                                  _sets[index].reps.toDouble(),
+                                                  (value) {
+                                                    setState(() {
+                                                      _sets[index] =
+                                                          _sets[index].copyWith(
+                                                              reps: value
+                                                                  .toInt()
+                                                                  .clamp(
+                                                                      1, 100));
+                                                      _saveSets();
+                                                    });
+                                                  },
+                                                );
+                                              },
+                                              child: Center(
+                                                  child: Text(
+                                                      _sets[index]
+                                                          .reps
+                                                          .toString(),
+                                                      style: const TextStyle(
+                                                          color:
+                                                              Colors.white))),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _sets[index] = _sets[index]
+                                                    .copyWith(
+                                                        reps:
+                                                            (_sets[index].reps +
+                                                                    _repsStep)
+                                                                .clamp(1, 100));
+                                                _saveSets();
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.add_circle_outline,
+                                                color: Colors.white),
+                                          ),
+                                          Column(
+                                            children: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    final targetReps =
+                                                        _sets[index].reps;
+                                                    for (int i = 0;
+                                                        i < _sets.length;
+                                                        i++) {
+                                                      _sets[i] = _sets[i]
+                                                          .copyWith(
+                                                              reps: targetReps);
+                                                    }
+                                                    _saveSets();
+                                                  });
+                                                  _showTopNotification(
+                                                      '모든 세트에 횟수가 적용되었습니다.');
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 0),
+                                                ),
+                                                child: const Text('전체적용',
+                                                    style: TextStyle(
+                                                        color:
+                                                            AppColors.neonCyan,
+                                                        fontSize: 12)),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    final targetReps =
+                                                        _sets[index].reps;
+                                                    for (int i = index;
+                                                        i < _sets.length;
+                                                        i++) {
+                                                      if (!_sets[i]
+                                                          .isCompleted) {
+                                                        _sets[i] = _sets[i]
+                                                            .copyWith(
+                                                                reps:
+                                                                    targetReps);
+                                                      }
+                                                    }
+                                                    _saveSets();
+                                                  });
+                                                  _showTopNotification(
+                                                      '이후 미완료 세트에 횟수가 적용되었습니다.');
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 0),
+                                                ),
+                                                child: const Text('이후적용',
+                                                    style: TextStyle(
+                                                        color:
+                                                            AppColors.neonCyan,
+                                                        fontSize: 12)),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  // 휴식
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const SizedBox(
+                                        width: 90,
+                                        child: Text('휴식(초)',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white)),
+                                      ),
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                final newRestTime = Duration(
+                                                    seconds: (_sets[index]
+                                                                .restTime
+                                                                .inSeconds -
+                                                            _restTimeStep)
+                                                        .clamp(10, 300));
+                                                _sets[index] = _sets[index]
+                                                    .copyWith(
+                                                        restTime: newRestTime);
+                                                _saveSets();
+
+                                                // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
+                                                if (index ==
+                                                    _currentSetIndex - 1) {
+                                                  context.read<TimerBloc>().add(
+                                                      TimerDurationUpdated(
+                                                          duration: newRestTime
+                                                              .inSeconds));
+                                                }
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.remove_circle_outline,
+                                                color: Colors.white),
+                                          ),
+                                          SizedBox(
+                                            width: 40,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                _showNumberInputDialog(
+                                                  context,
+                                                  '휴식시간 입력(초)',
+                                                  _sets[index]
+                                                      .restTime
+                                                      .inSeconds
+                                                      .toDouble(),
+                                                  (value) {
+                                                    setState(() {
+                                                      final newRestTime =
+                                                          Duration(
+                                                              seconds: value
+                                                                  .toInt()
+                                                                  .clamp(
+                                                                      10, 300));
+                                                      _sets[index] =
+                                                          _sets[index].copyWith(
+                                                              restTime:
+                                                                  newRestTime);
+                                                      _saveSets();
+
+                                                      if (index ==
+                                                          _currentSetIndex -
+                                                              1) {
+                                                        context
+                                                            .read<TimerBloc>()
+                                                            .add(TimerDurationUpdated(
+                                                                duration:
+                                                                    newRestTime
+                                                                        .inSeconds));
+                                                      }
+                                                    });
+                                                  },
+                                                );
+                                              },
+                                              child: Center(
+                                                  child: Text(
+                                                      _sets[index]
+                                                          .restTime
+                                                          .inSeconds
+                                                          .toString(),
+                                                      style: const TextStyle(
+                                                          color:
+                                                              Colors.white))),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                final newRestTime = Duration(
+                                                    seconds: (_sets[index]
+                                                                .restTime
+                                                                .inSeconds +
+                                                            _restTimeStep)
+                                                        .clamp(10, 300));
+                                                _sets[index] = _sets[index]
+                                                    .copyWith(
+                                                        restTime: newRestTime);
+                                                _saveSets();
+
+                                                // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
+                                                if (index ==
+                                                    _currentSetIndex - 1) {
+                                                  context.read<TimerBloc>().add(
+                                                      TimerDurationUpdated(
+                                                          duration: newRestTime
+                                                              .inSeconds));
+                                                }
+                                              });
+                                            },
+                                            icon: const Icon(
+                                                Icons.add_circle_outline,
+                                                color: Colors.white),
+                                          ),
+                                          Column(
+                                            children: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    final targetRest =
+                                                        _sets[index].restTime;
+                                                    for (int i = 0;
+                                                        i < _sets.length;
+                                                        i++) {
+                                                      _sets[i] = _sets[i]
+                                                          .copyWith(
+                                                              restTime:
+                                                                  targetRest);
+                                                    }
+                                                    _saveSets();
+
+                                                    if (_currentSetIndex > 0) {
+                                                      context.read<TimerBloc>().add(
+                                                          TimerDurationUpdated(
+                                                              duration: targetRest
+                                                                  .inSeconds));
+                                                    }
+                                                  });
+                                                  _showTopNotification(
+                                                      '모든 세트에 휴식 시간이 적용되었습니다.');
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 0),
+                                                ),
+                                                child: const Text('전체적용',
+                                                    style: TextStyle(
+                                                        color:
+                                                            AppColors.neonCyan,
+                                                        fontSize: 12)),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    final targetRest =
+                                                        _sets[index].restTime;
+                                                    for (int i = index;
+                                                        i < _sets.length;
+                                                        i++) {
+                                                      if (!_sets[i]
+                                                          .isCompleted) {
+                                                        _sets[i] = _sets[i]
+                                                            .copyWith(
+                                                                restTime:
+                                                                    targetRest);
+                                                      }
+                                                    }
+                                                    _saveSets();
+
+                                                    if (_currentSetIndex > 0) {
+                                                      context.read<TimerBloc>().add(
+                                                          TimerDurationUpdated(
+                                                              duration: targetRest
+                                                                  .inSeconds));
+                                                    }
+                                                  });
+                                                  _showTopNotification(
+                                                      '이후 미완료 세트에 휴식 시간이 적용되었습니다.');
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 4,
+                                                      vertical: 0),
+                                                ),
+                                                child: const Text('이후적용',
+                                                    style: TextStyle(
+                                                        color:
+                                                            AppColors.neonCyan,
+                                                        fontSize: 12)),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-              Text(
-                widget.exerciseName,
-                style: const TextStyle(fontSize: 15),
+
+              // 하단 버튼
+              SafeArea(
+                bottom: true,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _addSet,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                          backgroundColor: AppColors.neonLime,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text('세트 추가',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_sets.isNotEmpty)
+                        BlocBuilder<TimerBloc, TimerState>(
+                          builder: (context, state) {
+                            final isRunning = state is TimerRunInProgress;
+                            final duration = state.duration;
+                            final initialDuration =
+                                isRunning ? state.initialDuration : 0;
+
+                            return ElevatedButton(
+                              onPressed: () {
+                                if (isRunning) {
+                                  context
+                                      .read<TimerBloc>()
+                                      .add(const TimerReset());
+                                } else if (!allCompleted) {
+                                  _completeSet();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(56),
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                padding: EdgeInsets.zero,
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // 1. 전체 배경: Dark Surface
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(28),
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.customSurface,
+                                        border: Border.all(
+                                            color: AppColors.customSurface,
+                                            width: 2),
+                                      ),
+                                    ),
+                                  ),
+                                  // 2. 차오르는 게이지: Neon Cyan (Smooth Animation)
+                                  if (isRunning)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(28),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: TweenAnimationBuilder<double>(
+                                          tween: Tween<double>(
+                                            end: (initialDuration > 0)
+                                                ? ((initialDuration -
+                                                            duration) /
+                                                        initialDuration)
+                                                    .clamp(0.0, 1.0)
+                                                : 0.0,
+                                          ),
+                                          duration: const Duration(seconds: 1),
+                                          curve: Curves.linear,
+                                          builder: (context, value, child) {
+                                            return FractionallySizedBox(
+                                              widthFactor: value,
+                                              child: Container(
+                                                height: 56,
+                                                color: AppColors.neonCyan
+                                                    .withOpacity(0.8),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  // 3. 텍스트
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.max,
+                                      children: [
+                                        if (isRunning) ...[
+                                          Text(
+                                            _formatDuration(duration),
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors
+                                                    .black), // Black on Cyan
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.skip_next,
+                                                  color: Colors.black),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                '휴식 완료',
+                                                style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                        if (!isRunning)
+                                          Text(
+                                            allCompleted
+                                                ? '모든 세트 완료'
+                                                : '${_currentSetIndex + 1}번 세트 완료',
+                                            style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors
+                                                    .neonCyan), // Cyan text on Dark
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
         ),
-        body: Column(
-          children: [
-            // === 오늘/이전/역대 기록 요약 ===
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      if (_exercise?.needsWeight == true) ...[
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (context) => ExerciseStatisticsPopup(
-                                exerciseName: widget.exerciseName,
-                                type: ExerciseStatisticType.maxWeight,
-                              ),
-                            );
-                          },
-                          child: _StatBox(
-                            title: '최대 무게',
-                            value: todayMaxWeight,
-                            prev: prevMaxWeight,
-                            best: bestMaxWeight,
-                            unit: 'kg',
-                            formatter: (v) => v.toStringAsFixed(1),
-                            isHighlighted: _highlightMaxWeight,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (context) => ExerciseStatisticsPopup(
-                                exerciseName: widget.exerciseName,
-                                type: ExerciseStatisticType.oneRM,
-                              ),
-                            );
-                          },
-                          child: _StatBox(
-                            title: '최대 1RM',
-                            value: todayMax1RM,
-                            prev: prevMax1RM,
-                            best: bestMax1RM,
-                            unit: 'kg',
-                            formatter: (v) => v.toStringAsFixed(1),
-                            isHighlighted: _highlight1RM,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (context) => ExerciseStatisticsPopup(
-                                exerciseName: widget.exerciseName,
-                                type: ExerciseStatisticType.volume,
-                              ),
-                            );
-                          },
-                          child: _StatBox(
-                            title: '볼륨',
-                            value: todayTotalVolume,
-                            prev: prevTotalVolume,
-                            best: bestTotalVolume,
-                            unit: 'kg',
-                            formatter: (v) => v.toStringAsFixed(0),
-                            isHighlighted: _highlightVolume,
-                          ),
-                        ),
-                      ] else ...[
-                        _StatBox(
-                          title: '최대 횟수',
-                          value: todayMaxReps.toDouble(),
-                          prev: prevMaxReps.toDouble(),
-                          best: bestMaxReps.toDouble(),
-                          unit: '회',
-                          formatter: (v) => v.toInt().toString(),
-                        ),
-                         _StatBox(
-                          title: '총 횟수',
-                          value: todayTotalReps.toDouble(),
-                          prev: prevTotalReps.toDouble(),
-                          best: bestTotalReps.toDouble(),
-                          unit: '회',
-                          formatter: (v) => v.toInt().toString(),
-                        ),
-                      ]
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // === 세트 목록 ===
-            Expanded(
-              child: ListView.builder(
-                itemCount: _sets.length,
-                itemBuilder: (context, index) {
-                  final set = _sets[index];
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.customSurface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: index == _currentSetIndex
-                          ? Border.all(color: AppColors.neonCyan.withOpacity(0.5), width: 1)
-                          : null,
-                    ),
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        dividerColor: Colors.transparent,
-                        iconTheme: const IconThemeData(color: Colors.white),
-                        textTheme: const TextTheme(titleMedium: TextStyle(color: Colors.white)),
-                      ),
-                      child: ExpansionTile(
-                        controller: _tileControllers[index],
-                        backgroundColor: Colors.transparent,
-                        collapsedBackgroundColor: Colors.transparent,
-                        collapsedIconColor: Colors.white,
-                        iconColor: AppColors.neonLime,
-                        onExpansionChanged: (expanded) {
-                          if (expanded) {
-                            for (int i = 0; i < _tileControllers.length; i++) {
-                              if (i != index) {
-                                _tileControllers[i].collapse();
-                              }
-                            }
-                          }
-                        },
-                        leading: CircleAvatar(
-                          child: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          backgroundColor: set.isCompleted
-                              ? AppColors.neonLime.withOpacity(0.8)
-                              : index == _currentSetIndex
-                                  ? AppColors.neonCyan
-                                  : Colors.grey.withOpacity(0.3),
-                          foregroundColor: set.isCompleted || index == _currentSetIndex ? Colors.black : Colors.white,
-                        ),
-                        title: Text(
-                          _exercise?.needsWeight ?? true
-                              ? '${set.weight}kg × ${set.reps}회'
-                              : '${set.reps}회',
-                          style: set.isCompleted
-                              ? const TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey,
-                                )
-                              : const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                        ),
-                        subtitle: Text('휴식: ${set.restTime.inSeconds}초', style: const TextStyle(color: Colors.grey)),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.white54),
-                          onPressed: () => _removeSet(index),
-                        ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: Column(
-                              children: [
-                                // 보조 운동 무게 조절
-                                if (_exercise?.isAssisted ?? false)
-                                Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const SizedBox(
-                                          width: 90,
-                                          child: Text('체중(kg)',
-                                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                        ),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  double currentBody = _sets[index].bodyWeight ?? 70.0;
-                                                  currentBody = (currentBody - 1.0).clamp(0, 300);
-                                                  double currentAssisted = _sets[index].assistedWeight ?? 0.0;
-                                                  _sets[index] = _sets[index].copyWith(
-                                                    bodyWeight: currentBody,
-                                                    weight: currentBody - currentAssisted,
-                                                  );
-                                                  _saveSets();
-                                                });
-                                              },
-                                              icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
-                                            ),
-                                            SizedBox(
-                                              width: 40,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  _showNumberInputDialog(
-                                                    context,
-                                                    '체중 입력',
-                                                    _sets[index].bodyWeight ?? 70.0,
-                                                    (value) {
-                                                      setState(() {
-                                                        double currentAssisted = _sets[index].assistedWeight ?? 0.0;
-                                                        _sets[index] = _sets[index].copyWith(
-                                                          bodyWeight: value,
-                                                          weight: value - currentAssisted,
-                                                        );
-                                                        _saveSets();
-                                                      });
-                                                    },
-                                                    isDouble: true,
-                                                  );
-                                                },
-                                                child: Center(
-                                                    child: Text((_sets[index].bodyWeight ?? 70.0)
-                                                        .toStringAsFixed(1), style: const TextStyle(color: Colors.white))),
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  double currentBody = _sets[index].bodyWeight ?? 70.0;
-                                                  currentBody = (currentBody + 1.0).clamp(0, 300);
-                                                  double currentAssisted = _sets[index].assistedWeight ?? 0.0;
-                                                  _sets[index] = _sets[index].copyWith(
-                                                    bodyWeight: currentBody,
-                                                    weight: currentBody - currentAssisted,
-                                                  );
-                                                  _saveSets();
-                                                });
-                                              },
-                                              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                                            ),
- 
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const SizedBox(
-                                          width: 90,
-                                          child: Text('보조(kg)',
-                                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                        ),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  double currentAssisted = _sets[index].assistedWeight ?? 0.0;
-                                                  currentAssisted = (currentAssisted - _weightStep).clamp(0, 300);
-                                                  double currentBody = _sets[index].bodyWeight ?? 70.0;
-                                                  _sets[index] = _sets[index].copyWith(
-                                                    assistedWeight: currentAssisted,
-                                                    weight: currentBody - currentAssisted,
-                                                  );
-                                                  _saveSets();
-                                                });
-                                              },
-                                              icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
-                                            ),
-                                            SizedBox(
-                                              width: 40,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  _showNumberInputDialog(
-                                                    context,
-                                                    '보조 무게 입력',
-                                                    _sets[index].assistedWeight ?? 0.0,
-                                                    (value) {
-                                                      setState(() {
-                                                        double currentBody = _sets[index].bodyWeight ?? 70.0;
-                                                        _sets[index] = _sets[index].copyWith(
-                                                          assistedWeight: value,
-                                                          weight: currentBody - value,
-                                                        );
-                                                        _saveSets();
-                                                      });
-                                                    },
-                                                    isDouble: true,
-                                                  );
-                                                },
-                                                child: Center(
-                                                    child: Text((_sets[index].assistedWeight ?? 0.0)
-                                                        .toStringAsFixed(1), style: const TextStyle(color: Colors.white))),
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  double currentAssisted = _sets[index].assistedWeight ?? 0.0;
-                                                  currentAssisted = (currentAssisted + _weightStep).clamp(0, 300);
-                                                  double currentBody = _sets[index].bodyWeight ?? 70.0;
-                                                  _sets[index] = _sets[index].copyWith(
-                                                    assistedWeight: currentAssisted,
-                                                    weight: currentBody - currentAssisted,
-                                                  );
-                                                  _saveSets();
-                                                });
-                                              },
-                                              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                                            ),
- 
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                
-                                // 일반 무게
-                                if ((_exercise?.needsWeight ?? true) && !(_exercise?.isAssisted ?? false))
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const SizedBox(
-                                      width: 90,
-                                      child: Text('무게(kg)',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _sets[index] = _sets[index].copyWith(
-                                                  weight: (_sets[index].weight -
-                                                          _weightStep) 
-                                                      .clamp(0, 1000));
-                                              _saveSets();
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.remove_circle_outline, color: Colors.white),
-                                        ),
-                                        SizedBox(
-                                          width: 40,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _showNumberInputDialog(
-                                                context,
-                                                '무게 입력',
-                                                _sets[index].weight,
-                                                (value) {
-                                                  setState(() {
-                                                    _sets[index] = _sets[index]
-                                                        .copyWith(
-                                                            weight: value.clamp(
-                                                                0, 1000));
-                                                    _saveSets();
-                                                  });
-                                                },
-                                                isDouble: true,
-                                              );
-                                            },
-                                            child:
-                                                Center(child: Text(_sets[index]
-                                                    .weight
-                                                    .toStringAsFixed(1), style: const TextStyle(color: Colors.white))),
-                                          ),
-                                        ),
-                                          IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                _sets[index] = _sets[index].copyWith(
-                                                    weight: (_sets[index].weight +
-                                                            _weightStep) 
-                                                        .clamp(0, 1000));
-                                                _saveSets();
-                                              });
-                                            },
-                                            icon: const Icon(
-                                                Icons.add_circle_outline, color: Colors.white),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          TextButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                final targetWeight = _sets[index].weight;
-                                                for (int i = 0; i < _sets.length; i++) {
-                                                  _sets[i] = _sets[i].copyWith(weight: targetWeight);
-                                                }
-                                                _saveSets();
-                                              });
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('모든 세트에 무게가 적용되었습니다.'), duration: Duration(seconds: 1)),
-                                              );
-                                            },
-                                            child: const Text('전체적용', style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                // 횟수
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const SizedBox(
-                                      width: 90,
-                                      child: Text('횟수',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              _sets[index] = _sets[index].copyWith(
-                                                  reps: (_sets[index].reps -
-                                                          _repsStep) 
-                                                      .clamp(1, 100));
-                                              _saveSets();
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.remove_circle_outline, color: Colors.white),
-                                        ),
-                                        SizedBox(
-                                          width: 40,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _showNumberInputDialog(
-                                                context,
-                                                '횟수 입력',
-                                                _sets[index].reps.toDouble(),
-                                                (value) {
-                                                  setState(() {
-                                                    _sets[index] = _sets[index]
-                                                        .copyWith(
-                                                            reps: value
-                                                                .toInt()
-                                                                .clamp(1, 100));
-                                                    _saveSets();
-                                                  });
-                                                },
-                                              );
-                                            },
-                                            child: Center(child: Text(
-                                                _sets[index].reps.toString(), style: const TextStyle(color: Colors.white))),
-                                          ),
-                                        ),
-                                          IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                _sets[index] = _sets[index].copyWith(
-                                                    reps: (_sets[index].reps +
-                                                            _repsStep) 
-                                                        .clamp(1, 100));
-                                                _saveSets();
-                                              });
-                                            },
-                                            icon: const Icon(
-                                                Icons.add_circle_outline, color: Colors.white),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          TextButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                final targetReps = _sets[index].reps;
-                                                for (int i = 0; i < _sets.length; i++) {
-                                                  _sets[i] = _sets[i].copyWith(reps: targetReps);
-                                                }
-                                                _saveSets();
-                                              });
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('모든 세트에 횟수가 적용되었습니다.'), duration: Duration(seconds: 1)),
-                                              );
-                                            },
-                                            child: const Text('전체적용', style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                // 휴식
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const SizedBox(
-                                      width: 90,
-                                      child: Text('휴식(초)',
-                                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                                    ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              final newRestTime = Duration(
-                                                  seconds: (_sets[index]
-                                                              .restTime
-                                                              .inSeconds -
-                                                          _restTimeStep) 
-                                                      .clamp(10, 300));
-                                              _sets[index] = _sets[index].copyWith(restTime: newRestTime);
-                                              _saveSets();
-                                              
-                                              // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
-                                              if (index == _currentSetIndex - 1) {
-                                                  context.read<TimerBloc>().add(
-                                                      TimerDurationUpdated(duration: newRestTime.inSeconds));
-                                              }
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.remove_circle_outline, color: Colors.white),
-                                        ),
-                                        SizedBox(
-                                          width: 40,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _showNumberInputDialog(
-                                                context,
-                                                '휴식시간 입력(초)',
-                                                _sets[index]
-                                                    .restTime
-                                                    .inSeconds
-                                                    .toDouble(),
-                                                (value) {
-                                                  setState(() {
-                                                    final newRestTime = Duration(seconds: value.toInt()
-                                                                                              .clamp(10, 300));
-                                                    _sets[index] = _sets[index]
-                                                        .copyWith(restTime: newRestTime);
-                                                    _saveSets();
-                                                    
-                                                    if (index == _currentSetIndex - 1) {
-                                                        context.read<TimerBloc>().add(
-                                                            TimerDurationUpdated(duration: newRestTime.inSeconds));
-                                                    }
-                                                  });
-                                                },
-                                              );
-                                            },
-                                            child: Center(child: Text(_sets[index]
-                                                    .restTime
-                                                    .inSeconds
-                                                    .toString(), style: const TextStyle(color: Colors.white))),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              final newRestTime = Duration(
-                                                  seconds: (_sets[index]
-                                                              .restTime
-                                                              .inSeconds +
-                                                          _restTimeStep) 
-                                                      .clamp(10, 300));
-                                              _sets[index] = _sets[index].copyWith(restTime: newRestTime);
-                                              _saveSets();
-
-                                              // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
-                                              if (index == _currentSetIndex - 1) {
-                                                  context.read<TimerBloc>().add(
-                                                      TimerDurationUpdated(duration: newRestTime.inSeconds));
-                                              }
-                                            });
-                                          },
-                                          icon: const Icon(
-                                              Icons.add_circle_outline, color: Colors.white),
-                                        ),
-                                          const SizedBox(width: 8),
-                                          TextButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                final targetRest = _sets[index].restTime;
-                                                for (int i = 0; i < _sets.length; i++) {
-                                                  _sets[i] = _sets[i].copyWith(restTime: targetRest);
-                                                }
-                                                _saveSets();
-                                                
-                                                // 현재 휴식 타이머가 돌고 있다면 (직전 세트가 완료됨) 업데이트
-                                                if (_currentSetIndex > 0) {
-                                                   context.read<TimerBloc>().add(
-                                                        TimerDurationUpdated(duration: targetRest.inSeconds));
-                                                }
-                                              });
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('모든 세트에 휴식 시간이 적용되었습니다.'), duration: Duration(seconds: 1)),
-                                              );
-                                            },
-                                            child: const Text('전체적용', style: TextStyle(color: AppColors.neonCyan, fontSize: 12)),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // 하단 버튼
-            SafeArea(
-              bottom: true,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: _addSet,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        backgroundColor: AppColors.neonLime,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text('세트 추가', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(height: 8),
-                    if (_sets.isNotEmpty)
-                      BlocBuilder<TimerBloc, TimerState>(
-                        builder: (context, state) {
-                          final isRunning = state is TimerRunInProgress;
-                          final duration = state.duration;
-                          final initialDuration = isRunning ? state.initialDuration : 0;
-
-
-                          return ElevatedButton(
-                            onPressed: () {
-                              if (isRunning) {
-                                context.read<TimerBloc>().add(const TimerReset());
-                              } else if (!allCompleted) {
-                                _completeSet();
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size.fromHeight(56),
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              padding: EdgeInsets.zero,
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // 1. 전체 배경: Dark Surface
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(28),
-                                  child: Container(
-                                    width: double.infinity,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.customSurface,
-                                      border: Border.all(color: AppColors.customSurface, width: 2),
-                                    ),
-                                  ),
-                                ),
-                                // 2. 차오르는 게이지: Neon Cyan (Smooth Animation)
-                                if (isRunning)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(28),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: TweenAnimationBuilder<double>(
-                                        tween: Tween<double>(
-                                          end: (initialDuration > 0)
-                                              ? ((initialDuration - duration) / initialDuration).clamp(0.0, 1.0)
-                                              : 0.0,
-                                        ),
-                                        duration: const Duration(seconds: 1),
-                                        curve: Curves.linear,
-                                        builder: (context, value, child) {
-                                          return FractionallySizedBox(
-                                            widthFactor: value,
-                                            child: Container(
-                                              height: 56,
-                                              color: AppColors.neonCyan.withOpacity(0.8),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                // 3. 텍스트
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 56,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      if (isRunning) ...[
-                                        Text(
-                                          _formatDuration(duration),
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black), // Black on Cyan
-                                        ),
-                                        const SizedBox(width: 12),
-                                        const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.skip_next, color: Colors.black),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              '휴식 완료',
-                                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                      if (!isRunning)
-                                        Text(
-                                          allCompleted
-                                              ? '모든 세트 완료'
-                                              : '${_currentSetIndex + 1}번 세트 완료',
-                                          style: const TextStyle(
-                                              fontSize: 18, 
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.neonCyan), // Cyan text on Dark
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
       );
     } catch (e, st) {
       debugPrint('Error in build: $e\n$st');
       return const SizedBox.shrink();
     }
+  }
+}
+
+class _TopNotificationWidget extends StatefulWidget {
+  final String message;
+  final VoidCallback onDismiss;
+
+  const _TopNotificationWidget({
+    Key? key,
+    required this.message,
+    required this.onDismiss,
+  }) : super(key: key);
+
+  @override
+  State<_TopNotificationWidget> createState() => _TopNotificationWidgetState();
+}
+
+class _TopNotificationWidgetState extends State<_TopNotificationWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0.0, -1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+
+    _controller.forward();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _controller.reverse().then((_) {
+          widget.onDismiss();
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      left: 20,
+      right: 20,
+      child: Material(
+        color: Colors.transparent,
+        child: SlideTransition(
+          position: _offsetAnimation,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.neonCyan.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.message,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1907,15 +2439,21 @@ class _StatBox extends StatelessWidget {
         border: isHighlighted
             ? Border.all(color: AppColors.neonLime, width: 2)
             : Border.all(color: Colors.transparent, width: 2),
-        boxShadow: isHighlighted 
-            ? [BoxShadow(color: AppColors.neonLime.withOpacity(0.5), blurRadius: 10)]
+        boxShadow: isHighlighted
+            ? [
+                BoxShadow(
+                    color: AppColors.neonLime.withOpacity(0.5), blurRadius: 10)
+              ]
             : [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.white)),
           const SizedBox(height: 4),
           Text(
             '${formatter(value)} $unit',
@@ -1936,7 +2474,8 @@ class _StatBox extends StatelessWidget {
           Row(
             children: [
               Text('최고 ${formatter(best)}',
-                  style: const TextStyle(fontSize: 11, color: AppColors.neonLime)),
+                  style:
+                      const TextStyle(fontSize: 11, color: AppColors.neonLime)),
               const SizedBox(width: 4),
               _buildComparisonArrow(value, best),
             ],

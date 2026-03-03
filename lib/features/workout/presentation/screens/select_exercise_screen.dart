@@ -16,16 +16,14 @@ class SelectExerciseScreen extends StatefulWidget {
 
 class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedTab = '최근 운동';
+  String _selectedTab = '분류';
   Map<String, List<Exercise>> _exercises = {};
-  List<Exercise> _recentExercises = [];
   bool _isLoading = true;
 
   late final ExerciseRepository _exerciseRepository;
   late final WorkoutRepository _workoutRepository;
 
   List<String> _bodyParts = [
-    '최근 운동',
     '분류',
     '전체',
     '나만의 운동',
@@ -116,8 +114,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       });
 
       // Extract recent exercises and recency map for sorting
-      final List<Exercise> recentList = [];
-      final Set<String> addedRecentNames = {};
       final Map<String, int> exerciseRecencyMap = {}; // Lower is more recent
       int recencyCounter = 0;
       
@@ -138,15 +134,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
           if (!exerciseRecencyMap.containsKey(workoutExercise.name)) {
             exerciseRecencyMap[workoutExercise.name] = recencyCounter++;
           }
-          if (!addedRecentNames.contains(workoutExercise.name)) {
-            final fullExercise = allAvailableExercises[workoutExercise.name];
-            if (fullExercise != null) {
-              if (recentList.length < 10) {
-                recentList.add(fullExercise);
-              }
-              addedRecentNames.add(workoutExercise.name);
-            }
-          }
         }
       }
 
@@ -165,7 +152,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
       setState(() {
         _exercises = exercisesMap;
-        _recentExercises = recentList;
         _bodyParts = [...fixedParts, ...sortableParts];
         _isLoading = false;
       });
@@ -395,10 +381,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildSelectedTabContent() {
     if (_selectedTab == '분류') {
       return _buildCategoryButtons();
-    }
-
-    if (_selectedTab == '최근 운동') {
-      return _buildExerciseList(_recentExercises);
     }
 
     if (_selectedTab == '전체') {

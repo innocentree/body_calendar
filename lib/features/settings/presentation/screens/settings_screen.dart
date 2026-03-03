@@ -10,10 +10,42 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _useLbs = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _useLbs = prefs.getBool('use_lbs') ?? false;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _toggleWeightUnit(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('use_lbs', value);
+    setState(() {
+      _useLbs = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +72,13 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
+          if (!_isLoading)
+            SwitchListTile(
+              title: const Text('무게 단위 (Lbs)'),
+              subtitle: Text(_useLbs ? '현재 단위: 파운드 (lbs)' : '현재 단위: 킬로그램 (kg)'),
+              value: _useLbs,
+              onChanged: _toggleWeightUnit,
+            ),
           const Divider(height: 32),
           _buildSectionHeader(context, '데이터 관리'),
           ListTile(
