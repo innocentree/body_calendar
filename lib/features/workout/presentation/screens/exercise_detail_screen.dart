@@ -1,4 +1,4 @@
-import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+﻿import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -28,6 +28,7 @@ class ExerciseSet {
   final bool isCompleted;
   final double? bodyWeight;
   final double? assistedWeight;
+  final bool isLbs;
 
   ExerciseSet({
     required this.weight,
@@ -38,6 +39,7 @@ class ExerciseSet {
     this.isCompleted = false,
     this.bodyWeight,
     this.assistedWeight,
+    this.isLbs = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -49,6 +51,7 @@ class ExerciseSet {
         'isCompleted': isCompleted,
         'bodyWeight': bodyWeight,
         'assistedWeight': assistedWeight,
+        'isLbs': isLbs,
       };
 
   factory ExerciseSet.fromJson(Map<String, dynamic> json) => ExerciseSet(
@@ -71,6 +74,7 @@ class ExerciseSet {
         assistedWeight: (json['assistedWeight'] is int)
             ? (json['assistedWeight'] as int).toDouble()
             : (json['assistedWeight'] as double?),
+        isLbs: json['isLbs'] ?? false,
       );
 
   ExerciseSet copyWith({
@@ -82,6 +86,7 @@ class ExerciseSet {
     bool? isCompleted,
     double? bodyWeight,
     double? assistedWeight,
+    bool? isLbs,
   }) {
     return ExerciseSet(
       weight: weight ?? this.weight,
@@ -92,6 +97,7 @@ class ExerciseSet {
       isCompleted: isCompleted ?? this.isCompleted,
       bodyWeight: bodyWeight ?? this.bodyWeight,
       assistedWeight: assistedWeight ?? this.assistedWeight,
+      isLbs: isLbs ?? this.isLbs,
     );
   }
 }
@@ -137,7 +143,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   DateTime? _firstRecordDate;
   List<String> _recordedDates = [];
 
-  // 드롭다운 상태 관리
   List<ExpansionTileController> _tileControllers = [];
 
   // PR Highlight States
@@ -193,7 +198,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
 
   Future<void> _initializePrefs() async {
     _prefs = await SharedPreferences.getInstance();
-    _isLbs = _prefs.getBool('use_lbs') ?? false;
     await _checkAndSetFirstRecordDate();
     await _loadPreviousExerciseSets();
     _loadSets();
@@ -274,17 +278,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     Overlay.of(context).insert(overlayEntry);
   }
 
-  double _toDisplayWeight(double kg) => _isLbs ? kg * 2.20462 : kg;
-  double _toStorageWeight(double displayed) =>
-      _isLbs ? displayed / 2.20462 : displayed;
-  String _unitStr() => _isLbs ? 'lb' : 'kg';
-
-  void _toggleUnit() {
-    setState(() {
-      _isLbs = !_isLbs;
-      _prefs.setBool('use_lbs', _isLbs);
-    });
-  }
+  double _toDisplayWeight(double kg, {bool isLbs = false}) =>
+      isLbs ? kg * 2.20462 : kg;
+  double _toStorageWeight(double displayed, {bool isLbs = false}) =>
+      isLbs ? displayed / 2.20462 : displayed;
+  String _unitStr({bool isLbs = false}) => isLbs ? 'lb' : 'kg';
 
   Future<void> _checkAndSetFirstRecordDate() async {
     final key = 'first_record_date';
@@ -1339,7 +1337,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           ),
                           title: Text(
                             _exercise?.needsWeight ?? true
-                                ? '${_toDisplayWeight(set.weight).toStringAsFixed(1)}${_unitStr()} × ${set.reps}회'
+                                ? '${_toDisplayWeight(set.weight, isLbs: set.isLbs).toStringAsFixed(1)}${_unitStr(isLbs: set.isLbs)} × ${set.reps}회'
                                 : '${set.reps}회',
                             style: set.isCompleted
                                 ? const TextStyle(
@@ -1614,24 +1612,38 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const SizedBox(
+                                        SizedBox(
                                           width: 90,
-                                          child: Text('무게(kg)',
-                                              style: TextStyle(
+                                          child: Text('무게(${_unitStr(isLbs: set.isLbs)})',
+                                              style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white)),
                                         ),
                                         Row(
                                           children: [
-                                            IconButton(
+                                            TextButton(
                                               onPressed: () {
                                                 setState(() {
                                                   _sets[index] = _sets[index]
-                                                      .copyWith(
-                                                          weight: (_sets[index]
-                                                                      .weight -
-                                                                  _weightStep)
-                                                              .clamp(0, 1000));
+                                                      .copyWith(isLbs: !set.isLbs);
+                                                  _saveSets();
+                                                });
+                                              },
+                                              style: TextButton.styleFrom(
+                                                padding: EdgeInsets.zero,
+                                                minimumSize: const Size(32, 32),
+                                              ),
+                                              child: Text(set.isLbs ? 'lb' : 'kg', 
+                                                style: const TextStyle(color: AppColors.neonLime, fontWeight: FontWeight.bold)
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs);
+                                                  double newDisplay = (currentDisplay - _weightStep).clamp(0.0, 1000.0);
+                                                  _sets[index] = _sets[index].copyWith(
+                                                      weight: _toStorageWeight(newDisplay, isLbs: set.isLbs));
                                                   _saveSets();
                                                 });
                                               },
@@ -1646,16 +1658,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                   _showNumberInputDialog(
                                                     context,
                                                     '무게 입력',
-                                                    _sets[index].weight,
+                                                    _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs),
                                                     (value) {
                                                       setState(() {
                                                         _sets[index] = _sets[
                                                                 index]
                                                             .copyWith(
-                                                                weight:
-                                                                    value.clamp(
-                                                                        0,
-                                                                        1000));
+                                                                weight: _toStorageWeight(
+                                                                    value.clamp(0.0, 1000.0), isLbs: set.isLbs));
                                                         _saveSets();
                                                       });
                                                     },
@@ -1664,8 +1674,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                 },
                                                 child: Center(
                                                     child: Text(
-                                                        _sets[index]
-                                                            .weight
+                                                        _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs)
                                                             .toStringAsFixed(1),
                                                         style: const TextStyle(
                                                             color:
@@ -1675,12 +1684,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                             IconButton(
                                               onPressed: () {
                                                 setState(() {
-                                                  _sets[index] = _sets[index]
-                                                      .copyWith(
-                                                          weight: (_sets[index]
-                                                                      .weight +
-                                                                  _weightStep)
-                                                              .clamp(0, 1000));
+                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs);
+                                                  double newDisplay = (currentDisplay + _weightStep).clamp(0.0, 1000.0);
+                                                  _sets[index] = _sets[index].copyWith(
+                                                      weight: _toStorageWeight(newDisplay, isLbs: set.isLbs));
                                                   _saveSets();
                                                 });
                                               },

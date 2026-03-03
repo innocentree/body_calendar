@@ -1,0 +1,4 @@
+- `ExerciseSet` 모델에 개별 세트 단위(kg/lb)를 추적하기 위한 `isLbs` 필드 추가
+- `ExerciseDetailScreen`에서 전역 토글 대신 개별 세트 UI에 단위 변환(lb/kg) 버튼 추가
+- `isLbs`에 맞게 화면 표시 값과 실제 저장 값(kg)을 변환 처리하도록 로직 적용
+- `ExerciseSet`의 `toJson`, `fromJson`, `copyWith` 메서드 등 직렬화 로직 업데이트
