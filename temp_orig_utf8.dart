@@ -1,4 +1,4 @@
-import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+﻿import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
 import 'package:body_calendar/features/workout/presentation/screens/add_custom_exercise_screen.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +16,7 @@ class SelectExerciseScreen extends StatefulWidget {
 
 class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedTab = '분류';
+  String _selectedTab = '遺꾨쪟';
   Map<String, List<Exercise>> _exercises = {};
   bool _isLoading = true;
 
@@ -24,21 +24,21 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   late final WorkoutRepository _workoutRepository;
 
   List<String> _bodyParts = [
-    '분류',
-    '전체',
-    '나만의 운동',
-    '어깨',
-    '승모근',
-    '가슴',
-    '등',
-    '삼두',
-    '이두',
-    '전완',
-    '복부',
-    '허리',
-    '엉덩이',
-    '하체',
-    '종아리'
+    '遺꾨쪟',
+    '?꾩껜',
+    '?섎쭔???대룞',
+    '?닿묠',
+    '?밸え洹?,
+    '媛??,
+    '??,
+    '?쇰몢',
+    '?대몢',
+    '?꾩셿',
+    '蹂듬?',
+    '?덈━',
+    '?됰뜦??,
+    '?섏껜',
+    '醫낆븘由?
   ];
 
   @override
@@ -75,7 +75,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       }
 
       // Add custom exercises
-      exercisesMap['나만의 운동'] = customExercises;
+      exercisesMap['?섎쭔???대룞'] = customExercises;
       for (var exercise in customExercises) {
         if (exercise.bodyPart != null && exercisesMap.containsKey(exercise.bodyPart)) {
           if (exercisesMap[exercise.bodyPart!]!.any((e) => e.id == exercise.id) == false) {
@@ -104,7 +104,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       }
 
       // Sort body parts
-      final fixedParts = ['분류', '최근 운동', '전체', '나만의 운동'];
+      final fixedParts = ['遺꾨쪟', '理쒓렐 ?대룞', '?꾩껜', '?섎쭔???대룞'];
       final sortableParts = _bodyParts.where((part) => !fixedParts.contains(part)).toList();
       
       sortableParts.sort((a, b) {
@@ -113,8 +113,9 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         return freqB.compareTo(freqA); // Descending order
       });
 
-      // Count exercise frequency for sorting
-      final Map<String, int> exerciseFrequencyMap = {};
+      // Extract recent exercises and recency map for sorting
+      final Map<String, int> exerciseRecencyMap = {}; // Lower is more recent
+      int recencyCounter = 0;
       
       // Collect all available exercises from categories and custom ones for lookup
       final Map<String, Exercise> allAvailableExercises = {};
@@ -127,34 +128,23 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         }
       }
 
-      // Get all exercises from workouts, count frequency, and populate '최근 운동'
-      List<Exercise> recentExercises = [];
+      // Get all exercises from workouts, newest first
       for (var workout in workouts.reversed) {
         for (var workoutExercise in workout.exercises.reversed) {
-          // Count frequency
-          exerciseFrequencyMap[workoutExercise.name] = (exerciseFrequencyMap[workoutExercise.name] ?? 0) + 1;
-          
-          // Add to recent exercises for the '최근 운동' tab
-          if (allAvailableExercises.containsKey(workoutExercise.name)) {
-            final ex = allAvailableExercises[workoutExercise.name]!;
-            if (!recentExercises.any((e) => e.name == ex.name)) {
-              recentExercises.add(ex);
-            }
+          if (!exerciseRecencyMap.containsKey(workoutExercise.name)) {
+            exerciseRecencyMap[workoutExercise.name] = recencyCounter++;
           }
         }
       }
-      exercisesMap['최근 운동'] = recentExercises;
 
-      // Sort all exercise lists by frequency (descending)
+      // Sort all exercise lists by recency
       for (var entry in exercisesMap.entries) {
-        if (entry.key == '최근 운동') continue; // Keep recent exercises in chronological order
-
         entry.value.sort((a, b) {
-          final freqA = exerciseFrequencyMap[a.name] ?? 0;
-          final freqB = exerciseFrequencyMap[b.name] ?? 0;
+          final recencyA = exerciseRecencyMap[a.name] ?? 999999;
+          final recencyB = exerciseRecencyMap[b.name] ?? 999999;
           
-          if (freqA != freqB) {
-            return freqB.compareTo(freqA);
+          if (recencyA != recencyB) {
+            return recencyA.compareTo(recencyB);
           }
           return a.name.compareTo(b.name);
         });
@@ -173,7 +163,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('데이터를 불러오는데 실패했습니다.'),
+            content: Text('?곗씠?곕? 遺덈윭?ㅻ뒗???ㅽ뙣?덉뒿?덈떎.'),
           ),
         );
       }
@@ -240,11 +230,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                       labelColor: Colors.black,
                       unselectedLabelColor: Colors.grey,
                       tabs: [
-                        Tab(text: '전체'),
-                        Tab(text: '덤벨'),
-                        Tab(text: '케이블'),
-                        Tab(text: '머신'),
-                        Tab(text: '밴드'),
+                        Tab(text: '?꾩껜'),
+                        Tab(text: '?ㅻ꺼'),
+                        Tab(text: '耳?대툝'),
+                        Tab(text: '癒몄떊'),
+                        Tab(text: '諛대뱶'),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -253,19 +243,19 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                         children: [
                           _buildVariationList(exercise.variations, scrollController),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '덤벨').toList(),
+                            exercise.variations.where((v) => v.equipment == '?ㅻ꺼').toList(),
                             scrollController,
                           ),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '케이블').toList(),
+                            exercise.variations.where((v) => v.equipment == '耳?대툝').toList(),
                             scrollController,
                           ),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '머신').toList(),
+                            exercise.variations.where((v) => v.equipment == '癒몄떊').toList(),
                             scrollController,
                           ),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '밴드').toList(),
+                            exercise.variations.where((v) => v.equipment == '諛대뱶').toList(),
                             scrollController,
                           ),
                         ],
@@ -284,7 +274,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildVariationList(List<Exercise> variations, ScrollController scrollController) {
     if (variations.isEmpty) {
       return const Center(
-        child: Text('운동이 없습니다.'),
+        child: Text('?대룞???놁뒿?덈떎.'),
       );
     }
 
@@ -299,14 +289,14 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('장비: ${variation.equipment}'),
+                Text('?λ퉬: ${variation.equipment}'),
                 Text(variation.description),
               ],
             ),
             trailing: Text(
               variation.needsWeight
-                  ? '${variation.sets}세트 ${variation.weight}kg'
-                  : '${variation.sets}세트',
+                  ? '${variation.sets}?명듃 ${variation.weight}kg'
+                  : '${variation.sets}?명듃',
             ),
             onTap: () {
               Navigator.pop(context);
@@ -331,7 +321,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: '운동 검색',
+              hintText: '?대룞 寃??,
               hintStyle: TextStyle(color: Colors.grey[600]),
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               border: InputBorder.none,
@@ -348,7 +338,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             children: [
               Row(
                 children: [
-                  _buildTabButton('분류'),
+                  _buildTabButton('遺꾨쪟'),
                   Container(
                     height: 24,
                     width: 1,
@@ -360,7 +350,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: _bodyParts
-                            .where((part) => part != '분류')
+                            .where((part) => part != '遺꾨쪟')
                             .map((part) => _buildTabButton(part))
                             .toList(),
                       ),
@@ -389,11 +379,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   }
 
   Widget _buildSelectedTabContent() {
-    if (_selectedTab == '분류') {
+    if (_selectedTab == '遺꾨쪟') {
       return _buildCategoryButtons();
     }
 
-    if (_selectedTab == '전체') {
+    if (_selectedTab == '?꾩껜') {
       final allExercises = _exercises.values.expand((exercises) => exercises).toSet().toList();
       return _buildExerciseList(allExercises);
     }
@@ -416,7 +406,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildExerciseList(List<Exercise> exercises) {
     if (exercises.isEmpty) {
       return const Center(
-        child: Text('운동이 없습니다.'),
+        child: Text('?대룞???놁뒿?덈떎.'),
       );
     }
 
@@ -431,8 +421,8 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             subtitle: Text(exercise.description),
             trailing: Text(
               exercise.needsWeight
-                  ? '${exercise.sets}세트 ${exercise.weight}kg'
-                  : '${exercise.sets}세트',
+                  ? '${exercise.sets}?명듃 ${exercise.weight}kg'
+                  : '${exercise.sets}?명듃',
             ),
             onTap: () => _showVariations(exercise),
           ),
@@ -443,8 +433,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
   Widget _buildTabButton(String text) {
     final isSelected = _selectedTab == text;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selectedColor = isDark ? Colors.white : Colors.black;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -456,7 +444,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? selectedColor : Colors.transparent,
+              color: isSelected ? Colors.black : Colors.transparent,
               width: 2,
             ),
           ),
@@ -464,7 +452,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         child: Text(
           text,
           style: TextStyle(
-            color: isSelected ? selectedColor : Colors.grey,
+            color: isSelected ? Colors.black : Colors.grey,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -473,7 +461,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   }
 
   Widget _buildCategoryButtons() {
-    final categories = _bodyParts.where((part) => part != '분류' && part != '전체').toList();
+    final categories = _bodyParts.where((part) => part != '遺꾨쪟' && part != '?꾩껜').toList();
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

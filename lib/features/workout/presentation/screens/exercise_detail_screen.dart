@@ -1,4 +1,4 @@
-﻿import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -609,27 +609,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           constraints: BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
-                        const SizedBox(width: 16),
-                        SizedBox(
-                          width: 32,
-                          child: GestureDetector(
-                            onTap: () {
-                              _showNumberInputDialog(
-                                context,
-                                '무게 단위 입력',
-                                _weightStep,
-                                (value) {
-                                  setStateDialog(() {
-                                    _weightStep = value.clamp(0.5, 10.0);
-                                  });
-                                },
-                                isDouble: true,
-                              );
-                            },
-                            child: Center(
-                                child: Text(_weightStep.toStringAsFixed(1))),
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -835,25 +814,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         constraints: BoxConstraints(),
                         padding: EdgeInsets.zero,
                       ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: 32,
-                        child: GestureDetector(
-                          onTap: () {
-                            _showNumberInputDialog(
-                              context,
-                              '횟수 단위 입력',
-                              _repsStep.toDouble(),
-                              (value) {
-                                setStateDialog(() {
-                                  _repsStep = value.toInt().clamp(1, 10);
-                                });
-                              },
-                            );
-                          },
-                          child: Center(child: Text('$_repsStep')),
-                        ),
-                      ),
                     ],
                   ),
                 ],
@@ -907,25 +867,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         icon: const Icon(Icons.add_circle_outline),
                         constraints: BoxConstraints(),
                         padding: EdgeInsets.zero,
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: 32,
-                        child: GestureDetector(
-                          onTap: () {
-                            _showNumberInputDialog(
-                              context,
-                              '휴식시간 단위 입력(초)',
-                              _restTimeStep.toDouble(),
-                              (value) {
-                                setStateDialog(() {
-                                  _restTimeStep = value.toInt().clamp(5, 60);
-                                });
-                              },
-                            );
-                          },
-                          child: Center(child: Text('$_restTimeStep')),
-                        ),
                       ),
                     ],
                   ),
@@ -1030,6 +971,34 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     } catch (e) {
       debugPrint('Error loading previous exercise sets: $e');
     }
+  }
+
+  Widget _buildUnitAdjuster(BuildContext context, String title, String value, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.customSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.neonLime.withOpacity(0.5)),
+            ),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -2148,6 +2117,40 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            if (_exercise?.needsWeight == true)
+                              _buildUnitAdjuster(context, '무게 단위', '${_weightStep.toStringAsFixed(1)}${_unitStr(isLbs: _isLbs)}', () {
+                                _showNumberInputDialog(
+                                  context,
+                                  '무게 단위 입력',
+                                  _weightStep,
+                                  (value) => setState(() => _weightStep = value.clamp(0.5, 10.0)),
+                                  isDouble: true,
+                                );
+                              }),
+                            _buildUnitAdjuster(context, '횟수 단위', '$_repsStep회', () {
+                              _showNumberInputDialog(
+                                context,
+                                '횟수 단위 입력',
+                                _repsStep.toDouble(),
+                                (value) => setState(() => _repsStep = value.toInt().clamp(1, 100)),
+                              );
+                            }),
+                            _buildUnitAdjuster(context, '휴식 단위', '$_restTimeStep초', () {
+                              _showNumberInputDialog(
+                                context,
+                                '휴식시간 단위 입력(초)',
+                                _restTimeStep.toDouble(),
+                                (value) => setState(() => _restTimeStep = value.toInt().clamp(5, 300)),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
                       ElevatedButton(
                         onPressed: _addSet,
                         style: ElevatedButton.styleFrom(
