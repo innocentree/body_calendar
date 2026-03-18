@@ -28,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _hasBodyCompDataForDate = false;
   bool _hasMeasurementDataForDate = false;
   bool _isLoading = true;
+  bool _enableWorkoutRecommendation = true;
 
   final List<String> _bodyCompositionItems = ['체중', '골격근량', '체지방'];
 
@@ -98,7 +99,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _measurementRecords = loadedMeasurementRecords;
       _hasBodyCompDataForDate = compDataForDate;
       _hasMeasurementDataForDate = measureDataForDate;
+      _enableWorkoutRecommendation = prefs.getBool('enable_workout_recommendation') ?? true;
       _isLoading = false;
+    });
+  }
+
+  Future<void> _toggleRecommendation(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('enable_workout_recommendation', value);
+    setState(() {
+      _enableWorkoutRecommendation = value;
     });
   }
 
@@ -129,6 +139,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildCategoryCard('체중/체성분', _bodyCompositionRecords, 0),
                       if (_hasMeasurementDataForDate)
                         _buildCategoryCard('치수', _measurementRecords, 1),
+                      const SizedBox(height: 16),
+                      _buildSettingsSection(),
                     ],
                   ),
                 ),
@@ -264,6 +276,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildSettingsSection() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('설정', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('지난 주 운동 추천'),
+              subtitle: const Text('새로운 날에 이전 주 동일 세션의 운동을 추천합니다.'),
+              value: _enableWorkoutRecommendation,
+              onChanged: _toggleRecommendation,
+              activeColor: Theme.of(context).primaryColor,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

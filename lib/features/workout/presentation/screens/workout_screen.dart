@@ -198,6 +198,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
   }
 
   Future<void> _checkAndRecommendPreviousWorkout() async {
+    // 설정에서 추천 기능이 꺼져 있으면 중단
+    final bool enableRecommendation = _prefs.getBool('enable_workout_recommendation') ?? true;
+    if (!enableRecommendation) return;
+
     // 현재 세션에 이미 운동이 있으면 추천하지 않음
     if (_workouts.isNotEmpty) return;
 
