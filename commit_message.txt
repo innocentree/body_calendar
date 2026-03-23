@@ -1,5 +1,8 @@
-feat: 운동 추천 On/Off 옵션 추가
-
-- ProfileScreen 하단에 '지난 주 운동 추천' 설정을 추가했습니다.
-- WorkoutScreen에서 해당 설정을 확인하여 추천 팝업 표시 여부를 결정하도록 수정했습니다.
-- 설정값은 SharedPreferences를 통해 영구 저장됩니다.
+[운동 기능 및 UI 고도화]
+1. 신규 운동 추가: '프리처 컬: 이지바' 종목을 assets/data/exercises.json 에 반영
+2. 단위 관리 리팩토링: 무게 단위를 세트별 설정에서 화면 전체(글로벌) 설정으로 변경하여 편의성 개선
+3. 다이얼 입력 UI 완성: 
+    - CustomPaint 기반의 고성능 HorizontalDialPicker 구현 (Windows 안정성 확보)
+    - 눈금 간격 20px 확대 및 네온 시안 테마 적용으로 심미성 고도화
+4. 단위 선택 UI 개선: 숫자 입력 다이얼로그의 스위치 방식을 SegmentedButton(KG/LB)으로 대체하여 시인성 확보
+5. 버그 수정: Windows 환경에서 발생하던 MouseTracker 어설션 에러 및 레이아웃 무한 루프 완벽 해결

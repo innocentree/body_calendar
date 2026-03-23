@@ -18,6 +18,7 @@ import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
+import '../../../../core/widgets/horizontal_dial_picker.dart';
 
 class ExerciseSet {
   final double weight;
@@ -139,6 +140,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   int _restTimeStep = 10;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isLbs = false;
+
+  void _updateAllSetsUnit(bool isLbs) {
+    setState(() {
+      _isLbs = isLbs;
+      _sets = _sets.map((set) => set.copyWith(isLbs: isLbs)).toList();
+      _saveSets();
+    });
+  }
 
   DateTime? _firstRecordDate;
   List<String> _recordedDates = [];
@@ -485,394 +494,237 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     double initialValue,
     Function(double) onChanged, {
     bool isDouble = false,
+    bool showUnitToggle = false,
   }) {
-    final controller = TextEditingController(text: initialValue.toString());
-    // 텍스트 전체 선택을 위한 포커스 노드 추가
-    final focusNode = FocusNode();
+    double tempValue = initialValue;
+    bool tempIsLbs = _isLbs;
 
     showDialog(
       context: context,
       builder: (context) {
-        // 다이얼로그가 표시된 후 텍스트 전체 선택
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          controller.selection = TextSelection(
-            baseOffset: 0,
-            extentOffset: controller.text.length,
-          );
-          focusNode.requestFocus();
-        });
-
-        return AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: controller,
-            focusNode: focusNode,
-            keyboardType: isDouble
-                ? const TextInputType.numberWithOptions(decimal: true)
-                : TextInputType.number,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () {
-                final value = isDouble
-                    ? double.tryParse(controller.text) ?? initialValue
-                    : double.tryParse(controller.text)?.toInt().toDouble() ??
-                        initialValue;
-                onChanged(value);
-                Navigator.pop(context);
-              },
-              child: const Text('확인'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(title),
+                  if (showUnitToggle)
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment(value: false, label: Text('kg', style: TextStyle(fontSize: 12))),
+                            ButtonSegment(value: true, label: Text('lb', style: TextStyle(fontSize: 12))),
+                          ],
+                          selected: {tempIsLbs},
+                          onSelectionChanged: (value) {
+                            setStateDialog(() {
+                              bool nextIsLbs = value.first;
+                              if (nextIsLbs != tempIsLbs) {
+                                tempIsLbs = nextIsLbs;
+                                if (tempIsLbs) {
+                                  tempValue *= 2.20462;
+                                } else {
+                                  tempValue /= 2.20462;
+                                }
+                              }
+                            });
+                          },
+                          style: SegmentedButton.styleFrom(
+                            selectedBackgroundColor: AppColors.neonCyan,
+                            selectedForegroundColor: Colors.black,
+                            backgroundColor: AppColors.customSurface,
+                            foregroundColor: Colors.white70,
+                            visualDensity: VisualDensity.compact,
+                            side: BorderSide(color: AppColors.neonCyan.withOpacity(0.5)),
+                          ),
+                        ),
+                ],
+              ),
+              content: SizedBox(
+                width: 350,
+                child: HorizontalDialPicker(
+                  minValue: 0,
+                  maxValue: isDouble ? 1000 : 500,
+                  initialValue: tempValue,
+                  step: isDouble ? 0.5 : 1.0,
+                  unit: title.contains('휴식') ? '초' : (showUnitToggle ? (tempIsLbs ? 'lb' : 'kg') : (title.contains('횟수') ? '회' : '')),
+                  onChanged: (value) {
+                    tempValue = value;
+                  },
+                  width: 350,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('취소'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (showUnitToggle && tempIsLbs != _isLbs) {
+                      _updateAllSetsUnit(tempIsLbs);
+                    }
+                    onChanged(tempValue);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('확인'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
   void _showEditSetDialog(int index) {
-    var set = _sets[index]; // Make locally mutable for dialog state
+    var set = _sets[index];
     double tempWeight = set.weight;
-    // 초기값 설정
     if (_exercise?.isAssisted == true && set.bodyWeight == null) {
       set = set.copyWith(bodyWeight: 70.0, assistedWeight: 0.0);
       tempWeight = 70.0;
     }
     int tempReps = set.reps;
     int tempRest = set.restTime.inSeconds;
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) => AlertDialog(
-          title: const Text('세트 편집'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if ((_exercise?.needsWeight ?? true) &&
-                  !(_exercise?.isAssisted ?? false))
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(
-                      width: 90,
-                      child: Text('무게(kg)',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            setStateDialog(() {
-                              tempWeight =
-                                  (tempWeight - _weightStep).clamp(0, 1000);
-                            });
-                          },
-                          icon: const Icon(Icons.remove_circle_outline),
-                          constraints: BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                        SizedBox(
-                          width: 40,
-                          child: GestureDetector(
-                            onTap: () {
-                              _showNumberInputDialog(
-                                context,
-                                '무게 입력',
-                                tempWeight,
-                                (value) {
-                                  setStateDialog(() {
-                                    tempWeight = value;
-                                  });
-                                },
-                                isDouble: true,
-                              );
-                            },
-                            child: Center(
-                                child: Text(tempWeight.toStringAsFixed(1))),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            setStateDialog(() {
-                              tempWeight =
-                                  (tempWeight + _weightStep).clamp(0, 1000);
-                            });
-                          },
-                          icon: const Icon(Icons.add_circle_outline),
-                          constraints: BoxConstraints(),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              if (_exercise?.isAssisted ?? false)
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(
-                          width: 90,
-                          child: Text('체중(kg)',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                setStateDialog(() {
-                                  // Default to 70 if not set
-                                  double currentBodyWeight =
-                                      set.bodyWeight ?? 70.0;
-                                  currentBodyWeight =
-                                      (currentBodyWeight - 1.0).clamp(0, 300);
-                                  set = set.copyWith(
-                                      bodyWeight: currentBodyWeight);
-                                  tempWeight = (set.bodyWeight ?? 70.0) -
-                                      (set.assistedWeight ?? 0.0);
-                                });
-                              },
-                              icon: const Icon(Icons.remove_circle_outline),
-                              constraints: BoxConstraints(),
-                              padding: EdgeInsets.zero,
-                            ),
-                            SizedBox(
-                              width: 40,
-                              child: GestureDetector(
-                                onTap: () {
-                                  _showNumberInputDialog(
-                                    context,
-                                    '체중 입력',
-                                    set.bodyWeight ?? 70.0,
-                                    (value) {
-                                      setStateDialog(() {
-                                        set = set.copyWith(bodyWeight: value);
-                                        tempWeight = (set.bodyWeight ?? 70.0) -
-                                            (set.assistedWeight ?? 0.0);
-                                      });
-                                    },
-                                    isDouble: true,
-                                  );
-                                },
-                                child: Center(
-                                    child: Text((set.bodyWeight ?? 70.0)
-                                        .toStringAsFixed(1))),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                setStateDialog(() {
-                                  double currentBodyWeight =
-                                      set.bodyWeight ?? 70.0;
-                                  currentBodyWeight =
-                                      (currentBodyWeight + 1.0).clamp(0, 300);
-                                  set = set.copyWith(
-                                      bodyWeight: currentBodyWeight);
-                                  tempWeight = (set.bodyWeight ?? 70.0) -
-                                      (set.assistedWeight ?? 0.0);
-                                });
-                              },
-                              icon: const Icon(Icons.add_circle_outline),
-                              constraints: BoxConstraints(),
-                              padding: EdgeInsets.zero,
-                            ),
-                            const SizedBox(width: 48), // Spacing to align
-                          ],
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox(
-                          width: 90,
-                          child: Text('보조(kg)',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                setStateDialog(() {
-                                  double currentAssisted =
-                                      set.assistedWeight ?? 0.0;
-                                  currentAssisted =
-                                      (currentAssisted - _weightStep)
-                                          .clamp(0, 300);
-                                  set = set.copyWith(
-                                      assistedWeight: currentAssisted);
-                                  tempWeight = (set.bodyWeight ?? 70.0) -
-                                      (set.assistedWeight ?? 0.0);
-                                });
-                              },
-                              icon: const Icon(Icons.remove_circle_outline),
-                              constraints: BoxConstraints(),
-                              padding: EdgeInsets.zero,
-                            ),
-                            SizedBox(
-                              width: 40,
-                              child: GestureDetector(
-                                onTap: () {
-                                  _showNumberInputDialog(
-                                    context,
-                                    '보조 무게 입력',
-                                    set.assistedWeight ?? 0.0,
-                                    (value) {
-                                      setStateDialog(() {
-                                        set =
-                                            set.copyWith(assistedWeight: value);
-                                        tempWeight = (set.bodyWeight ?? 70.0) -
-                                            (set.assistedWeight ?? 0.0);
-                                      });
-                                    },
-                                    isDouble: true,
-                                  );
-                                },
-                                child: Center(
-                                    child: Text((set.assistedWeight ?? 0.0)
-                                        .toStringAsFixed(1))),
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                setStateDialog(() {
-                                  double currentAssisted =
-                                      set.assistedWeight ?? 0.0;
-                                  currentAssisted =
-                                      (currentAssisted + _weightStep)
-                                          .clamp(0, 300);
-                                  set = set.copyWith(
-                                      assistedWeight: currentAssisted);
-                                  tempWeight = (set.bodyWeight ?? 70.0) -
-                                      (set.assistedWeight ?? 0.0);
-                                });
-                              },
-                              icon: const Icon(Icons.add_circle_outline),
-                              constraints: BoxConstraints(),
-                              padding: EdgeInsets.zero,
-                            ),
-                            const SizedBox(width: 48), // Spacing to align
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(
-                    width: 90,
-                    child: Text('횟수',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setStateDialog(() {
-                            tempReps = (tempReps - _repsStep).clamp(1, 100);
-                          });
-                        },
-                        icon: const Icon(Icons.remove_circle_outline),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                      SizedBox(
-                        width: 40,
-                        child: GestureDetector(
-                          onTap: () {
-                            _showNumberInputDialog(
-                              context,
-                              '횟수 입력',
-                              tempReps.toDouble(),
-                              (value) {
-                                setStateDialog(() {
-                                  tempReps = value.toInt();
-                                });
-                              },
-                            );
-                          },
-                          child: Center(child: Text(tempReps.toString())),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          setStateDialog(() {
-                            tempReps = (tempReps + _repsStep).clamp(1, 100);
-                          });
-                        },
-                        icon: const Icon(Icons.add_circle_outline),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
+              const Text('세트 편집'),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('kg', style: TextStyle(fontSize: 12))),
+                  ButtonSegment(value: true, label: Text('lb', style: TextStyle(fontSize: 12))),
                 ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const SizedBox(
-                    width: 90,
-                    child: Text('휴식(초)',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setStateDialog(() {
-                            tempRest =
-                                (tempRest - _restTimeStep).clamp(10, 300);
-                          });
-                        },
-                        icon: const Icon(Icons.remove_circle_outline),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                      SizedBox(
-                        width: 40,
-                        child: GestureDetector(
-                          onTap: () {
-                            _showNumberInputDialog(
-                              context,
-                              '휴식시간 입력(초)',
-                              tempRest.toDouble(),
-                              (value) {
-                                setStateDialog(() {
-                                  tempRest = value.toInt();
-                                });
-                              },
-                            );
-                          },
-                          child: Center(child: Text(tempRest.toString())),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          setStateDialog(() {
-                            tempRest =
-                                (tempRest + _restTimeStep).clamp(10, 300);
-                          });
-                        },
-                        icon: const Icon(Icons.add_circle_outline),
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
-                ],
+                selected: {_isLbs},
+                onSelectionChanged: (value) {
+                  setStateDialog(() {
+                    _updateAllSetsUnit(value.first);
+                  });
+                },
+                style: SegmentedButton.styleFrom(
+                  selectedBackgroundColor: AppColors.neonCyan,
+                  selectedForegroundColor: Colors.black,
+                  backgroundColor: AppColors.customSurface,
+                  foregroundColor: Colors.white70,
+                  visualDensity: VisualDensity.compact,
+                  side: BorderSide(color: AppColors.neonCyan.withOpacity(0.5)),
+                ),
               ),
             ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 350,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if ((_exercise?.needsWeight ?? true) &&
+                      !(_exercise?.isAssisted ?? false))
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('무게 (${_unitStr(isLbs: _isLbs)})',
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        HorizontalDialPicker(
+                          minValue: 0,
+                          maxValue: 1000,
+                          initialValue: _toDisplayWeight(tempWeight, isLbs: _isLbs),
+                          step: _weightStep,
+                          unit: _unitStr(isLbs: _isLbs),
+                          onChanged: (value) {
+                            tempWeight = _toStorageWeight(value, isLbs: _isLbs);
+                          },
+                          width: 350,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  if (_exercise?.isAssisted ?? false)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('체중 (kg)',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        HorizontalDialPicker(
+                          minValue: 0,
+                          maxValue: 300,
+                          initialValue: set.bodyWeight ?? 70.0,
+                          step: 1.0,
+                          unit: 'kg',
+                          onChanged: (value) {
+                            set = set.copyWith(bodyWeight: value);
+                            tempWeight = value - (set.assistedWeight ?? 0.0);
+                          },
+                          width: 350,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('보조 (kg)',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        HorizontalDialPicker(
+                          minValue: 0,
+                          maxValue: 300,
+                          initialValue: set.assistedWeight ?? 0.0,
+                          step: _weightStep,
+                          unit: 'kg',
+                          onChanged: (value) {
+                            set = set.copyWith(assistedWeight: value);
+                            tempWeight = (set.bodyWeight ?? 70.0) - value;
+                          },
+                          width: 350,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('횟수',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      HorizontalDialPicker(
+                        minValue: 1,
+                        maxValue: 200,
+                        initialValue: tempReps.toDouble(),
+                        step: 1,
+                        unit: '회',
+                        onChanged: (value) {
+                          tempReps = value.toInt();
+                        },
+                        width: 350,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('휴식 (초)',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      HorizontalDialPicker(
+                        minValue: 5,
+                        maxValue: 600,
+                        initialValue: tempRest.toDouble(),
+                        step: 1,
+                        unit: '초',
+                        onChanged: (value) {
+                          tempRest = value.toInt();
+                        },
+                        width: 350,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
           actions: [
             TextButton(
@@ -885,13 +737,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                 setState(() {
                   final newRestTime = Duration(seconds: tempRest);
                   _sets[index] = set.copyWith(
-                    // Use the potentially modified 'set'
                     weight: tempWeight,
                     reps: tempReps,
                     restTime: newRestTime,
                   );
                   _saveSets();
-
                   if (index == _currentSetIndex - 1) {
                     context.read<TimerBloc>().add(
                         TimerDurationUpdated(duration: newRestTime.inSeconds));
@@ -1583,33 +1433,17 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       children: [
                                         SizedBox(
                                           width: 90,
-                                          child: Text('무게(${_unitStr(isLbs: set.isLbs)})',
+                                          child: Text('무게(${_unitStr(isLbs: _isLbs)})',
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white)),
                                         ),
                                         Row(
                                           children: [
-                                            TextButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  _sets[index] = _sets[index]
-                                                      .copyWith(isLbs: !set.isLbs);
-                                                  _saveSets();
-                                                });
-                                              },
-                                              style: TextButton.styleFrom(
-                                                padding: EdgeInsets.zero,
-                                                minimumSize: const Size(32, 32),
-                                              ),
-                                              child: Text(set.isLbs ? 'lb' : 'kg', 
-                                                style: const TextStyle(color: AppColors.neonLime, fontWeight: FontWeight.bold)
-                                              ),
-                                            ),
                                             IconButton(
                                               onPressed: () {
                                                 setState(() {
-                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs);
+                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: _isLbs);
                                                   double newDisplay = (currentDisplay - _weightStep).clamp(0.0, 1000.0);
                                                   _sets[index] = _sets[index].copyWith(
                                                       weight: _toStorageWeight(newDisplay, isLbs: set.isLbs));
@@ -1627,23 +1461,24 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                   _showNumberInputDialog(
                                                     context,
                                                     '무게 입력',
-                                                    _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs),
+                                                    _toDisplayWeight(_sets[index].weight, isLbs: _isLbs),
                                                     (value) {
                                                       setState(() {
                                                         _sets[index] = _sets[
                                                                 index]
                                                             .copyWith(
                                                                 weight: _toStorageWeight(
-                                                                    value.clamp(0.0, 1000.0), isLbs: set.isLbs));
+                                                                    value.clamp(0.0, 1000.0), isLbs: _isLbs));
                                                         _saveSets();
                                                       });
                                                     },
                                                     isDouble: true,
+                                                    showUnitToggle: true,
                                                   );
                                                 },
                                                 child: Center(
                                                     child: Text(
-                                                        _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs)
+                                                        _toDisplayWeight(_sets[index].weight, isLbs: _isLbs)
                                                             .toStringAsFixed(1),
                                                         style: const TextStyle(
                                                             color:
@@ -1653,10 +1488,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                             IconButton(
                                               onPressed: () {
                                                 setState(() {
-                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: set.isLbs);
+                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: _isLbs);
                                                   double newDisplay = (currentDisplay + _weightStep).clamp(0.0, 1000.0);
                                                   _sets[index] = _sets[index].copyWith(
-                                                      weight: _toStorageWeight(newDisplay, isLbs: set.isLbs));
+                                                      weight: _toStorageWeight(newDisplay, isLbs: _isLbs));
                                                   _saveSets();
                                                 });
                                               },
@@ -2124,13 +1959,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           children: [
                             if (_exercise?.needsWeight == true)
                               _buildUnitAdjuster(context, '무게 단위', '${_weightStep.toStringAsFixed(1)}${_unitStr(isLbs: _isLbs)}', () {
-                                _showNumberInputDialog(
-                                  context,
-                                  '무게 단위 입력',
-                                  _weightStep,
-                                  (value) => setState(() => _weightStep = value.clamp(0.5, 10.0)),
-                                  isDouble: true,
-                                );
+                                  _showNumberInputDialog(
+                                    context,
+                                    '무게 단위 입력',
+                                    _weightStep,
+                                    (value) => setState(() => _weightStep = value.clamp(0.5, 10.0)),
+                                    isDouble: true,
+                                    showUnitToggle: true,
+                                  );
                               }),
                             _buildUnitAdjuster(context, '횟수 단위', '$_repsStep회', () {
                               _showNumberInputDialog(

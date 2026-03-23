@@ -758,6 +758,15 @@
         "weight": 10.0,
         "description": "해머 그립으로 수행하는 인클라인 컬입니다.",
         "variations": []
+      },
+      {
+        "name": "프리처 컬: 이지바",
+        "equipment": "이지바",
+        "imagePath": "assets/images/exercises/biceps/ez_bar_curl.png",
+        "sets": 4,
+        "weight": 20.0,
+        "description": "이지바를 사용하여 손목 부담을 줄이며 이두를 집중적으로 타격합니다.",
+        "variations": []
       }
     ]
   },
