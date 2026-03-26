@@ -508,12 +508,33 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                             ],
                           ),
                         )
-                      : ListView.builder(
+                      : ReorderableListView.builder(
                           itemCount: sessionWorkouts.length,
+                          buildDefaultDragHandles: false, // 기본 핸들 제거
+                          onReorder: (oldIndex, newIndex) {
+                            setState(() {
+                              if (newIndex > oldIndex) {
+                                newIndex -= 1;
+                              }
+                              final item = sessionWorkouts.removeAt(oldIndex);
+                              sessionWorkouts.insert(newIndex, item);
+
+                              // 마스터 리스트 _workouts 업데이트
+                              _workouts.removeWhere((w) =>
+                                  w.sessionIndex == _tabController.index + 1);
+                              _workouts.addAll(sessionWorkouts);
+
+                              _saveWorkouts();
+                            });
+                          },
                           itemBuilder: (context, i) {
                             final workout = sessionWorkouts[i];
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            return ReorderableDelayedDragStartListener(
+                              key: ValueKey(workout.id),
+                              index: i,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
                                 color: AppColors.customSurface,
                                 borderRadius: BorderRadius.circular(20),
@@ -547,55 +568,81 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                   child: Padding(
                                     padding: const EdgeInsets.all(20.0),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     workout.name,
-                                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
-                                                  if (workout.equipment.isNotEmpty)
+                                                  if (workout.equipment
+                                                      .isNotEmpty)
                                                     Text(
                                                       '장비: ${workout.equipment}',
-                                                      style: const TextStyle(color: Colors.grey),
+                                                      style: const TextStyle(
+                                                          color: Colors.grey),
                                                     ),
                                                 ],
                                               ),
                                             ),
                                             const Row(
                                               children: [
-                                                Icon(Icons.fitness_center, size: 40, color: Colors.white70),
+                                                Icon(Icons.fitness_center,
+                                                    size: 40,
+                                                    color: Colors.white70),
                                                 SizedBox(width: 8),
-                                                Icon(Icons.fitness_center, size: 40, color: Colors.white70),
+                                                Icon(Icons.fitness_center,
+                                                    size: 40,
+                                                    color: Colors.white70),
                                               ],
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 8),
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             FutureBuilder<List<dynamic>>(
-                                              future: _getSetInfo(workout.name, widget.selectedDate),
+                                              future: _getSetInfo(workout.name,
+                                                  widget.selectedDate),
                                               builder: (context, snapshot) {
                                                 if (!snapshot.hasData) {
-                                                  return const Text('세트 정보 불러오는 중...', style: TextStyle(color: Colors.grey));
+                                                  return const Text(
+                                                      '세트 정보 불러오는 중...',
+                                                      style: TextStyle(
+                                                          color: Colors.grey));
                                                 }
-                                                final sets = snapshot.data![0] as int;
-                                                final completed = snapshot.data![1] as int;
-                                                return Text('$completed/$sets 세트', style: const TextStyle(color: Colors.white70));
+                                                final sets =
+                                                    snapshot.data![0] as int;
+                                                final completed =
+                                                    snapshot.data![1] as int;
+                                                return Text('$completed/$sets 세트',
+                                                    style: const TextStyle(
+                                                        color: Colors.white70));
                                               },
                                             ),
                                             TextButton(
-                                              onPressed: () => _deleteWorkout(workout),
-                                              child: const Text('삭제', style: TextStyle(color: AppColors.neonLime)),
+                                              onPressed: () =>
+                                                  _deleteWorkout(workout),
+                                              child: const Text('삭제',
+                                                  style: TextStyle(
+                                                      color: AppColors.neonLime)),
                                             ),
                                           ],
                                         ),
@@ -604,8 +651,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                   ),
                                 ),
                               ),
-                            );
-                          },
+                            ),
+                          );
+                        },
                         ),
                   ),
                 ],

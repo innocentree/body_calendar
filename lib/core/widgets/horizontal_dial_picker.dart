@@ -79,117 +79,137 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
 
   @override
   Widget build(BuildContext context) {
-    final centerPadding = widget.width / 2;
-    final totalScrollWidth = ((widget.maxValue - widget.minValue) / widget.step) * _itemWidth;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final actualWidth = constraints.maxWidth;
+        final centerPadding = actualWidth / 2;
+        final totalScrollWidth = ((widget.maxValue - widget.minValue) / widget.step) * _itemWidth;
 
-    return Container(
-      width: widget.width,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: AppColors.customBackground.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+        return Container(
+          width: actualWidth,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: AppColors.customBackground.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                widget.step < 1 ? _currentValue.toStringAsFixed(1) : _currentValue.toInt().toString(),
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.neonCyan,
-                  letterSpacing: -1,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    widget.step < 1 ? _currentValue.toStringAsFixed(1) : _currentValue.toInt().toString(),
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.neonCyan,
+                      letterSpacing: -1,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.unit,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.neonCyan.withOpacity(0.7),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                widget.unit,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.neonCyan.withOpacity(0.7),
+              const SizedBox(height: 15),
+              SizedBox(
+                height: 100,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Background Glow for center
+                    Container(
+                      width: 100,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            AppColors.neonCyan.withOpacity(0.15),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                    NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollUpdateNotification) {
+                          _onScroll();
+                        } else if (notification is ScrollEndNotification) {
+                          // Snapping logic
+                          final offset = _scrollController.offset;
+                          final snappedOffset = (offset / _itemWidth).round() * _itemWidth;
+                          if (snappedOffset != offset) {
+                            Future.microtask(() {
+                              if (_scrollController.hasClients) {
+                                _scrollController.animateTo(
+                                  snappedOffset,
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOutCubic,
+                                );
+                              }
+                            });
+                          }
+                        }
+                        return false;
+                      },
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: centerPadding),
+                          child: CustomPaint(
+                            size: Size(totalScrollWidth, 80),
+                            painter: _DialPainter(
+                              minValue: widget.minValue,
+                              maxValue: widget.maxValue,
+                              step: widget.step,
+                              itemWidth: _itemWidth,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Premium Pointer
+                    IgnorePointer(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.neonCyan.withOpacity(0.2),
+                                  AppColors.neonCyan,
+                                  AppColors.neonCyan.withOpacity(0.2),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 15),
-          SizedBox(
-            height: 100,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Background Glow for center
-                Container(
-                  width: 100,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      colors: [
-                        AppColors.neonCyan.withOpacity(0.15),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-                NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    if (notification is ScrollUpdateNotification) {
-                      _onScroll();
-                    }
-                    return false;
-                  },
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: centerPadding),
-                      child: CustomPaint(
-                        size: Size(totalScrollWidth, 80),
-                        painter: _DialPainter(
-                          minValue: widget.minValue,
-                          maxValue: widget.maxValue,
-                          step: widget.step,
-                          itemWidth: _itemWidth,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Premium Pointer
-                IgnorePointer(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.neonCyan.withOpacity(0.2),
-                              AppColors.neonCyan,
-                              AppColors.neonCyan.withOpacity(0.2),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

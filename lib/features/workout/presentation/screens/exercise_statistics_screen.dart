@@ -15,6 +15,7 @@ class ExerciseStatisticsScreen extends StatefulWidget {
 class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> with SingleTickerProviderStateMixin {
   Map<String, double> _dateToTotalWeight = {};
   Map<String, double> _dateToMaxWeight = {};
+  Map<String, int> _dateToOrder = {};
   bool _loading = true;
   late TabController _tabController;
 
@@ -36,8 +37,28 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
     final keys = prefs.getKeys().where((k) => k.startsWith('exercise_sets_${widget.exerciseName}_'));
     final Map<String, double> dateToWeight = {};
     final Map<String, double> dateToMax = {};
+    final Map<String, int> dateToOrder = {};
+
     for (final key in keys) {
       final dateStr = key.split('_').last;
+      
+      // 해당 날짜의 운동 순서 찾기
+      final workoutsKey = 'workouts_$dateStr';
+      final workoutsJson = prefs.getStringList(workoutsKey) ?? [];
+      int order = -1;
+      for (int i = 0; i < workoutsJson.length; i++) {
+        try {
+          final workout = jsonDecode(workoutsJson[i]);
+          if (workout['name'] == widget.exerciseName) {
+            order = i + 1;
+            break;
+          }
+        } catch (_) {}
+      }
+      if (order != -1) {
+        dateToOrder[dateStr] = order;
+      }
+
       final setsJson = prefs.getStringList(key) ?? [];
       double total = 0.0;
       double maxWeight = 0.0;
@@ -65,6 +86,7 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
     setState(() {
       _dateToTotalWeight = dateToWeight;
       _dateToMaxWeight = dateToMax;
+      _dateToOrder = dateToOrder;
       _loading = false;
     });
   }
@@ -150,6 +172,21 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
                                       dotData: FlDotData(show: true),
                                     ),
                                   ],
+                                  lineTouchData: LineTouchData(
+                                    touchTooltipData: LineTouchTooltipData(
+                                      // tooltipBgColor: Colors.deepPurpleAccent,
+                                      getTooltipItems: (touchedSpots) {
+                                        return touchedSpots.map((spot) {
+                                          final date = dates[spot.x.toInt()];
+                                          final order = _dateToOrder[date];
+                                          return LineTooltipItem(
+                                            '${dates[spot.x.toInt()]}\n${spot.y.toStringAsFixed(1)} kg${order != null ? '\n($order회차)' : ''}',
+                                            const TextStyle(color: Colors.white),
+                                          );
+                                        }).toList();
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -160,6 +197,9 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
                                 itemBuilder: (context, idx) {
                                   return ListTile(
                                     title: Text('${dates[idx]}'),
+                                    subtitle: _dateToOrder[dates[idx]] != null
+                                        ? Text('${_dateToOrder[dates[idx]]}회차 수행')
+                                        : null,
                                     trailing: Text('${weights[idx].toStringAsFixed(1)} kg'),
                                   );
                                 },
@@ -218,6 +258,21 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
                                       dotData: FlDotData(show: true),
                                     ),
                                   ],
+                                  lineTouchData: LineTouchData(
+                                    touchTooltipData: LineTouchTooltipData(
+                                      // tooltipBgColor: Colors.deepPurpleAccent,
+                                      getTooltipItems: (touchedSpots) {
+                                        return touchedSpots.map((spot) {
+                                          final date = maxDates[spot.x.toInt()];
+                                          final order = _dateToOrder[date];
+                                          return LineTooltipItem(
+                                            '${maxDates[spot.x.toInt()]}\n${spot.y.toStringAsFixed(1)} kg${order != null ? '\n($order회차)' : ''}',
+                                            const TextStyle(color: Colors.white),
+                                          );
+                                        }).toList();
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -228,6 +283,9 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
                                 itemBuilder: (context, idx) {
                                   return ListTile(
                                     title: Text('${maxDates[idx]}'),
+                                    subtitle: _dateToOrder[maxDates[idx]] != null
+                                        ? Text('${_dateToOrder[maxDates[idx]]}회차 수행')
+                                        : null,
                                     trailing: Text('${maxWeights[idx].toStringAsFixed(1)} kg'),
                                   );
                                 },
