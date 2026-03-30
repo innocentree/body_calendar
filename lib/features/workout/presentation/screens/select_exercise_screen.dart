@@ -113,8 +113,10 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         return freqB.compareTo(freqA); // Descending order
       });
 
-      // Count exercise frequency for sorting
+      // Count exercise frequency and recency for sorting
       final Map<String, int> exerciseFrequencyMap = {};
+      final Map<String, int> exerciseRecencyMap = {};
+      int recencyCounter = 0;
       
       // Collect all available exercises from categories and custom ones for lookup
       final Map<String, Exercise> allAvailableExercises = {};
@@ -134,6 +136,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
           // Count frequency
           exerciseFrequencyMap[workoutExercise.name] = (exerciseFrequencyMap[workoutExercise.name] ?? 0) + 1;
           
+          // Track recency (lower index = more recent)
+          if (!exerciseRecencyMap.containsKey(workoutExercise.name)) {
+            exerciseRecencyMap[workoutExercise.name] = recencyCounter++;
+          }
+
           // Add to recent exercises for the '최근 운동' tab
           if (allAvailableExercises.containsKey(workoutExercise.name)) {
             final ex = allAvailableExercises[workoutExercise.name]!;
@@ -145,11 +152,18 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       }
       exercisesMap['최근 운동'] = recentExercises;
 
-      // Sort all exercise lists by frequency (descending)
+      // Sort all exercise lists by recency (primary) and frequency (secondary)
       for (var entry in exercisesMap.entries) {
         if (entry.key == '최근 운동') continue; // Keep recent exercises in chronological order
 
         entry.value.sort((a, b) {
+          final recencyA = exerciseRecencyMap[a.name] ?? 999999;
+          final recencyB = exerciseRecencyMap[b.name] ?? 999999;
+
+          if (recencyA != recencyB) {
+            return recencyA.compareTo(recencyB);
+          }
+
           final freqA = exerciseFrequencyMap[a.name] ?? 0;
           final freqB = exerciseFrequencyMap[b.name] ?? 0;
           
@@ -320,70 +334,92 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: '운동 검색',
-              hintStyle: TextStyle(color: Colors.grey[600]),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            onChanged: (value) {
-              setState(() {});
+    return PopScope(
+      canPop: _selectedTab == '분류',
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          setState(() {
+            _selectedTab = '분류';
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (_selectedTab == '분류') {
+                Navigator.pop(context);
+              } else {
+                setState(() {
+                  _selectedTab = '분류';
+                });
+              }
             },
           ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  _buildTabButton('분류'),
-                  Container(
-                    height: 24,
-                    width: 1,
-                    color: Colors.grey[300],
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _bodyParts
-                            .where((part) => part != '분류')
-                            .map((part) => _buildTabButton(part))
-                            .toList(),
+          title: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '운동 검색',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              onChanged: (value) {
+                setState(() {});
+              },
+            ),
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    _buildTabButton('분류'),
+                    Container(
+                      height: 24,
+                      width: 1,
+                      color: Colors.grey[300],
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _bodyParts
+                              .where((part) => part != '분류')
+                              .map((part) => _buildTabButton(part))
+                              .toList(),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              Container(
-                height: 1,
-                color: Colors.grey[300],
-              ),
-            ],
+                  ],
+                ),
+                Container(
+                  height: 1,
+                  color: Colors.grey[300],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _searchController.text.isNotEmpty
-              ? _buildSearchResults()
-              : _buildSelectedTabContent(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddExercise,
-        child: const Icon(Icons.add),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _searchController.text.isNotEmpty
+                ? _buildSearchResults()
+                : _buildSelectedTabContent(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _navigateToAddExercise,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

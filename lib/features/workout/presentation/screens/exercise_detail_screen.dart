@@ -378,7 +378,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
 
   void _addSet() {
     setState(() {
-      // 이전 세트가 있으면 그 정보를 사용, 없으면 현재 설정된 값 사용
       final lastSet = _sets.isNotEmpty ? _sets.last : null;
       _sets.add(ExerciseSet(
         weight: lastSet?.weight ?? _currentWeight,
@@ -388,6 +387,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
             (_exercise?.isAssisted == true ? 70.0 : null),
         assistedWeight: lastSet?.assistedWeight ??
             (_exercise?.isAssisted == true ? 0.0 : null),
+        isLbs: lastSet?.isLbs ?? _isLbs,
       ));
       _tileControllers.add(ExpansionTileController());
 
