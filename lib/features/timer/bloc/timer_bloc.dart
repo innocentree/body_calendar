@@ -99,7 +99,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
       // 만료 시간 재설정
       _expiresAt = DateTime.now().add(Duration(seconds: newRemaining));
       
-      emit(TimerRunInProgress(newRemaining, oldState.initialDuration, expiresAt: _expiresAt));
+      emit(TimerRunInProgress(newRemaining, event.duration, expiresAt: _expiresAt));
 
       // 티커가 이미 돌고 있으니 _expiresAt만 바뀌면 다음 틱에서 반영됨.
       // 하지만 즉시 UI 갱신을 위해 틱을 한 번 발생시키는 것이 좋음.
@@ -111,7 +111,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
        int newRemaining = event.duration - elapsed;
        if (newRemaining < 0) newRemaining = 0;
        
-       emit(TimerRunPause(newRemaining, oldState.initialDuration));
+       emit(TimerRunPause(newRemaining, event.duration));
     }
   }
 
