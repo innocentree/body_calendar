@@ -89,49 +89,38 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   void _onDurationUpdated(TimerDurationUpdated event, Emitter<TimerState> emit) {
     if (state is TimerRunInProgress) {
       final oldState = state as TimerRunInProgress;
-      // 현재 경과 시간 계산
-      final elapsed = oldState.initialDuration - oldState.duration;
-      // 새로운 남은 시간 계산 (새 전체 시간 - 경과 시간)
-      // 만약 줄어든 시간이 경과 시간보다 작으면 0으로 처리 (종료될 것임)
-      int newRemaining = event.duration - elapsed;
-      if (newRemaining < 0) newRemaining = 0;
+      final currentRemaining = oldState.duration;
 
-      // 만료 시간 재설정
-      _expiresAt = DateTime.now().add(Duration(seconds: newRemaining));
-      
-      emit(TimerRunInProgress(newRemaining, event.duration, expiresAt: _expiresAt));
-
-      // 티커가 이미 돌고 있으니 _expiresAt만 바뀌면 다음 틱에서 반영됨.
-      // 하지만 즉시 UI 갱신을 위해 틱을 한 번 발생시키는 것이 좋음.
-      add(_TimerTicked(duration: newRemaining, expiresAt: _expiresAt));
+      _expiresAt = DateTime.now().add(Duration(seconds: currentRemaining));
+      emit(TimerRunInProgress(currentRemaining, event.duration, expiresAt: _expiresAt));
     } else if (state is TimerRunPause) {
-       // 일시정지 상태에서 시간이 바뀌면?
-       final oldState = state as TimerRunPause;
-       final elapsed = oldState.initialDuration - oldState.duration;
-       int newRemaining = event.duration - elapsed;
-       if (newRemaining < 0) newRemaining = 0;
-       
-       emit(TimerRunPause(newRemaining, event.duration));
+      final oldState = state as TimerRunPause;
+      emit(TimerRunPause(oldState.duration, event.duration));
     }
   }
 
   void _onTicked(_TimerTicked event, Emitter<TimerState> emit) {
-    // Determine actual remaining time based on expiresAt if available
     int duration = event.duration;
-    
-    // Safety check if we drift heavily or calculate manually
+
     if (_expiresAt != null) {
-       final remaining = _expiresAt!.difference(DateTime.now()).inSeconds;
-       // We use the larger of the two to avoid premature 0 if the tick is slightly fast? 
-       // Actually correct approach is purely time difference.
-       // However, Ticker emits periodically.
-       // The event.duration comes from our Listen calculation above.
-       duration = remaining;
+      final remaining = _expiresAt!.difference(DateTime.now()).inSeconds;
+      duration = remaining < 0 ? 0 : remaining;
+    }
+
+    if (state is! TimerRunInProgress) {
+      emit(duration > 0
+          ? TimerRunInProgress(duration, duration, expiresAt: _expiresAt)
+          : const TimerRunComplete());
+      return;
     }
 
     emit(
       duration > 0
-          ? TimerRunInProgress(duration, (state as TimerRunInProgress).initialDuration, expiresAt: _expiresAt)
+          ? TimerRunInProgress(
+              duration,
+              (state as TimerRunInProgress).initialDuration,
+              expiresAt: _expiresAt,
+            )
           : const TimerRunComplete(),
     );
   }

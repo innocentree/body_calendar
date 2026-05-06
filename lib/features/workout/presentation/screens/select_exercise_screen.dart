@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
 import 'package:body_calendar/features/workout/presentation/screens/add_custom_exercise_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/models/exercise.dart';
 import '../../../../core/utils/hangul_utils.dart';
@@ -61,6 +64,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       final categories = await _exerciseRepository.getExerciseCategories();
       final customExercises = await _exerciseRepository.getCustomExercises();
       final workouts = await _workoutRepository.getWorkouts();
+      final prefs = await SharedPreferences.getInstance();
 
       final Map<String, List<Exercise>> exercisesMap = {};
       
@@ -117,6 +121,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       final Map<String, int> exerciseFrequencyMap = {};
       final Map<String, int> exerciseRecencyMap = {};
       int recencyCounter = 0;
+
+      final workoutKeys = prefs.getKeys()
+          .where((k) => k.startsWith('workouts_'))
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
       
       // Collect all available exercises from categories and custom ones for lookup
       final Map<String, Exercise> allAvailableExercises = {};
@@ -129,19 +138,37 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         }
       }
 
-      // Get all exercises from workouts, count frequency, and populate '최근 운동'
+      // 기존 repository 기반 기록도 참고하되,
+      // 실제 앱에서는 SharedPreferences의 workouts_yyyy-MM-dd 키가 주 데이터라 이것을 우선 사용한다.
       List<Exercise> recentExercises = [];
+
+      for (final key in workoutKeys) {
+        final workoutsJson = prefs.getStringList(key) ?? [];
+        for (final jsonStr in workoutsJson.reversed) {
+          try {
+            final workout = jsonDecode(jsonStr) as Map<String, dynamic>;
+            final name = workout['name']?.toString();
+            if (name == null || name.isEmpty) continue;
+
+            exerciseFrequencyMap[name] = (exerciseFrequencyMap[name] ?? 0) + 1;
+            exerciseRecencyMap.putIfAbsent(name, () => recencyCounter++);
+
+            final ex = allAvailableExercises[name];
+            if (ex != null && !recentExercises.any((e) => e.name == ex.name)) {
+              recentExercises.add(ex);
+            }
+          } catch (_) {}
+        }
+      }
+
+      // repository 데이터가 살아 있는 경우 보조적으로 합친다.
       for (var workout in workouts.reversed) {
         for (var workoutExercise in workout.exercises.reversed) {
-          // Count frequency
-          exerciseFrequencyMap[workoutExercise.name] = (exerciseFrequencyMap[workoutExercise.name] ?? 0) + 1;
-          
-          // Track recency (lower index = more recent)
-          if (!exerciseRecencyMap.containsKey(workoutExercise.name)) {
-            exerciseRecencyMap[workoutExercise.name] = recencyCounter++;
-          }
+          exerciseFrequencyMap[workoutExercise.name] =
+              (exerciseFrequencyMap[workoutExercise.name] ?? 0) + 1;
+          exerciseRecencyMap.putIfAbsent(
+              workoutExercise.name, () => recencyCounter++);
 
-          // Add to recent exercises for the '최근 운동' tab
           if (allAvailableExercises.containsKey(workoutExercise.name)) {
             final ex = allAvailableExercises[workoutExercise.name]!;
             if (!recentExercises.any((e) => e.name == ex.name)) {
