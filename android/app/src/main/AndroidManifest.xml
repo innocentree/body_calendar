@@ -7,7 +7,7 @@
     <application
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
-        android:label="body_calendar"
+        android:label="펌핑데이"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -127,7 +127,7 @@ class MyApp extends StatelessWidget {
       builder: (context, state) {
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Body Calendar',
+          title: '펌핑데이',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: state.themeData.brightness == Brightness.dark
