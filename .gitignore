@@ -46,3 +46,6 @@ app.*.map.json
 
 # Executables
 *.exe
+
+# Local preview exports
+assets/icons/png_preview/
