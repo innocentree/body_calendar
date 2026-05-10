@@ -10,9 +10,7 @@ class TimerOverlayScreen extends StatefulWidget {
 }
 
 class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
-  String _exerciseName = '';
   int _remainingTime = 0;
-  bool _isVisible = false;
 
   @override
   void initState() {
@@ -45,12 +43,12 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
+          color: Colors.black.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.neonLime, width: 2),
           boxShadow: [
              BoxShadow(
-               color: AppColors.neonLime.withOpacity(0.3),
+               color: AppColors.neonLime.withValues(alpha: 0.3),
                blurRadius: 8,
                offset: const Offset(0, 4),
              )
@@ -87,7 +85,7 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
              Text(
                '터치하여 복귀',
                style: TextStyle(
-                 color: Colors.white.withOpacity(0.7),
+                 color: Colors.white.withValues(alpha: 0.7),
                  fontSize: 10,
                  decoration: TextDecoration.none,
                ),

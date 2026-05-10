@@ -17,7 +17,7 @@ class AppTheme {
       titleSmall: GoogleFonts.notoSansKr(color: textColor, fontWeight: FontWeight.w500),
       bodyLarge: GoogleFonts.notoSansKr(color: textColor),
       bodyMedium: GoogleFonts.notoSansKr(color: textColor),
-      bodySmall: GoogleFonts.notoSansKr(color: textColor.withOpacity(0.7)),
+      bodySmall: GoogleFonts.notoSansKr(color: textColor.withValues(alpha: 0.7)),
       labelLarge: GoogleFonts.notoSansKr(color: textColor, fontWeight: FontWeight.w500),
     );
   }
@@ -31,11 +31,11 @@ class AppTheme {
       primary: AppColors.primary,
       secondary: AppColors.secondary,
       tertiary: AppColors.accent,
-      background: AppColors.backgroundLight,
+      surface: AppColors.backgroundLight,
       surface: AppColors.surfaceLight,
       onPrimary: Colors.black, // Neon color needs dark text for contrast
       onSecondary: Colors.black,
-      onBackground: AppColors.textPrimaryLight,
+      onSurface: AppColors.textPrimaryLight,
       onSurface: AppColors.textPrimaryLight,
     ),
     scaffoldBackgroundColor: AppColors.backgroundLight,
@@ -50,7 +50,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: AppColors.surfaceLight,
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -102,11 +102,11 @@ class AppTheme {
       primary: AppColors.neonLime,
       secondary: AppColors.neonCyan,
       tertiary: AppColors.accent,
-      background: AppColors.backgroundDark,
+      surface: AppColors.backgroundDark,
       surface: AppColors.customBackground,
       onPrimary: Colors.black,
       onSecondary: Colors.black,
-      onBackground: AppColors.textPrimaryDark,
+      onSurface: AppColors.textPrimaryDark,
       onSurface: AppColors.textPrimaryDark,
       error: AppColors.error,
     ),
@@ -179,14 +179,14 @@ class AppTheme {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.customBackground,
       indicatorColor: AppColors.customSurface, // Matches Workout Card Background
-      iconTheme: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return const IconThemeData(color: Colors.white); // Matches "White" Text
         }
         return const IconThemeData(color: AppColors.textSecondaryDark);
       }),
-      labelTextStyle: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return GoogleFonts.notoSansKr(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white);
         }
         return GoogleFonts.notoSansKr(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondaryDark);

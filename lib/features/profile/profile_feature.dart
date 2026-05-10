@@ -294,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: const Text('새로운 날에 이전 주 동일 세션의 운동을 추천합니다.'),
               value: _enableWorkoutRecommendation,
               onChanged: _toggleRecommendation,
-              activeColor: Theme.of(context).primaryColor,
+              activeThumbColor: Theme.of(context).primaryColor,
             ),
           ],
         ),

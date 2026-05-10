@@ -89,7 +89,7 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
           width: actualWidth,
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: AppColors.customBackground.withOpacity(0.3),
+            color: AppColors.customBackground.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
@@ -115,7 +115,7 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.neonCyan.withOpacity(0.7),
+                      color: AppColors.neonCyan.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -133,7 +133,7 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                       decoration: BoxDecoration(
                         gradient: RadialGradient(
                           colors: [
-                            AppColors.neonCyan.withOpacity(0.15),
+                            AppColors.neonCyan.withValues(alpha: 0.15),
                             Colors.transparent,
                           ],
                         ),
@@ -192,9 +192,9 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  AppColors.neonCyan.withOpacity(0.2),
+                                  AppColors.neonCyan.withValues(alpha: 0.2),
                                   AppColors.neonCyan,
-                                  AppColors.neonCyan.withOpacity(0.2),
+                                  AppColors.neonCyan.withValues(alpha: 0.2),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(2),
@@ -245,7 +245,7 @@ class _DialPainter extends CustomPainter {
       final value = minValue + (i * step);
 
       if (isMajor) {
-        paint.color = AppColors.neonCyan.withOpacity(0.8);
+        paint.color = AppColors.neonCyan.withValues(alpha: 0.8);
         paint.strokeWidth = 2.5;
         const double tickHeight = 40;
         canvas.drawLine(
@@ -260,7 +260,7 @@ class _DialPainter extends CustomPainter {
           style: TextStyle(
             fontSize: 12, 
             fontWeight: FontWeight.bold,
-            color: AppColors.neonCyan.withOpacity(0.6),
+            color: AppColors.neonCyan.withValues(alpha: 0.6),
           ),
         );
         textPainter.layout();
@@ -269,7 +269,7 @@ class _DialPainter extends CustomPainter {
           Offset(x - textPainter.width / 2, (size.height + tickHeight) / 2 + 5),
         );
       } else {
-        paint.color = AppColors.neonCyan.withOpacity(0.3);
+        paint.color = AppColors.neonCyan.withValues(alpha: 0.3);
         paint.strokeWidth = 1.5;
         const double tickHeight = 20;
         canvas.drawLine(
