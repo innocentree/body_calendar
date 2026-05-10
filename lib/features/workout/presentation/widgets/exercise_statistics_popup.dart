@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 
 enum ExerciseStatisticType {
   volume,

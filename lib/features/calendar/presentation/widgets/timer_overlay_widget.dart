@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
@@ -12,6 +13,7 @@ class TimerOverlayWidget extends StatefulWidget {
 class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
   int _totalDuration = 1;
   int _remainingTime = 0;
+  StreamSubscription<dynamic>? _dataSubscription;
 
   @override
   void initState() {
@@ -20,14 +22,49 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
   }
 
   void _listenForData() {
-    FlutterOverlayWindow.shareData.listen((data) {
-      if (data is Map<String, dynamic>) {
+    _dataSubscription = FlutterOverlayWindow.overlayListener.listen((data) {
+      final Map<String, dynamic>? parsed = switch (data) {
+        Map<String, dynamic> value => value,
+        String value => _tryParseMap(value),
+        _ => null,
+      };
+
+      if (parsed != null && mounted) {
         setState(() {
-          _totalDuration = data['totalDuration'] ?? 1;
-          _remainingTime = data['remainingTime'] ?? 0;
+          _totalDuration = parsed['totalDuration'] ?? 1;
+          _remainingTime = parsed['remainingTime'] ?? 0;
         });
       }
     });
+  }
+
+  Map<String, dynamic>? _tryParseMap(String data) {
+    try {
+      final value = data.startsWith('{')
+          ? Map<String, dynamic>.from(
+              Map<String, dynamic>.fromEntries(
+                (data
+                        .replaceAll('{', '')
+                        .replaceAll('}', '')
+                        .split(','))
+                    .where((e) => e.contains(':'))
+                    .map((e) {
+                  final parts = e.split(':');
+                  return MapEntry(parts.first.trim(), int.tryParse(parts.last.trim()) ?? parts.last.trim());
+                }),
+              ),
+            )
+          : null;
+      return value;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _dataSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -35,7 +72,7 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
     return Material(
       color: Colors.transparent,
       child: GestureDetector(
-        onTap: () => FlutterOverlayWindow.activateApp(),
+        onTap: () {},
         child: Center(
           child: SizedBox(
             width: 120,
@@ -53,7 +90,7 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
                     return CircularProgressIndicator(
                       value: value,
                       strokeWidth: 10,
-                      backgroundColor: Colors.grey.withOpacity(0.5),
+                      backgroundColor: Colors.grey.withValues(alpha: 0.5),
                       valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
                     );
                   },

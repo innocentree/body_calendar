@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../workout/domain/models/exercise.dart';
 
 class AddWorkoutScreen extends StatefulWidget {
@@ -48,12 +49,12 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
             controller: _searchController,
             decoration: InputDecoration(
               hintText: 'Search(스쿼트, 스 크 ...',
-              hintStyle: TextStyle(color: Colors.grey),
-              prefixIcon: Icon(Icons.search, color: Colors.grey),
+              hintStyle: const TextStyle(color: Colors.grey),
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
         ),
       ),
@@ -109,16 +110,20 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                     onTap: () {
                       try {
                         // 운동 선택 시 이전 화면으로 결과 전달
-                        Navigator.pop(context, Exercise(
-                          name: muscle,
-                          sets: 4,
-                          reps: 12,
-                          weight: 10.0,
-                          intensity: 75,
-                        ));
+                        Navigator.pop(
+                          context,
+                          Exercise(
+                            name: muscle,
+                            imagePath: 'assets/images/default_exercise.png',
+                            sets: 4,
+                            weight: 10.0,
+                            description: '$muscle 운동',
+                            bodyPart: muscle,
+                          ),
+                        );
                       } catch (e) {
                         // 오류 방지
-                        print('Error selecting exercise: $e');
+                        debugPrint('Error selecting exercise: $e');
                         Navigator.pop(context);
                       }
                     },

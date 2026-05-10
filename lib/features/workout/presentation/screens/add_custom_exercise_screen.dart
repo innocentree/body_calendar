@@ -1,5 +1,4 @@
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
-import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';

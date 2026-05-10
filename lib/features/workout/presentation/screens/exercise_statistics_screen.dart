@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class ExerciseStatisticsScreen extends StatefulWidget {
