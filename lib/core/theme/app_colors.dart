@@ -1,54 +1,51 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // 주요 색상 (Neon Accents)
-  static const Color primary = Color(0xFFB9FF03); // Neon Lime
-  static const Color secondary = Color(0xFF00E5FF); // Neon Cyan
-  static const Color accent = Color(0xFFFF4081); // Hot Pink
-  
-  // Aliases for Theme
+  // Claude-inspired neutral product palette
+  static const Color primary = Color(0xFFD97706); // warm amber accent
+  static const Color secondary = Color(0xFFB45309);
+  static const Color accent = Color(0xFF92400E);
+
+  // Legacy aliases kept for compatibility while tone shifts quieter
   static const Color neonLime = primary;
   static const Color neonCyan = secondary;
 
-  // 배경 색상 (Deep Dark)
-  static const Color backgroundLight = Color(0xFFF5F5F7); // Soft White (Warm)
-  static const Color backgroundDark = Color(0xFF121212); // True Black
+  // Backgrounds
+  static const Color backgroundLight = Color(0xFFF7F5F2);
+  static const Color backgroundDark = Color(0xFF171411);
 
-  // 카드/서피스 색상
-  static const Color background = Color(0xFF121212);
-  static const Color surface = Color(0xFF1E1E24);
+  // Surfaces
+  static const Color background = backgroundDark;
+  static const Color surface = Color(0xFF211D19);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF1E1E24);
-  
-  // Custom Colors from User
-  static const Color customBackground = Color.fromARGB(255, 34, 41, 53);
-  static const Color customSurface = Color.fromARGB(255, 52, 64, 78); // Blue-Grey for Selected/Cards
-  static const Color cardDark = Color(0xFF2C2C35); // Lighter Gunmetal
+  static const Color surfaceDark = surface;
 
-  // 텍스트 색상
-  static const Color textPrimaryLight = Color(0xFF1C1C1E);
-  static const Color textSecondaryLight = Color(0xFF8E8E93);
-  static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFFB0B0B0); // Lighter Grey for readability
+  static const Color customBackground = Color(0xFF171411);
+  static const Color customSurface = Color(0xFF23201C);
+  static const Color cardDark = Color(0xFF2A2622);
 
-  // 상태 색상
-  static const Color success = Color(0xFFB9FF03); // Use Primary logic for success
-  static const Color error = Color(0xFFFF453A); // iOS Red
-  static const Color warning = Color(0xFFFF9F0A); // iOS Orange
-  static const Color info = Color(0xFF0A84FF); // iOS Blue
+  // Text
+  static const Color textPrimaryLight = Color(0xFF1F1B16);
+  static const Color textSecondaryLight = Color(0xFF7A746D);
+  static const Color textPrimaryDark = Color(0xFFF4EFE8);
+  static const Color textSecondaryDark = Color(0xFFA8A099);
 
-  // 그래프 색상 (Vibrant)
+  // States
+  static const Color success = Color(0xFF3F7A5F);
+  static const Color error = Color(0xFFD35D47);
+  static const Color warning = Color(0xFFC98A2E);
+  static const Color info = Color(0xFF7C8FA8);
+
   static const List<Color> chartColors = [
-    Color(0xFFB9FF03), // Neon Lime
-    Color(0xFF00E5FF), // Neon Cyan
-    Color(0xFFFF4081), // Hot Pink
-    Color(0xFFAE52DE), // Purple
-    Color(0xFFFF9F0A), // Orange
+    Color(0xFFD97706),
+    Color(0xFFB45309),
+    Color(0xFF7C8FA8),
+    Color(0xFF3F7A5F),
+    Color(0xFFC98A2E),
   ];
 
-  // 그라데이션
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFB9FF03), Color(0xFF82B100)],
+    colors: [Color(0xFFD97706), Color(0xFFB45309)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
