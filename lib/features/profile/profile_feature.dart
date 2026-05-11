@@ -655,7 +655,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
               LineChartData(
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    tooltipBgColor: Colors.blueGrey.withOpacity(0.8),
+                    tooltipBgColor: Colors.blueGrey.withValues(alpha: 0.8),
                     getTooltipItems: (List<LineBarSpot> touchedSpots) {
                       return touchedSpots.map((barSpot) {
                         final flSpot = barSpot;

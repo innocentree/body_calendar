@@ -8,11 +8,6 @@ import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
 import '../../domain/repositories/exercise_repository.dart';
 import 'dart:async';
-import 'package:screen_brightness/screen_brightness.dart';
-import 'dart:io';
-import 'package:body_calendar/features/calendar/presentation/widgets/overlay_helper_impl.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:vibration/vibration.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -133,6 +128,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   late SharedPreferences _prefs;
   Exercise? _exercise;
   late final ExerciseRepository _exerciseRepository;
+  DateTime? _firstRecordDate;
 
   // 증가/감소 단위 변수 수정
   double _weightStep = 5.0;
@@ -149,7 +145,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     });
   }
 
-  DateTime? _firstRecordDate;
   List<String> _recordedDates = [];
 
   List<ExpansionTileController> _tileControllers = [];
@@ -173,8 +168,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   // Maybe user wants that. Or maybe only when crossing the threshold?
   // "최고값을 갱신하면" -> Whenever it updates. So yes.
 
-  double _historicalBestVolume =
-      0; // To track if we are in PR territory for volume
 
   @override
   void initState() {
@@ -535,7 +528,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             backgroundColor: AppColors.customSurface,
                             foregroundColor: Colors.white70,
                             visualDensity: VisualDensity.compact,
-                            side: BorderSide(color: AppColors.neonCyan.withOpacity(0.5)),
+                            side: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.5)),
                           ),
                         ),
                 ],
@@ -612,7 +605,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   backgroundColor: AppColors.customSurface,
                   foregroundColor: Colors.white70,
                   visualDensity: VisualDensity.compact,
-                  side: BorderSide(color: AppColors.neonCyan.withOpacity(0.5)),
+                  side: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.5)),
                 ),
               ),
             ],
@@ -836,7 +829,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
             decoration: BoxDecoration(
               color: AppColors.customSurface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.neonLime.withOpacity(0.5)),
+              border: Border.all(color: AppColors.neonLime.withValues(alpha: 0.5)),
             ),
             child: Text(
               value,
@@ -1112,7 +1105,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         borderRadius: BorderRadius.circular(16),
                         border: index == _currentSetIndex
                             ? Border.all(
-                                color: AppColors.neonCyan.withOpacity(0.5),
+                                color: AppColors.neonCyan.withValues(alpha: 0.5),
                                 width: 1)
                             : null,
                       ),
@@ -1145,10 +1138,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                             backgroundColor: set.isCompleted
-                                ? AppColors.neonLime.withOpacity(0.8)
+                                ? AppColors.neonLime.withValues(alpha: 0.8)
                                 : index == _currentSetIndex
                                     ? AppColors.neonCyan
-                                    : Colors.grey.withOpacity(0.3),
+                                    : Colors.grey.withValues(alpha: 0.3),
                             foregroundColor:
                                 set.isCompleted || index == _currentSetIndex
                                     ? Colors.black
@@ -2067,7 +2060,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                               child: Container(
                                                 height: 56,
                                                 color: AppColors.neonCyan
-                                                    .withOpacity(0.8),
+                                                    .withValues(alpha: 0.8),
                                               ),
                                             );
                                           },
@@ -2206,11 +2199,11 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.neonCyan.withOpacity(0.9),
+              color: AppColors.neonCyan.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -2288,7 +2281,7 @@ class _StatBox extends StatelessWidget {
         boxShadow: isHighlighted
             ? [
                 BoxShadow(
-                    color: AppColors.neonLime.withOpacity(0.5), blurRadius: 10)
+                    color: AppColors.neonLime.withValues(alpha: 0.5), blurRadius: 10)
               ]
             : [],
       ),

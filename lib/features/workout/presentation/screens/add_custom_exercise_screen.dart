@@ -88,7 +88,7 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedBodyPart,
+                initialValue: _selectedBodyPart,
                 decoration: const InputDecoration(
                   labelText: '운동 부위',
                   border: OutlineInputBorder(),

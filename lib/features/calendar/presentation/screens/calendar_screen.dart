@@ -156,7 +156,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                   )
                 ]
@@ -205,7 +205,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
           Text(
             DateFormat.E('en_US').format(day)[0], 
             style: TextStyle(
-              color: textColor.withOpacity(0.7),
+              color: textColor.withValues(alpha: 0.7),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -232,7 +232,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                boxShadow: hasEvent
                    ? [
                        BoxShadow(
-                         color: Theme.of(context).primaryColor.withOpacity(0.8),
+                         color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
                          blurRadius: 6,
                          spreadRadius: 1,
                        )
@@ -318,7 +318,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withOpacity(0.4),
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -331,7 +331,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                   
                   // Today
                   todayDecoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.2),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
                   ),
@@ -402,7 +402,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                                   blurRadius: 4,
                                 ),
                               ],
@@ -444,7 +444,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                                     borderRadius: BorderRadius.circular(20.0),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -500,7 +500,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                                                 borderRadius: BorderRadius.circular(3),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: randomColor.withOpacity(0.5),
+                                                    color: randomColor.withValues(alpha: 0.5),
                                                     blurRadius: 6,
                                                   ),
                                                 ],
@@ -532,7 +532,7 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).primaryColor.withOpacity(0.4),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -582,12 +582,12 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.customSurface.withOpacity(0.9),
+                    color: AppColors.customSurface.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.5)),
+                    border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.5)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
