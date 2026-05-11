@@ -1510,7 +1510,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       _saveSets();
                                                     });
                                                     _showTopNotification(
-                                                        '모든 세트에 무게가 적용되었습니다.');
+                                                        '모든 세트에 무게를 적용했어요.');
                                                   },
                                                   style: TextButton.styleFrom(
                                                     visualDensity:
@@ -1520,7 +1520,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                         horizontal: 4,
                                                         vertical: 0),
                                                   ),
-                                                  child: const Text('전체적용',
+                                                  child: const Text('전체에 적용',
                                                       style: TextStyle(
                                                           color: AppColors
                                                               .neonCyan,
@@ -1545,7 +1545,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       _saveSets();
                                                     });
                                                     _showTopNotification(
-                                                        '이후 미완료 세트에 무게가 적용되었습니다.');
+                                                        '이후 미완료 세트에 무게를 적용했어요.');
                                                   },
                                                   style: TextButton.styleFrom(
                                                     visualDensity:
@@ -1555,7 +1555,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                         horizontal: 4,
                                                         vertical: 0),
                                                   ),
-                                                  child: const Text('이후적용',
+                                                  child: const Text('이후 세트에 적용',
                                                       style: TextStyle(
                                                           color: AppColors
                                                               .neonCyan,
@@ -1671,7 +1671,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('전체적용',
+                                                child: const Text('전체에 적용',
                                                     style: TextStyle(
                                                         color:
                                                             AppColors.neonCyan,
@@ -1706,7 +1706,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('이후적용',
+                                                child: const Text('이후 세트에 적용',
                                                     style: TextStyle(
                                                         color:
                                                             AppColors.neonCyan,
@@ -1873,7 +1873,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('전체적용',
+                                                child: const Text('전체에 적용',
                                                     style: TextStyle(
                                                         color:
                                                             AppColors.neonCyan,
@@ -1915,7 +1915,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('이후적용',
+                                                child: const Text('이후 세트에 적용',
                                                     style: TextStyle(
                                                         color:
                                                             AppColors.neonCyan,

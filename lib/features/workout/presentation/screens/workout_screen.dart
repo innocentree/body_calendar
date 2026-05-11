@@ -333,7 +333,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                 );
               }
             },
-            child: const Text('저장'),
+            child: const Text('루틴 저장'),
           ),
         ],
       ),
@@ -417,14 +417,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(_getFormattedDate(), style: const TextStyle(fontSize: 18)),
-                Text(_recordDay > 0 ? '$_recordDay번째 기록' : '', style: const TextStyle(fontSize: 14)),
+                Text(_recordDay > 0 ? '$_recordDay번째 운동 기록' : '', style: const TextStyle(fontSize: 14)),
               ],
             ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.save),
                 onPressed: _saveRoutine,
-                tooltip: '현재 운동을 루틴으로 저장',
+                tooltip: '현재 운동을 루틴으로 저장하기',
               ),
               IconButton(
                 icon: const Icon(Icons.folder_open),
@@ -491,7 +491,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                               const Icon(Icons.fitness_center, size: 80, color: Colors.grey),
                               const SizedBox(height: 16),
                               Text(
-                                '${index + 1}회차 운동 아직 기록된 운동이 없어요.',
+                                '${index + 1}회차에 아직 기록된 운동이 없어요.',
                                 style: const TextStyle(fontSize: 18),
                               ),
                               const Text('아래 + 버튼으로 운동을 추가해보세요'),
