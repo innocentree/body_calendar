@@ -214,7 +214,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('데이터를 불러오는데 실패했습니다.'),
+            content: Text('운동 목록을 불러오지 못했어요.'),
           ),
         );
       }
@@ -325,7 +325,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildVariationList(List<Exercise> variations, ScrollController scrollController) {
     if (variations.isEmpty) {
       return const Center(
-        child: Text('운동이 없습니다.'),
+        child: Text('표시할 운동이 없어요.'),
       );
     }
 
@@ -479,7 +479,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildExerciseList(List<Exercise> exercises) {
     if (exercises.isEmpty) {
       return const Center(
-        child: Text('운동이 없습니다.'),
+        child: Text('표시할 운동이 없어요.'),
       );
     }
 

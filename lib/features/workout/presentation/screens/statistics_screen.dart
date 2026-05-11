@@ -49,7 +49,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             title: const Text('운동 통계'),
           ),
           body: _exerciseNames.isEmpty
-              ? const Center(child: Text('운동 기록이 있는 종목이 없습니다.'))
+              ? const Center(child: Text('기록된 운동 종목이 아직 없어요.'))
               : ListView.builder(
                   itemCount: _exerciseNames.length,
                   itemBuilder: (context, idx) {

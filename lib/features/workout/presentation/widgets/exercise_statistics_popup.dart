@@ -147,7 +147,7 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : displayDates.isEmpty
-                      ? const Center(child: Text('기록이 없습니다.', style: TextStyle(color: Colors.grey)))
+                      ? const Center(child: Text('아직 기록이 없어요.', style: TextStyle(color: Colors.grey)))
                       : LineChart(
                           LineChartData(
                             gridData: FlGridData(show: false),

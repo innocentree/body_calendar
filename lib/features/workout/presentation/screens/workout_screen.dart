@@ -269,11 +269,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('아니요'),
+              child: const Text('취소'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('네, 추가할게요'),
+              child: const Text('불러오기'),
             ),
           ],
         ),
@@ -303,7 +303,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     if (_workouts.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('저장할 운동이 없습니다.')),
+          const SnackBar(content: Text('저장할 운동이 아직 없어요.')),
         );
       }
       return;
@@ -329,7 +329,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                 Navigator.pop(context, true);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('루틴 이름을 입력해주세요.')),
+                  const SnackBar(content: Text('루틴 이름을 입력해 주세요.')),
                 );
               }
             },
@@ -361,14 +361,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
         await _workoutRoutineRepository.addWorkoutRoutine(newRoutine);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('루틴이 성공적으로 저장되었습니다!')),
+            const SnackBar(content: Text('루틴을 저장했어요.')),
           );
         }
       } catch (e) {
         debugPrint('Error saving routine: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('루틴 저장 중 오류가 발생했습니다.')),
+            const SnackBar(content: Text('루틴 저장 중 문제가 생겼어요.')),
           );
         }
       }
@@ -401,7 +401,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
       await _saveWorkouts();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${selectedRoutine.name} 루틴을 불러왔습니다.')),
+          SnackBar(content: Text('${selectedRoutine.name} 루틴을 불러왔어요.')),
         );
       }
     }
@@ -491,13 +491,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                               const Icon(Icons.fitness_center, size: 80, color: Colors.grey),
                               const SizedBox(height: 16),
                               Text(
-                                '${index + 1}회차 운동 기록이 없습니다.',
+                                '${index + 1}회차 운동 아직 기록된 운동이 없어요.',
                                 style: const TextStyle(fontSize: 18),
                               ),
-                              const Text('우측 하단 + 버튼을 눌러 추가해보세요'),
+                              const Text('아래 + 버튼으로 운동을 추가해보세요'),
                               const SizedBox(height: 32),
-                              const Text('하루에 운동을 여러번 하시나요?'),
-                              const Text('회차를 선택해서 구분해보세요'),
+                              const Text('하루에 여러 번 운동하나요?'),
+                              const Text('회차를 나눠서 기록해보세요'),
                               const Text('운동 시간 등이 별도로 기록됩니다'),
                             ],
                           ),
@@ -736,7 +736,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
       debugPrint('Error adding workout: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('운동을 추가하는 중 오류가 발생했습니다.')),
+          const SnackBar(content: Text('운동을 추가하는 중 문제가 생겼어요.')),
         );
       }
     }

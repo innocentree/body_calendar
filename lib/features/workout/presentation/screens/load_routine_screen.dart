@@ -40,7 +40,7 @@ class _LoadRoutineScreenState extends State<LoadRoutineScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('루틴을 불러오는데 실패했습니다.'),
+            content: Text('루틴을 불러오지 못했어요.'),
           ),
         );
       }
@@ -53,14 +53,14 @@ class _LoadRoutineScreenState extends State<LoadRoutineScreen> {
       _loadRoutines(); // Refresh list after deletion
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('루틴이 삭제되었습니다.')),
+          const SnackBar(content: Text('루틴을 삭제했어요.')),
         );
       }
     } catch (e) {
       debugPrint('Error deleting routine: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('루틴 삭제 중 오류가 발생했습니다.')),
+          const SnackBar(content: Text('루틴 삭제 중 문제가 생겼어요.')),
         );
       }
     }
@@ -75,7 +75,7 @@ class _LoadRoutineScreenState extends State<LoadRoutineScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _routines.isEmpty
-              ? const Center(child: Text('저장된 루틴이 없습니다.'))
+              ? const Center(child: Text('저장된 루틴이 아직 없어요.'))
               : ListView.builder(
                   itemCount: _routines.length,
                   itemBuilder: (context, index) {

@@ -417,14 +417,14 @@ class _CalendarScreenState extends State<CalendarScreen> with RouteAware {
               const SizedBox(height: 16.0),
               Expanded(
                 child: _selectedDay == null
-                    ? const Center(child: Text('날짜를 선택해주세요'))
+                    ? const Center(child: Text('날짜를 선택해보세요'))
                     : ListView(
                         children: _getEventsForDay(_selectedDay!).isEmpty
                             ? [
                                 const Center(
                                   child: Padding(
                                     padding: EdgeInsets.all(16.0),
-                                    child: Text('선택한 날짜에 운동 기록이 없습니다'),
+                                    child: Text('아직 기록된 운동이 없어요'),
                                   ),
                                 )
                               ]

@@ -123,7 +123,7 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
               children: [
                 // 전체 수행 중량 탭
                 _dateToTotalWeight.isEmpty
-                    ? const Center(child: Text('해당 운동의 기록이 없습니다.'))
+                    ? const Center(child: Text('해당 운동의 아직 기록이 없어요.'))
                     : Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -209,7 +209,7 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
                       ),
                 // 최고 세트 무게 탭
                 _dateToMaxWeight.isEmpty
-                    ? const Center(child: Text('해당 운동의 기록이 없습니다.'))
+                    ? const Center(child: Text('해당 운동의 아직 기록이 없어요.'))
                     : Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(

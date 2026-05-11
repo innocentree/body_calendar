@@ -82,14 +82,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionHeader(context, '데이터 관리'),
           ListTile(
             leading: const Icon(Icons.download),
-            title: const Text('현재 데이터 백업하기'),
-            subtitle: const Text('운동 기록과 루틴을 파일로 저장합니다.'),
+            title: const Text('데이터 백업'),
+            subtitle: const Text('운동 기록과 루틴을 파일로 저장해요.'),
             onTap: () => _backupData(context),
           ),
           ListTile(
             leading: const Icon(Icons.upload),
-            title: const Text('데이터 복원하기'),
-            subtitle: const Text('백업 파일을 불러와 데이터를 복구합니다. (기존 데이터는 덮어씌워집니다)'),
+            title: const Text('데이터 복원'),
+            subtitle: const Text('백업 파일로 데이터를 복원해요. 기존 데이터는 새 데이터로 대체돼요.'),
             onTap: () => _restoreData(context),
           ),
         ],
@@ -143,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           await file.writeAsString(jsonString);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('백업 파일이 저장되었습니다: $outputFile')),
+              SnackBar(content: Text('백업 파일을 저장했어요: $outputFile')),
             );
           }
         }
@@ -153,16 +153,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final file = File('${tempDir.path}/$fileName');
         await file.writeAsString(jsonString);
 
-        final result = await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'Body Calendar 데이터 백업 ($dateStr)',
-          subject: 'Body Calendar 백업 파일',
+        final result = await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path)],
+            text: 'Body Calendar 데이터 백업 ($dateStr)',
+            subject: 'Body Calendar 백업 파일',
+          ),
         );
 
         if (result.status == ShareResultStatus.success) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('백업 파일이 생성되었습니다.')),
+              const SnackBar(content: Text('백업 파일을 준비했어요.')),
             );
           }
         }
@@ -170,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('백업 중 오류가 발생했습니다: $e')),
+          SnackBar(content: Text('백업 중 문제가 생겼어요: $e')),
         );
       }
     }
@@ -191,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // 간단한 유효성 검사
         if (!backupData.containsKey('workouts') ||
             !backupData.containsKey('routines')) {
-          throw Exception('잘못된 백업 파일 형식입니다.');
+          throw Exception('백업 파일 형식이 올바르지 않아요.');
         }
 
         final workoutRepo = GetIt.I<WorkoutRepository>();
@@ -208,14 +210,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('데이터가 성공적으로 복원되었습니다. 앱을 재시작해주세요.')),
+            const SnackBar(content: Text('데이터를 복원했어요. 앱을 다시 열어 주세요.')),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('복원 중 오류가 발생했습니다: $e')),
+          SnackBar(content: Text('복원 중 문제가 생겼어요: $e')),
         );
       }
     }

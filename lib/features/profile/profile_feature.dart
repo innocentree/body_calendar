@@ -129,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? const Center(child: CircularProgressIndicator())
           : !_hasBodyCompDataForDate && !_hasMeasurementDataForDate
               ? const Center(
-                  child: Text('선택된 날짜에 저장된 데이터가 없습니다.', textAlign: TextAlign.center),
+                  child: Text('선택한 날짜에 저장된 데이터가 없어요.', textAlign: TextAlign.center),
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(8.0),
@@ -632,7 +632,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
 
   Widget _buildTab(List<String> items) {
     if (items.isEmpty) {
-      return const Center(child: Text('선택된 항목이 없습니다.'));
+      return const Center(child: Text('선택한 항목이 없어요.'));
     }
 
     final List<LineChartBarData> lineBarsData = items.map((item) {
