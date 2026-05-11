@@ -132,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
         // Desktop: Save dialog
         final String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: '백업 파일 저장',
+          dialogTitle: '백업 파일 저장하기',
           fileName: fileName,
           allowedExtensions: ['json'],
           type: FileType.custom,
@@ -156,8 +156,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final result = await SharePlus.instance.share(
           ShareParams(
             files: [XFile(file.path)],
-            text: 'Body Calendar 데이터 백업 ($dateStr)',
-            subject: 'Body Calendar 백업 파일',
+            text: 'PumpingDay 데이터 백업 ($dateStr)',
+            subject: 'PumpingDay 백업 파일',
           ),
         );
 

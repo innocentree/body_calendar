@@ -313,10 +313,10 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('루틴 이름 입력'),
+        title: const Text('루틴 이름 정하기'),
         content: TextField(
           controller: routineNameController,
-          decoration: const InputDecoration(hintText: '루틴 이름'),
+          decoration: const InputDecoration(hintText: '루틴 이름을 입력해보세요'),
         ),
         actions: [
           TextButton(
@@ -464,9 +464,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                           FutureBuilder<List<dynamic>>(
                             future: _getCompletedSetStats(sessionWorkouts),
                             builder: (context, snapshot) {
-                              if (!snapshot.hasData) return const Text('운동시간 : 0분');
+                              if (!snapshot.hasData) return const Text('운동 시간 0분');
                               final totalMinutes = snapshot.data![0] as int;
-                              return Text('운동시간 : $totalMinutes분');
+                              return Text('운동 시간 $totalMinutes분');
                             },
                           ),
                           // 완료 세트/무게
@@ -498,7 +498,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                               const SizedBox(height: 32),
                               const Text('하루에 여러 번 운동하나요?'),
                               const Text('회차를 나눠서 기록해보세요'),
-                              const Text('운동 시간 등이 별도로 기록됩니다'),
+                              const Text('운동 시간도 함께 기록돼요'),
                             ],
                           ),
                         )

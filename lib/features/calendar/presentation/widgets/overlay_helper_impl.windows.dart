@@ -101,10 +101,10 @@ class WindowsTimerOverlay extends StatelessWidget {
                 if (state is TimerRunComplete)
                   ElevatedButton(
                      onPressed: () {
-                         // 복귀 로직
+                         // 앱으로 돌아가기 로직
                          closeOverlayFAB();
                      },
-                     child: const Text('복귀'),
+                     child: const Text('앱으로 돌아가기'),
                   )
                 else
                  IconButton(

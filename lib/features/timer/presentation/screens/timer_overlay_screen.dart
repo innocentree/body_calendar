@@ -83,7 +83,7 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
              ),
              const SizedBox(height: 4),
              Text(
-               '터치하여 복귀',
+               '터치하여 앱으로 돌아가기',
                style: TextStyle(
                  color: Colors.white.withValues(alpha: 0.7),
                  fontSize: 10,

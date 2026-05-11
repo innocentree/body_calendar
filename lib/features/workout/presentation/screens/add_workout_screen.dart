@@ -48,7 +48,7 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              hintText: 'Search(스쿼트, 스 크 ...',
+              hintText: '운동 검색',
               hintStyle: const TextStyle(color: Colors.grey),
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
               border: InputBorder.none,

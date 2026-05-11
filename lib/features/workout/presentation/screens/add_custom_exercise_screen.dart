@@ -65,7 +65,7 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('나만의 운동 추가'),
+        title: const Text('커스텀 운동 추가'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -76,12 +76,12 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: '운동 이름',
+                  labelText: '운동 이름 입력',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return '운동 이름을 입력해주세요.';
+                    return '운동 이름을 입력해 주세요.';
                   }
                   return null;
                 },
@@ -90,7 +90,7 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _selectedBodyPart,
                 decoration: const InputDecoration(
-                  labelText: '운동 부위',
+                  labelText: '운동 부위 선택',
                   border: OutlineInputBorder(),
                 ),
                 items: _bodyPartOptions
@@ -106,7 +106,7 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
                 },
                 validator: (value) {
                   if (value == null) {
-                    return '운동 부위를 선택해주세요.';
+                    return '운동 부위를 선택해 주세요.';
                   }
                   return null;
                 },
@@ -115,7 +115,7 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: '운동 설명 (선택 사항)',
+                  labelText: '운동 메모 (선택)',
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
@@ -126,7 +126,7 @@ class _AddCustomExerciseScreenState extends State<AddCustomExerciseScreen> {
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('저장하기'),
+                child: const Text('운동 저장'),
               ),
             ],
           ),

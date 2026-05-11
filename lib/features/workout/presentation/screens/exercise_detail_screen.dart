@@ -560,7 +560,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                     onChanged(tempValue);
                     Navigator.pop(context);
                   },
-                  child: const Text('확인'),
+                  child: const Text('적용'),
                 ),
               ],
             );
@@ -587,7 +587,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('세트 편집'),
+              const Text('세트 조정'),
               SegmentedButton<bool>(
                 segments: const [
                   ButtonSegment(value: false, label: Text('kg', style: TextStyle(fontSize: 12))),
@@ -1162,7 +1162,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     fontSize: 16,
                                   ),
                           ),
-                          subtitle: Text('휴식: ${set.restTime.inSeconds}초',
+                          subtitle: Text('휴식 ${set.restTime.inSeconds}초',
                               style: const TextStyle(color: Colors.grey)),
                           trailing: IconButton(
                             icon:
