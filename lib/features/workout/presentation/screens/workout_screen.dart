@@ -13,6 +13,10 @@ import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 
+const _workoutBorderColor = Color(0xFF3A342E);
+const _workoutSurface = Color(0xFF211D19);
+const _workoutSoftSurface = Color(0xFF2A2520);
+
 class WorkoutRecord {
   final int id;
   final String name;
@@ -264,6 +268,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
       final bool? accept = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: const Text('지난주 운동 추천'),
           content: Text('지난주 $dateStr에 진행했던 운동들을 추가하시겠습니까?\n\n목록: $exerciseNames'),
           actions: [
@@ -313,6 +318,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('루틴 이름 정하기'),
         content: TextField(
           controller: routineNameController,
@@ -416,255 +422,486 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_getFormattedDate(), style: const TextStyle(fontSize: 18)),
-                Text(_recordDay > 0 ? '$_recordDay번째 운동 기록' : '', style: const TextStyle(fontSize: 14)),
+                Text(
+                  _getFormattedDate(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                if (_recordDay > 0)
+                  Text(
+                    '$_recordDay번째 운동 기록',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withValues(alpha: 0.82),
+                        ),
+                  ),
               ],
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.save),
+                icon: const Icon(Icons.save_outlined),
                 onPressed: _saveRoutine,
                 tooltip: '현재 운동을 루틴으로 저장하기',
               ),
               IconButton(
-                icon: const Icon(Icons.folder_open),
+                icon: const Icon(Icons.folder_open_outlined),
                 onPressed: _loadRoutine,
                 tooltip: '루틴 불러오기',
               ),
             ],
-            bottom: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.neonLime,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: AppColors.neonLime,
-              tabs: const [
-                Tab(text: '1회차'),
-                Tab(text: '2회차'),
-                Tab(text: '3회차'),
-              ],
-            ),
-          ),
-          body: TabBarView(
-            controller: _tabController,
-            children: List.generate(3, (index) {
-              // 각 회차별 운동 기록만 필터링
-              final sessionWorkouts = _workouts
-                  .where((workout) => workout.sessionIndex == index + 1)
-                  .toList();
-
-              return Column(
-                children: [
-                  if (sessionWorkouts.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // 운동시간 : N분
-                          FutureBuilder<List<dynamic>>(
-                            future: _getCompletedSetStats(sessionWorkouts),
-                            builder: (context, snapshot) {
-                              if (!snapshot.hasData) return const Text('운동 시간 0분');
-                              final totalMinutes = snapshot.data![0] as int;
-                              return Text('운동 시간 $totalMinutes분');
-                            },
-                          ),
-                          // 완료 세트/무게
-                          FutureBuilder<List<dynamic>>(
-                            future: _getCompletedSetStats(sessionWorkouts),
-                            builder: (context, snapshot) {
-                              if (!snapshot.hasData) return const Text('0세트 0kg');
-                              final completedSets = snapshot.data![1] as int;
-                              final totalWeight = snapshot.data![2] as double;
-                              return Text('${completedSets}세트 ${_formatWeight(totalWeight * 1000)}');
-                            },
-                          ),
-                        ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(76),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _workoutSurface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: _workoutBorderColor),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    dividerColor: Colors.transparent,
+                    indicator: BoxDecoration(
+                      color: _workoutSoftSurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.24),
                       ),
                     ),
-                  Expanded(
-                    child: sessionWorkouts.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.fitness_center, size: 80, color: Colors.grey),
-                              const SizedBox(height: 16),
-                              Text(
-                                '${index + 1}회차에 아직 기록된 운동이 없어요.',
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                              const Text('아래 + 버튼으로 운동을 추가해보세요'),
-                              const SizedBox(height: 32),
-                              const Text('하루에 여러 번 운동하나요?'),
-                              const Text('회차를 나눠서 기록해보세요'),
-                              const Text('운동 시간도 함께 기록돼요'),
-                            ],
-                          ),
-                        )
-                      : ReorderableListView.builder(
-                          itemCount: sessionWorkouts.length,
-                          buildDefaultDragHandles: false, // 기본 핸들 제거
-                          onReorder: (oldIndex, newIndex) {
-                            setState(() {
-                              if (newIndex > oldIndex) {
-                                newIndex -= 1;
-                              }
-                              final item = sessionWorkouts.removeAt(oldIndex);
-                              sessionWorkouts.insert(newIndex, item);
+                    labelColor: Theme.of(context).textTheme.bodyLarge?.color,
+                    unselectedLabelColor: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withValues(alpha: 0.56),
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w700),
+                    tabs: const [
+                      Tab(text: '1회차'),
+                      Tab(text: '2회차'),
+                      Tab(text: '3회차'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          body: SafeArea(
+            top: false,
+            child: TabBarView(
+              controller: _tabController,
+              children: List.generate(3, (index) {
+                final sessionWorkouts = _workouts
+                    .where((workout) => workout.sessionIndex == index + 1)
+                    .toList();
 
-                              // 마스터 리스트 _workouts 업데이트
-                              _workouts.removeWhere((w) =>
-                                  w.sessionIndex == _tabController.index + 1);
-                              _workouts.addAll(sessionWorkouts);
-
-                              _saveWorkouts();
-                            });
-                          },
-                          itemBuilder: (context, i) {
-                            final workout = sessionWorkouts[i];
-                            return ReorderableDelayedDragStartListener(
-                              key: ValueKey(workout.id),
-                              index: i,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppColors.customSurface,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: _workoutSurface,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: _workoutBorderColor),
+                        ),
+                        child: sessionWorkouts.isEmpty
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${index + 1}회차 준비',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '운동을 추가하면 세트와 기록이 여기에 정리돼요.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.color
+                                              ?.withValues(alpha: 0.66),
+                                        ),
                                   ),
                                 ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ExerciseDetailScreen(
-                                          exerciseName: workout.name,
-                                          selectedDate: widget.selectedDate,
-                                          initialWeight: workout.weight.toInt(),
-                                          initialSets: workout.sets,
-                                          recordDay: _recordDay,
+                              )
+                            : FutureBuilder<List<dynamic>>(
+                                future: _getCompletedSetStats(sessionWorkouts),
+                                builder: (context, snapshot) {
+                                  final totalMinutes = snapshot.data?[0] as int? ?? 0;
+                                  final completedSets = snapshot.data?[1] as int? ?? 0;
+                                  final totalWeight = snapshot.data?[2] as double? ?? 0;
+
+                                  Widget statChip(String label, String value) {
+                                    return Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: _workoutSoftSurface,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              label,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.color
+                                                        ?.withValues(
+                                                            alpha: 0.76),
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              value,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     );
-                                    _loadWorkouts();
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    workout.name,
-                                                    style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.white),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  if (workout.equipment
-                                                      .isNotEmpty)
-                                                    Text(
-                                                      '장비: ${workout.equipment}',
-                                                      style: const TextStyle(
-                                                          color: Colors.grey),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                            const Row(
-                                              children: [
-                                                Icon(Icons.fitness_center,
-                                                    size: 40,
-                                                    color: Colors.white70),
-                                                SizedBox(width: 8),
-                                                Icon(Icons.fitness_center,
-                                                    size: 40,
-                                                    color: Colors.white70),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            FutureBuilder<List<dynamic>>(
-                                              future: _getSetInfo(workout.name,
-                                                  widget.selectedDate),
-                                              builder: (context, snapshot) {
-                                                if (!snapshot.hasData) {
-                                                  return const Text(
-                                                      '세트 정보를 불러오는 중...',
-                                                      style: TextStyle(
-                                                          color: Colors.grey));
-                                                }
-                                                final sets =
-                                                    snapshot.data![0] as int;
-                                                final completed =
-                                                    snapshot.data![1] as int;
-                                                return Text('$completed/$sets 세트',
-                                                    style: const TextStyle(
-                                                        color: Colors.white70));
-                                              },
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  _deleteWorkout(workout),
-                                              child: const Text('삭제',
-                                                  style: TextStyle(
-                                                      color: AppColors.neonLime)),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                  }
+
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${sessionWorkouts.length}개 운동이 정리되어 있어요',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w700),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: [
+                                          statChip('운동 시간', '$totalMinutes분'),
+                                          const SizedBox(width: 10),
+                                          statChip('완료 세트', '${completedSets}세트'),
+                                          const SizedBox(width: 10),
+                                          statChip('총 무게',
+                                              _formatWeight(totalWeight * 1000)),
+                                        ],
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                      ),
+                    ),
+                    Expanded(
+                      child: sessionWorkouts.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 72,
+                                      height: 72,
+                                      decoration: BoxDecoration(
+                                        color: _workoutSurface,
+                                        borderRadius: BorderRadius.circular(24),
+                                        border: Border.all(
+                                            color: _workoutBorderColor),
+                                      ),
+                                      child: Icon(
+                                        Icons.fitness_center_rounded,
+                                        size: 30,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                            ?.withValues(alpha: 0.58),
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      '${index + 1}회차에 아직 기록된 운동이 없어요.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(fontWeight: FontWeight.w700),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      '아래 버튼으로 운동을 추가하고 오늘의 세션을 정리해보세요.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color
+                                                ?.withValues(alpha: 0.66),
+                                          ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            )
+                          : ReorderableListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                              itemCount: sessionWorkouts.length,
+                              buildDefaultDragHandles: false,
+                              onReorder: (oldIndex, newIndex) {
+                                setState(() {
+                                  if (newIndex > oldIndex) {
+                                    newIndex -= 1;
+                                  }
+                                  final item = sessionWorkouts.removeAt(oldIndex);
+                                  sessionWorkouts.insert(newIndex, item);
+                                  _workouts.removeWhere((w) =>
+                                      w.sessionIndex == _tabController.index + 1);
+                                  _workouts.addAll(sessionWorkouts);
+                                  _saveWorkouts();
+                                });
+                              },
+                              itemBuilder: (context, i) {
+                                final workout = sessionWorkouts[i];
+                                return ReorderableDelayedDragStartListener(
+                                  key: ValueKey(workout.id),
+                                  index: i,
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: _workoutSurface,
+                                      borderRadius: BorderRadius.circular(22),
+                                      border: Border.all(color: _workoutBorderColor),
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(22),
+                                        onTap: () async {
+                                          await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => ExerciseDetailScreen(
+                                                exerciseName: workout.name,
+                                                selectedDate: widget.selectedDate,
+                                                initialWeight: workout.weight.toInt(),
+                                                initialSets: workout.sets,
+                                                recordDay: _recordDay,
+                                              ),
+                                            ),
+                                          );
+                                          _loadWorkouts();
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(18),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    width: 44,
+                                                    height: 44,
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .primary
+                                                          .withValues(alpha: 0.10),
+                                                      borderRadius:
+                                                          BorderRadius.circular(14),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.fitness_center_rounded,
+                                                      size: 20,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .primary,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 14),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          workout.name,
+                                                          style: Theme.of(context)
+                                                              .textTheme
+                                                              .titleMedium
+                                                              ?.copyWith(
+                                                                  fontWeight:
+                                                                      FontWeight.w700),
+                                                          overflow:
+                                                              TextOverflow.ellipsis,
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        if (workout.equipment
+                                                            .isNotEmpty)
+                                                          Text(
+                                                            workout.equipment,
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                                  color: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodySmall
+                                                                      ?.color
+                                                                      ?.withValues(alpha: 0.8),
+                                                                ),
+                                                          )
+                                                        else
+                                                          Text(
+                                                            '세트 기록 열기',
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                                  color: Theme.of(context)
+                                                                      .textTheme
+                                                                      .bodySmall
+                                                                      ?.color
+                                                                      ?.withValues(alpha: 0.72),
+                                                                ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Icon(
+                                                    Icons.drag_indicator_rounded,
+                                                    color: Theme.of(context)
+                                                        .iconTheme
+                                                        .color
+                                                        ?.withValues(alpha: 0.48),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 14),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 14, vertical: 12),
+                                                decoration: BoxDecoration(
+                                                  color: _workoutSoftSurface,
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    FutureBuilder<List<dynamic>>(
+                                                      future: _getSetInfo(
+                                                          workout.name,
+                                                          widget.selectedDate),
+                                                      builder:
+                                                          (context, snapshot) {
+                                                        if (!snapshot.hasData) {
+                                                          return Text(
+                                                            '세트 정보를 불러오는 중...',
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .bodySmall,
+                                                          );
+                                                        }
+                                                        final sets =
+                                                            snapshot.data![0] as int;
+                                                        final completed =
+                                                            snapshot.data![1] as int;
+                                                        return Text(
+                                                          '$completed / $sets 세트',
+                                                          style: Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium
+                                                              ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight.w600,
+                                                              ),
+                                                        );
+                                                      },
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          _deleteWorkout(workout),
+                                                      style:
+                                                          TextButton.styleFrom(
+                                                        foregroundColor:
+                                                            const Color(0xFFD47A63),
+                                                        minimumSize: Size.zero,
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                                horizontal: 8,
+                                                                vertical: 4),
+                                                        tapTargetSize:
+                                                            MaterialTapTargetSize
+                                                                .shrinkWrap,
+                                                      ),
+                                                      child: const Text('삭제'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                        ),
-                  ),
-                ],
-              );
-            }),
+                    ),
+                  ],
+                );
+              }),
+            ),
           ),
           bottomNavigationBar: NavigationBar(
-            destinations: [
+            destinations: const [
               NavigationDestination(
-                icon: const Icon(Icons.fitness_center),
+                icon: Icon(Icons.fitness_center),
                 label: '운동',
               ),
-              const NavigationDestination(
+              NavigationDestination(
                 icon: Icon(Icons.person),
                 label: '프로필',
               ),
-              const NavigationDestination(
+              NavigationDestination(
                 icon: Icon(Icons.calendar_today),
                 label: '캘린더',
               ),
@@ -681,29 +918,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               }
             },
           ),
-          floatingActionButton: Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.neonLime, AppColors.neonCyan],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.neonLime.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: FloatingActionButton(
-              onPressed: _addWorkout,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              child: const Icon(Icons.add, color: Colors.black),
-            ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _addWorkout,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('운동 추가'),
           ),
         ),
-        RestFabOverlay(),
+        const RestFabOverlay(),
       ],
     );
   }

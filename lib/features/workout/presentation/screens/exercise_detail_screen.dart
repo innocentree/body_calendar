@@ -15,6 +15,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
 import '../../../../core/widgets/horizontal_dial_picker.dart';
 
+const _detailBorderColor = Color(0xFF3A342E);
+const _detailSurface = Color(0xFF211D19);
+const _detailSoftSurface = Color(0xFF2A2520);
+const _detailMutedText = Color(0xFFA8A099);
+
 class ExerciseSet {
   final double weight;
   final int reps;
@@ -498,6 +503,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -528,7 +534,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             backgroundColor: AppColors.customSurface,
                             foregroundColor: Colors.white70,
                             visualDensity: VisualDensity.compact,
-                            side: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.5)),
+                            side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45)),
                           ),
                         ),
                 ],
@@ -584,6 +590,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -605,7 +612,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   backgroundColor: AppColors.customSurface,
                   foregroundColor: Colors.white70,
                   visualDensity: VisualDensity.compact,
-                  side: BorderSide(color: AppColors.neonCyan.withValues(alpha: 0.5)),
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45)),
                 ),
               ),
             ],
@@ -819,27 +826,31 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   Widget _buildUnitAdjuster(BuildContext context, String title, String value, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.customSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.neonLime.withValues(alpha: 0.5)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: _detailSurface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _detailBorderColor),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(color: _detailMutedText, fontSize: 12),
             ),
-            child: Text(
+            const SizedBox(height: 6),
+            Text(
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -981,15 +992,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
               children: [
                 Text(
                   DateFormat('yyyy-MM-dd').format(widget.selectedDate),
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 13),
                 ),
                 Text(
-                  (widget.recordDay > 0 ? '${widget.recordDay}번째 기록  ' : ''),
-                  style: const TextStyle(fontSize: 12),
+                  (widget.recordDay > 0 ? '${widget.recordDay}번째 운동 기록' : ''),
+                  style: const TextStyle(fontSize: 11),
                 ),
                 Text(
                   widget.exerciseName,
-                  style: const TextStyle(fontSize: 15),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -1101,11 +1112,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.customSurface,
+                        color: AppColors.cardDark,
                         borderRadius: BorderRadius.circular(16),
                         border: index == _currentSetIndex
                             ? Border.all(
-                                color: AppColors.neonCyan.withValues(alpha: 0.5),
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
                                 width: 1)
                             : null,
                       ),
@@ -1121,7 +1132,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           backgroundColor: Colors.transparent,
                           collapsedBackgroundColor: Colors.transparent,
                           collapsedIconColor: Colors.white,
-                          iconColor: AppColors.neonLime,
+                          iconColor: Theme.of(context).colorScheme.primary,
                           onExpansionChanged: (expanded) {
                             if (expanded) {
                               for (int i = 0;
@@ -1138,9 +1149,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                             backgroundColor: set.isCompleted
-                                ? AppColors.neonLime.withValues(alpha: 0.8)
+                                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
                                 : index == _currentSetIndex
-                                    ? AppColors.neonCyan
+                                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.55)
                                     : Colors.grey.withValues(alpha: 0.3),
                             foregroundColor:
                                 set.isCompleted || index == _currentSetIndex
@@ -2030,9 +2041,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       width: double.infinity,
                                       height: 56,
                                       decoration: BoxDecoration(
-                                        color: AppColors.customSurface,
+                                        color: AppColors.cardDark,
                                         border: Border.all(
-                                            color: AppColors.customSurface,
+                                            color: AppColors.cardDark,
                                             width: 2),
                                       ),
                                     ),
@@ -2199,27 +2210,21 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.neonCyan.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: _detailSoftSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _detailBorderColor),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle, color: Colors.black, size: 20),
+                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     widget.message,
                     style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
                   ),
@@ -2273,33 +2278,30 @@ class _StatBox extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.customSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: isHighlighted
-            ? Border.all(color: AppColors.neonLime, width: 2)
-            : Border.all(color: Colors.transparent, width: 2),
-        boxShadow: isHighlighted
-            ? [
-                BoxShadow(
-                    color: AppColors.neonLime.withValues(alpha: 0.5), blurRadius: 10)
-              ]
-            : [],
+        color: _detailSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isHighlighted
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.48)
+              : _detailBorderColor,
+          width: isHighlighted ? 1.4 : 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
               style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   fontSize: 13,
                   color: Colors.white)),
           const SizedBox(height: 4),
           Text(
             '${formatter(value)} $unit',
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.neonCyan),
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.primary),
           ),
           const SizedBox(height: 4),
           Row(
@@ -2314,7 +2316,7 @@ class _StatBox extends StatelessWidget {
             children: [
               Text('최고 ${formatter(best)}',
                   style:
-                      const TextStyle(fontSize: 11, color: AppColors.neonLime)),
+                      const TextStyle(fontSize: 11, color: _detailMutedText)),
               const SizedBox(width: 4),
               _buildComparisonArrow(value, best),
             ],
