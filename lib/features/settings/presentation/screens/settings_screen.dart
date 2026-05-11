@@ -53,15 +53,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('설정'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Theme.of(context).dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '앱 설정',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '테마, 단위, 데이터 관리 옵션을 한곳에서 정리해보세요.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.68),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           _buildSectionHeader(context, '일반'),
           BlocBuilder<ThemeBloc, ThemeState>(
             builder: (context, state) {
               final isDarkMode =
                   state.themeData.brightness == Brightness.dark;
               return SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 title: const Text('다크 모드'),
+                subtitle: const Text('차분한 다크 테마로 전환해요.'),
                 value: isDarkMode,
                 onChanged: (value) {
                   context
@@ -73,6 +103,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (!_isLoading)
             SwitchListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               title: const Text('무게 단위 (Lbs)'),
               subtitle: Text(_useLbs ? '현재 단위: 파운드 (lbs)' : '현재 단위: 킬로그램 (kg)'),
               value: _useLbs,
@@ -81,12 +113,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 32),
           _buildSectionHeader(context, '데이터 관리'),
           ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            tileColor: Theme.of(context).cardTheme.color,
             leading: const Icon(Icons.download),
             title: const Text('데이터 백업'),
             subtitle: const Text('운동 기록과 루틴을 파일로 저장해요.'),
             onTap: () => _backupData(context),
           ),
+          const SizedBox(height: 10),
           ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            tileColor: Theme.of(context).cardTheme.color,
             leading: const Icon(Icons.upload),
             title: const Text('데이터 복원'),
             subtitle: const Text('백업 파일로 데이터를 복원해요. 기존 데이터는 새 데이터로 대체돼요.'),

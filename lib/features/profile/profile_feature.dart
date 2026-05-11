@@ -116,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('프로필 (${DateFormat('yyyy-MM-dd').format(widget.selectedDate)})'),
+        title: Text('바디 로그 · ${DateFormat('yyyy-MM-dd').format(widget.selectedDate)}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -132,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Text('선택한 날짜에 저장된 데이터가 없어요.', textAlign: TextAlign.center),
                 )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
                   child: Column(
                     children: [
                       if (_hasBodyCompDataForDate)
@@ -175,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () async {
           final List<String> itemsToEdit = records.map((r) => r.name).toList();
@@ -192,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _loadRecords();
         },
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -281,7 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildSettingsSection() {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
