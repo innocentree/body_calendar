@@ -338,7 +338,7 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('기록 항목 선택'),
+        title: const Text('기록할 항목 선택'),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -418,7 +418,7 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
               }
             }
           },
-          child: const Text('선택 완료'),
+          child: const Text('이 항목으로 시작'),
         ),
       ),
     );
@@ -564,7 +564,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('$item 기록 편집'),
+          title: Text('$item 기록 수정'),
           content: TextField(
             controller: editController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -586,7 +586,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: const Text('변경 저장'),
+              child: const Text('저장'),
               onPressed: () {
                 final doubleValue = double.tryParse(editController.text);
                 if (doubleValue != null) {
@@ -618,7 +618,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('바디 변화 기록'),
+        title: const Text('바디 로그'),
       ),
       body: TabBarView(
         controller: _tabController,

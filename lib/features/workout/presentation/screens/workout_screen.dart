@@ -429,7 +429,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               IconButton(
                 icon: const Icon(Icons.folder_open),
                 onPressed: _loadRoutine,
-                tooltip: '저장된 루틴 불러오기',
+                tooltip: '루틴 불러오기',
               ),
             ],
             bottom: TabBar(
@@ -618,7 +618,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                               builder: (context, snapshot) {
                                                 if (!snapshot.hasData) {
                                                   return const Text(
-                                                      '세트 정보 불러오는 중...',
+                                                      '세트 정보를 불러오는 중...',
                                                       style: TextStyle(
                                                           color: Colors.grey));
                                                 }

@@ -741,7 +741,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   }
                 });
               },
-              child: const Text('저장'),
+              child: const Text('변경 저장'),
             ),
           ],
         ),
