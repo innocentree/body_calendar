@@ -2,7 +2,6 @@ import 'package:body_calendar/features/settings/presentation/screens/settings_sc
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../workout/presentation/screens/workout_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';

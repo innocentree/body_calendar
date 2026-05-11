@@ -198,7 +198,7 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                 dotData: FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: Colors.deepPurpleAccent.withOpacity(0.2),
+                                  color: Colors.deepPurpleAccent.withValues(alpha: 0.2),
                                 ),
                               ),
                             ],

@@ -66,7 +66,7 @@ Future<void> _restore() async {
           }
         }
       } catch (e) {
-        print('Error during auto restore: $e');
+        debugPrint('Error during auto restore: $e');
       }
     }
   }

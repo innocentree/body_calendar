@@ -76,7 +76,6 @@ class WorkoutScreen extends StatefulWidget {
 class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProviderStateMixin {
   List<WorkoutRecord> _workouts = [];
   late TabController _tabController;
-  int _recordCount = 0; // 총 운동 기록 횟수
   late SharedPreferences _prefs;
   int _recordDay = 0;
   late final WorkoutRoutineRepository _workoutRoutineRepository;
@@ -90,14 +89,11 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
       _tabController = TabController(length: 3, vsync: this, initialIndex: widget.sessionIndex - 1);
       _tabController.addListener(_handleTabSelection);
       
-      // 실제 앱에서는 이 부분에서 데이터베이스에서 운동 기록을 불러옵니다
-      _recordCount = 181; // 예시 데이터
       _calculateRecordDay();
     } catch (e) {
       debugPrint('Error initializing WorkoutScreen: $e');
       // 에러 발생 시 기본값으로 초기화
       _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
-      _recordCount = 0;
     }
   }
 
@@ -206,8 +202,6 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     if (_workouts.isNotEmpty) return;
 
     final today = widget.selectedDate;
-    final todayStr = DateFormat('yyyy-MM-dd').format(today);
-    
     // 현재 주차의 월요일 찾기
     final firstDayOfWeek = today.subtract(Duration(days: today.weekday - 1));
     
@@ -540,7 +534,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -695,7 +689,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.neonLime.withOpacity(0.3),
+                  color: AppColors.neonLime.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),

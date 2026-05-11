@@ -33,7 +33,7 @@ class ExerciseList extends StatelessWidget {
               ),
             ),
             leading: CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+              backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
               child: Icon(
                 Icons.fitness_center,
                 color: Theme.of(context).primaryColor,
