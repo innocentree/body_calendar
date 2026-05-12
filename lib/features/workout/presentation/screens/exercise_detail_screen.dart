@@ -1112,13 +1112,18 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: set.isCompleted
+                            ? AppColors.cardDark.withValues(alpha: 0.96)
+                            : AppColors.cardDark,
                         borderRadius: BorderRadius.circular(16),
-                        border: index == _currentSetIndex
-                            ? Border.all(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
-                                width: 1)
-                            : null,
+                        border: Border.all(
+                          color: set.isCompleted
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.34)
+                              : index == _currentSetIndex
+                                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.55)
+                                  : Colors.white.withValues(alpha: 0.06),
+                          width: index == _currentSetIndex || set.isCompleted ? 1.2 : 1,
+                        ),
                       ),
                       child: Theme(
                         data: Theme.of(context).copyWith(
@@ -1177,8 +1182,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           ),
                           subtitle: Text(
                               set.isCompleted
-                                  ? '클리어 완료'
-                                  : '쿨다운 ${set.restTime.inSeconds}초',
+                                  ? '클리어 완료 · 보상 반영됨'
+                                  : index == _currentSetIndex
+                                      ? '현재 진행 중 · 쿨다운 ${set.restTime.inSeconds}초'
+                                      : '대기 중 · 쿨다운 ${set.restTime.inSeconds}초',
                               style: const TextStyle(color: Colors.grey)),
                           trailing: IconButton(
                             icon:
