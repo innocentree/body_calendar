@@ -116,22 +116,22 @@ class _RestFabOverlayState extends State<RestFabOverlay> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.deepPurple,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+          color: const Color(0xFF151C29),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFF243043)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.timer, color: Colors.white),
+            const Icon(Icons.timelapse_rounded, color: Color(0xFF74F0B2)),
             const SizedBox(width: 8),
             Text(
-              '$duration',
+              '쿨다운 $duration',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.none,
-                fontSize: 40,
+                fontSize: 22,
               ),
             ),
           ],

@@ -208,7 +208,7 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                 getTooltipItems: (touchedSpots) {
                                   return touchedSpots.map((spot) {
                                     return LineTooltipItem(
-                                      '${spot.y.toStringAsFixed(1)} kg',
+                                      '점수 ${spot.y.toStringAsFixed(1)}',
                                       const TextStyle(color: Colors.white),
                                     );
                                   }).toList();
