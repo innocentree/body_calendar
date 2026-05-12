@@ -706,7 +706,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('휴식 (초)',
+                      const Text('쿨다운 (초)',
                           style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       HorizontalDialPicker(
@@ -1028,7 +1028,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               );
                             },
                             child: _StatBox(
-                              title: '최대 무게',
+                              title: '최고 중량',
                               value: _toDisplayWeight(todayMaxWeight),
                               prev: _toDisplayWeight(prevMaxWeight),
                               best: _toDisplayWeight(bestMaxWeight),
@@ -1070,7 +1070,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                               );
                             },
                             child: _StatBox(
-                              title: '볼륨',
+                              title: '누적 볼륨',
                               value: _toDisplayWeight(todayTotalVolume),
                               prev: _toDisplayWeight(prevTotalVolume),
                               best: _toDisplayWeight(bestTotalVolume),
@@ -1173,7 +1173,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     fontSize: 16,
                                   ),
                           ),
-                          subtitle: Text('휴식 ${set.restTime.inSeconds}초',
+                          subtitle: Text('쿨다운 ${set.restTime.inSeconds}초',
                               style: const TextStyle(color: Colors.grey)),
                           trailing: IconButton(
                             icon:
@@ -1238,7 +1238,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     onTap: () {
                                                       _showNumberInputDialog(
                                                         context,
-                                                        '체중 입력',
+                                                        '체중 설정',
                                                         _sets[index]
                                                                 .bodyWeight ??
                                                             70.0,
@@ -1757,7 +1757,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                         restTime: newRestTime);
                                                 _saveSets();
 
-                                                // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
+                                                // 현재 쿨다운 중인 세트(직전 완료된 세트)의 쿨다운 시간이 변경되면 타이머 업데이트
                                                 if (index ==
                                                     _currentSetIndex - 1) {
                                                   context.read<TimerBloc>().add(
@@ -1835,7 +1835,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                         restTime: newRestTime);
                                                 _saveSets();
 
-                                                // 현재 휴식 중인 세트(직전 완료된 세트)의 휴식 시간이 변경되면 타이머 업데이트
+                                                // 현재 쿨다운 중인 세트(직전 완료된 세트)의 쿨다운 시간이 변경되면 타이머 업데이트
                                                 if (index ==
                                                     _currentSetIndex - 1) {
                                                   context.read<TimerBloc>().add(
@@ -1874,7 +1874,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     }
                                                   });
                                                   _showTopNotification(
-                                                      '모든 세트에 휴식 시간이 적용되었습니다.');
+                                                      '모든 세트에 쿨다운 시간이 적용되었습니다.');
                                                 },
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
@@ -1916,7 +1916,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     }
                                                   });
                                                   _showTopNotification(
-                                                      '이후 미완료 세트에 휴식 시간이 적용되었습니다.');
+                                                      '이후 미완료 세트에 쿨다운 시간이 적용되었습니다.');
                                                 },
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
@@ -1980,7 +1980,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                 (value) => setState(() => _repsStep = value.toInt().clamp(1, 100)),
                               );
                             }),
-                            _buildUnitAdjuster(context, '휴식 단위', '$_restTimeStep초', () {
+                            _buildUnitAdjuster(context, '쿨다운 단위', '$_restTimeStep초', () {
                               _showNumberInputDialog(
                                 context,
                                 '휴식시간 단위 입력(초)',
@@ -2104,7 +2104,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                   color: Colors.black),
                                               SizedBox(width: 4),
                                               Text(
-                                                '휴식 완료',
+                                                '쿨다운 완료',
                                                 style: TextStyle(
                                                     color: Colors.black,
                                                     fontWeight:

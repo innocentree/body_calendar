@@ -450,7 +450,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               IconButton(
                 icon: const Icon(Icons.folder_open_outlined),
                 onPressed: _loadRoutine,
-                tooltip: '루틴 불러오기',
+                tooltip: '프리셋 불러오기',
               ),
             ],
             bottom: PreferredSize(
@@ -610,9 +610,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                         children: [
                                           statChip('운동 시간', '$totalMinutes분'),
                                           const SizedBox(width: 10),
-                                          statChip('완료 세트', '${completedSets}세트'),
+                                          statChip('클리어 세트', '${completedSets}세트'),
                                           const SizedBox(width: 10),
-                                          statChip('총 무게',
+                                          statChip('누적 중량',
                                               _formatWeight(totalWeight * 1000)),
                                         ],
                                       ),
@@ -788,7 +788,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                                           )
                                                         else
                                                           Text(
-                                                            '세트 기록 열기',
+                                                            '세트 로그 열기',
                                                             style: Theme.of(context)
                                                                 .textTheme
                                                                 .bodySmall
@@ -996,7 +996,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     return [total, completed];
   }
 
-  // 완료 세트의 총 시간(분), 완료 세트 수, 완료 세트 무게(톤) 반환
+  // 클리어 세트의 총 시간(분), 클리어 세트 수, 클리어 세트 무게(톤) 반환
   Future<List<dynamic>> _getCompletedSetStats(List<WorkoutRecord> workouts) async {
     final prefs = await SharedPreferences.getInstance();
     int totalSeconds = 0;
