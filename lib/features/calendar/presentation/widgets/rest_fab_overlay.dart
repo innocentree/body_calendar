@@ -69,7 +69,7 @@ class _RestFabOverlayState extends State<RestFabOverlay> {
         final mq = MediaQuery.of(context);
         return Positioned(
           right: _fabOffset.dx,
-          bottom: _fabOffset.dy,
+          bottom: _fabOffset.dy + mq.padding.bottom,
           child: GestureDetector(
             onPanStart: (details) {
               _dragStartOffset = _fabOffset;

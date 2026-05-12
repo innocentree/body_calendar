@@ -319,7 +319,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.customBackground.withValues(alpha: 0.55),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.customBackground.withValues(alpha: 0.55)
+                                : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color:
@@ -421,8 +423,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         leftChevronIcon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.customBackground
-                                .withValues(alpha: 0.45),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.customBackground.withValues(alpha: 0.45)
+                                : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -434,8 +437,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         rightChevronIcon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.customBackground
-                                .withValues(alpha: 0.45),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.customBackground.withValues(alpha: 0.45)
+                                : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -711,7 +715,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         if (!isSameDay(_focusedDay, DateTime.now()))
           Positioned(
             left: 20,
-            bottom: 20,
+            bottom: MediaQuery.of(context).padding.bottom + 84,
             child: Material(
               color: Colors.transparent,
               child: InkWell(

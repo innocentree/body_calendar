@@ -918,10 +918,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               }
             },
           ),
-          floatingActionButton: FloatingActionButton.extended(
+          floatingActionButton: FloatingActionButton(
             onPressed: _addWorkout,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('운동 추가'),
+            child: const Icon(Icons.add_rounded),
           ),
         ),
         const RestFabOverlay(),
