@@ -305,7 +305,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         Text(
                           _selectedDay == null
                               ? '기록이 남은 날짜를 선택해 세션 로그를 확인해보세요.'
-                              : '${DateFormat('M월 d일 EEEE', 'ko_KR').format(_selectedDay!)} 기록을 보고 있어요.',
+                              : '${DateFormat('M월 d일 EEEE', 'ko_KR').format(_selectedDay!)} 로그를 확인하고 있어요.',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: Theme.of(context)
@@ -365,8 +365,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         weekendTextStyle: TextStyle(color: Colors.red[300]),
                         holidayTextStyle: TextStyle(color: Colors.red[300]),
                         selectedDecoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
+                          gradient: AppColors.primaryGradient,
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         selectedTextStyle: const TextStyle(
                           color: Colors.white,
@@ -546,7 +553,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         ),
                                         const SizedBox(height: 12),
                                         Text(
-                                          '아직 기록된 운동이 없어요',
+                                          '아직 클리어된 세션이 없어요',
                                           style: Theme.of(context)
                                               .textTheme
                                               .titleMedium,
@@ -635,7 +642,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                     ),
                                                     const SizedBox(height: 4),
                                                     Text(
-                                                      '운동 완료',
+                                                      '세션 클리어',
                                                       style: Theme.of(context)
                                                           .textTheme
                                                           .bodySmall

@@ -1145,6 +1145,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             }
                           },
                           leading: CircleAvatar(
+                            radius: 22,
                             child: Text('${index + 1}',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
@@ -1163,9 +1164,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                 ? '${_toDisplayWeight(set.weight, isLbs: set.isLbs).toStringAsFixed(1)}${_unitStr(isLbs: set.isLbs)} × ${set.reps}회'
                                 : '${set.reps}회',
                             style: set.isCompleted
-                                ? const TextStyle(
+                                ? TextStyle(
                                     decoration: TextDecoration.lineThrough,
-                                    color: Colors.grey,
+                                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.65),
+                                    fontWeight: FontWeight.w700,
                                   )
                                 : const TextStyle(
                                     color: Colors.white,
@@ -1173,7 +1175,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     fontSize: 16,
                                   ),
                           ),
-                          subtitle: Text('쿨다운 ${set.restTime.inSeconds}초',
+                          subtitle: Text(
+                              set.isCompleted
+                                  ? '클리어 완료'
+                                  : '쿨다운 ${set.restTime.inSeconds}초',
                               style: const TextStyle(color: Colors.grey)),
                           trailing: IconButton(
                             icon:
