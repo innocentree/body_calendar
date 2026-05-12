@@ -520,7 +520,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${index + 1}회차 준비',
+                                    '${index + 1}라운드 준비',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -598,7 +598,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${sessionWorkouts.length}개 운동이 정리되어 있어요',
+                                        '${sessionWorkouts.length}개 미션이 준비되어 있어요',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -610,7 +610,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                         children: [
                                           statChip('운동 시간', '$totalMinutes분'),
                                           const SizedBox(width: 10),
-                                          statChip('클리어 세트', '${completedSets}세트'),
+                                          statChip('클리어 미션', '${completedSets}세트'),
                                           const SizedBox(width: 10),
                                           statChip('누적 중량',
                                               _formatWeight(totalWeight * 1000)),
@@ -661,7 +661,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '아래 버튼으로 운동을 추가하고 오늘의 세션을 정리해보세요.',
+                                      '아래 버튼으로 미션을 추가하고 오늘 세션을 시작해보세요.',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme
@@ -996,7 +996,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     return [total, completed];
   }
 
-  // 클리어 세트의 총 시간(분), 클리어 세트 수, 클리어 세트 무게(톤) 반환
+  // 클리어 미션의 총 시간(분), 클리어 미션 수, 클리어 미션 무게(톤) 반환
   Future<List<dynamic>> _getCompletedSetStats(List<WorkoutRecord> workouts) async {
     final prefs = await SharedPreferences.getInstance();
     int totalSeconds = 0;

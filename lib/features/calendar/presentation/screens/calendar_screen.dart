@@ -251,7 +251,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const Text('캘린더'),
+            title: const Text('세션 허브'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings),
@@ -267,7 +267,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.analytics),
-                tooltip: '통계',
+                tooltip: '전적 보드',
                 onPressed: () {
                   Navigator.push(
                     context,

@@ -995,7 +995,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   style: const TextStyle(fontSize: 13),
                 ),
                 Text(
-                  (widget.recordDay > 0 ? '${widget.recordDay}번째 운동 기록' : ''),
+                  (widget.recordDay > 0 ? '${widget.recordDay}번째 미션 로그' : ''),
                   style: const TextStyle(fontSize: 11),
                 ),
                 Text(
@@ -1185,7 +1185,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                   ? '클리어 완료 · 보상 반영됨'
                                   : index == _currentSetIndex
                                       ? '현재 진행 중 · 쿨다운 ${set.restTime.inSeconds}초'
-                                      : '대기 중 · 쿨다운 ${set.restTime.inSeconds}초',
+                                      : '대기 중 · 다음 미션 준비',
                               style: const TextStyle(color: Colors.grey)),
                           trailing: IconButton(
                             icon:
