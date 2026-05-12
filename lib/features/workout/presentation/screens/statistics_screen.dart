@@ -66,7 +66,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '운동 통계',
+                            '전적 보드',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -74,7 +74,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            '운동별 기록 흐름을 한눈에 살펴볼 수 있어요.',
+                            '종목별 로그와 성장 흐름을 전적판처럼 살펴볼 수 있어요.',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Theme.of(context)
                                       .textTheme
@@ -112,7 +112,29 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               ),
                             );
                           },
-                          child: Text(name, style: const TextStyle(fontSize: 16)),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.sports_martial_arts_rounded,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(child: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }),
