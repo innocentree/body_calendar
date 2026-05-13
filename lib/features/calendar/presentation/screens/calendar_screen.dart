@@ -452,16 +452,43 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: isSameDay(day, DateTime.now()),
                             );
                           }
+                          final hasEvents = _getEventsForDay(day).isNotEmpty;
                           return Container(
                             margin: const EdgeInsets.all(4),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '${day.day}',
-                              style: TextStyle(
-                                color:
-                                    Theme.of(context).textTheme.bodyMedium?.color,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            decoration: BoxDecoration(
+                              color: hasEvents
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.10)
+                                  : Colors.transparent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Text(
+                                  '${day.day}',
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                                    fontWeight: hasEvents ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                ),
+                                if (hasEvents)
+                                  Positioned(
+                                    bottom: 6,
+                                    child: Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
                         },
@@ -474,7 +501,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: isSameDay(day, DateTime.now()),
                             );
                           }
-                          return null;
+                          final hasEvents = _getEventsForDay(day).isNotEmpty;
+                          return Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Text(
+                                  '${day.day}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (hasEvents)
+                                  Positioned(
+                                    bottom: 6,
+                                    child: Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
                         },
                         todayBuilder: (context, day, focusedDay) {
                           if (_calendarFormat == CalendarFormat.week) {
@@ -485,33 +543,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: true,
                             );
                           }
-                          return null;
-                        },
-                        markerBuilder: (context, day, events) {
-                          if (_calendarFormat == CalendarFormat.week) {
-                            return const SizedBox.shrink();
-                          }
-                          if (events.isEmpty) return null;
-                          return Positioned(
-                            bottom: 8,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: events.take(3).map((_) {
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                                  width: 5,
-                                  height: 5,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withValues(alpha: 0.75),
-                                    shape: BoxShape.circle,
+                          final hasEvents = _getEventsForDay(day).isNotEmpty;
+                          return Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.14),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.6),
+                                width: 1,
+                              ),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Text(
+                                  '${day.day}',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                );
-                              }).toList(),
+                                ),
+                                if (hasEvents)
+                                  Positioned(
+                                    bottom: 6,
+                                    child: Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
+                        },
+                        markerBuilder: (context, day, events) {
+                          return const SizedBox.shrink();
                         },
                       ),
                     ),
