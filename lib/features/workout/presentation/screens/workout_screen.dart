@@ -528,7 +528,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    '운동을 추가하면 세트와 로그가 여기에 쌓여요.',
+                                    '운동을 추가하면 세트와 기록이 여기에 정리돼요.',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyMedium
@@ -598,7 +598,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${sessionWorkouts.length}개 미션이 활성화됐어요',
+                                        '${sessionWorkouts.length}개 미션이 준비되어 있어요',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
