@@ -1,7 +1,8 @@
+import 'dart:convert';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:fl_chart/fl_chart.dart';
 
 class ExerciseStatisticsScreen extends StatefulWidget {
   final String exerciseName;
@@ -11,7 +12,8 @@ class ExerciseStatisticsScreen extends StatefulWidget {
   State<ExerciseStatisticsScreen> createState() => _ExerciseStatisticsScreenState();
 }
 
-class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> with SingleTickerProviderStateMixin {
+class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
+    with SingleTickerProviderStateMixin {
   Map<String, double> _dateToTotalWeight = {};
   Map<String, double> _dateToMaxWeight = {};
   Map<String, int> _dateToOrder = {};
@@ -33,15 +35,15 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
 
   Future<void> _loadStats() async {
     final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys().where((k) => k.startsWith('exercise_sets_${widget.exerciseName}_'));
+    final keys = prefs.getKeys().where(
+      (k) => k.startsWith('exercise_sets_${widget.exerciseName}_'),
+    );
     final Map<String, double> dateToWeight = {};
     final Map<String, double> dateToMax = {};
     final Map<String, int> dateToOrder = {};
 
     for (final key in keys) {
       final dateStr = key.split('_').last;
-      
-      // 해당 날짜의 운동 순서 찾기
       final workoutsKey = 'workouts_$dateStr';
       final workoutsJson = prefs.getStringList(workoutsKey) ?? [];
       int order = -1;
@@ -74,13 +76,10 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
           if (weight > maxWeight) maxWeight = weight;
         } catch (_) {}
       }
-      if (total > 0) {
-        dateToWeight[dateStr] = total;
-      }
-      if (maxWeight > 0) {
-        dateToMax[dateStr] = maxWeight;
-      }
+      if (total > 0) dateToWeight[dateStr] = total;
+      if (maxWeight > 0) dateToMax[dateStr] = maxWeight;
     }
+
     if (!mounted) return;
     setState(() {
       _dateToTotalWeight = dateToWeight;
@@ -90,28 +89,236 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
     });
   }
 
+  Widget _buildHeaderCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${widget.exerciseName} 전적판',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '날짜별 최고 기록과 누적 성장을 한눈에 확인해보세요.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withValues(alpha: 0.68),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartTab({
+    required BuildContext context,
+    required List<String> dates,
+    required List<double> values,
+    required String title,
+    required String unit,
+    required Color color,
+  }) {
+    if (dates.isEmpty) {
+      return const Center(child: Text('해당 운동의 아직 기록이 없어요.'));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildHeaderCard(context),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Theme.of(context).dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 240,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: values.isEmpty ? 1 : (values.reduce((a, b) => a > b ? a : b) / 4).clamp(1, double.infinity),
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final idx = value.toInt();
+                              if (idx < 0 || idx >= dates.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return Text(
+                                dates[idx].substring(5),
+                                style: const TextStyle(fontSize: 10),
+                              );
+                            },
+                            interval: 1,
+                            reservedSize: 32,
+                          ),
+                        ),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      minX: 0,
+                      maxX: (dates.length - 1).toDouble(),
+                      minY: 0,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: [
+                            for (int i = 0; i < values.length; i++)
+                              FlSpot(i.toDouble(), values[i]),
+                          ],
+                          isCurved: true,
+                          color: color,
+                          barWidth: 3,
+                          dotData: FlDotData(show: true),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: color.withValues(alpha: 0.16),
+                          ),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          tooltipBgColor: Colors.black87,
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final date = dates[spot.x.toInt()];
+                              final order = _dateToOrder[date];
+                              return LineTooltipItem(
+                                '$date\n${spot.y.toStringAsFixed(1)} $unit${order != null ? '\n(${order}회차)' : ''}',
+                                const TextStyle(color: Colors.white),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView.separated(
+              itemCount: dates.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              itemBuilder: (context, idx) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.bolt_rounded, size: 18, color: color),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(dates[idx], style: const TextStyle(fontWeight: FontWeight.w700)),
+                            if (_dateToOrder[dates[idx]] != null)
+                              Text('${_dateToOrder[dates[idx]]}회차 클리어', style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color)),
+                          ],
+                        ),
+                      ),
+                      Text('${values[idx].toStringAsFixed(1)} $unit'),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dates = _dateToTotalWeight.keys.toList()..sort();
     final weights = dates.map((d) => _dateToTotalWeight[d] ?? 0.0).toList();
     final maxDates = _dateToMaxWeight.keys.toList()..sort();
     final maxWeights = maxDates.map((d) => _dateToMaxWeight[d] ?? 0.0).toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.exerciseName} 통계'),
+        title: Text('${widget.exerciseName} 전적'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.deepPurple,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Colors.deepPurple,
-              tabs: const [
-                Tab(text: '전체 수행 중량'),
-                Tab(text: '최고 세트 무게'),
-              ],
+          preferredSize: const Size.fromHeight(62),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Theme.of(context).dividerColor),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.28),
+                  ),
+                ),
+                dividerColor: Colors.transparent,
+                tabs: const [
+                  Tab(text: '누적 중량'),
+                  Tab(text: '최고 세트'),
+                ],
+              ),
             ),
           ),
         ),
@@ -121,180 +328,24 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen> wit
           : TabBarView(
               controller: _tabController,
               children: [
-                // 전체 수행 중량 탭
-                _dateToTotalWeight.isEmpty
-                    ? const Center(child: Text('해당 운동의 아직 기록이 없어요.'))
-                    : Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text('날짜별 총 무게(kg)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 240,
-                              child: LineChart(
-                                LineChartData(
-                                  gridData: FlGridData(show: true),
-                                  titlesData: FlTitlesData(
-                                    leftTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-                                    ),
-                                    bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        getTitlesWidget: (value, meta) {
-                                          final idx = value.toInt();
-                                          if (idx < 0 || idx >= dates.length) return const SizedBox.shrink();
-                                          return Text(dates[idx].substring(5), style: const TextStyle(fontSize: 10));
-                                        },
-                                        interval: 1,
-                                        reservedSize: 32,
-                                      ),
-                                    ),
-                                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  ),
-                                  borderData: FlBorderData(show: true),
-                                  minX: 0,
-                                  maxX: (dates.length - 1).toDouble(),
-                                  minY: 0,
-                                  lineBarsData: [
-                                    LineChartBarData(
-                                      spots: [
-                                        for (int i = 0; i < weights.length; i++)
-                                          FlSpot(i.toDouble(), weights[i]),
-                                      ],
-                                      isCurved: false,
-                                      color: Colors.deepPurple,
-                                      barWidth: 3,
-                                      dotData: FlDotData(show: true),
-                                    ),
-                                  ],
-                                  lineTouchData: LineTouchData(
-                                    touchTooltipData: LineTouchTooltipData(
-                                      // tooltipBgColor: Colors.deepPurpleAccent,
-                                      getTooltipItems: (touchedSpots) {
-                                        return touchedSpots.map((spot) {
-                                          final date = dates[spot.x.toInt()];
-                                          final order = _dateToOrder[date];
-                                          return LineTooltipItem(
-                                            '${dates[spot.x.toInt()]}\n${spot.y.toStringAsFixed(1)} kg${order != null ? '\n($order회차)' : ''}',
-                                            const TextStyle(color: Colors.white),
-                                          );
-                                        }).toList();
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: dates.length,
-                                itemBuilder: (context, idx) {
-                                  return ListTile(
-                                    title: Text('${dates[idx]}'),
-                                    subtitle: _dateToOrder[dates[idx]] != null
-                                        ? Text('${_dateToOrder[dates[idx]]}회차 수행')
-                                        : null,
-                                    trailing: Text('${weights[idx].toStringAsFixed(1)} kg'),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                // 최고 세트 무게 탭
-                _dateToMaxWeight.isEmpty
-                    ? const Center(child: Text('해당 운동의 아직 기록이 없어요.'))
-                    : Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text('날짜별 최고 세트 무게(kg)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 240,
-                              child: LineChart(
-                                LineChartData(
-                                  gridData: FlGridData(show: true),
-                                  titlesData: FlTitlesData(
-                                    leftTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-                                    ),
-                                    bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        getTitlesWidget: (value, meta) {
-                                          final idx = value.toInt();
-                                          if (idx < 0 || idx >= maxDates.length) return const SizedBox.shrink();
-                                          return Text(maxDates[idx].substring(5), style: const TextStyle(fontSize: 10));
-                                        },
-                                        interval: 1,
-                                        reservedSize: 32,
-                                      ),
-                                    ),
-                                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  ),
-                                  borderData: FlBorderData(show: true),
-                                  minX: 0,
-                                  maxX: (maxDates.length - 1).toDouble(),
-                                  minY: 0,
-                                  lineBarsData: [
-                                    LineChartBarData(
-                                      spots: [
-                                        for (int i = 0; i < maxWeights.length; i++)
-                                          FlSpot(i.toDouble(), maxWeights[i]),
-                                      ],
-                                      isCurved: false,
-                                      color: Colors.deepPurple,
-                                      barWidth: 3,
-                                      dotData: FlDotData(show: true),
-                                    ),
-                                  ],
-                                  lineTouchData: LineTouchData(
-                                    touchTooltipData: LineTouchTooltipData(
-                                      // tooltipBgColor: Colors.deepPurpleAccent,
-                                      getTooltipItems: (touchedSpots) {
-                                        return touchedSpots.map((spot) {
-                                          final date = maxDates[spot.x.toInt()];
-                                          final order = _dateToOrder[date];
-                                          return LineTooltipItem(
-                                            '${maxDates[spot.x.toInt()]}\n${spot.y.toStringAsFixed(1)} kg${order != null ? '\n($order회차)' : ''}',
-                                            const TextStyle(color: Colors.white),
-                                          );
-                                        }).toList();
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: maxDates.length,
-                                itemBuilder: (context, idx) {
-                                  return ListTile(
-                                    title: Text('${maxDates[idx]}'),
-                                    subtitle: _dateToOrder[maxDates[idx]] != null
-                                        ? Text('${_dateToOrder[maxDates[idx]]}회차 수행')
-                                        : null,
-                                    trailing: Text('${maxWeights[idx].toStringAsFixed(1)} kg'),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                _buildChartTab(
+                  context: context,
+                  dates: dates,
+                  values: weights,
+                  title: '누적 중량 그래프',
+                  unit: 'kg',
+                  color: const Color(0xFF4BC2FF),
+                ),
+                _buildChartTab(
+                  context: context,
+                  dates: maxDates,
+                  values: maxWeights,
+                  title: '최고 세트 그래프',
+                  unit: 'kg',
+                  color: const Color(0xFF74F0B2),
+                ),
               ],
             ),
     );
   }
-} 
+}
