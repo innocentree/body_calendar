@@ -296,7 +296,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '세션 캘린더',
+                          '운동 캘린더',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -304,7 +304,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         const SizedBox(height: 6),
                         Text(
                           _selectedDay == null
-                              ? '기록이 남은 날짜를 선택해 세션 로그를 확인해보세요.'
+                              ? '운동 기록이 있는 날을 살펴보세요.'
                               : '${DateFormat('M월 d일 EEEE', 'ko_KR').format(_selectedDay!)} 기록을 보고 있어요.',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -742,7 +742,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '오늘 로그로 이동',
+                        '오늘로 이동',
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.bold,

@@ -104,9 +104,9 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
 
   String get _title {
     switch (widget.type) {
-      case ExerciseStatisticType.volume: return '${widget.exerciseName} 볼륨 로그';
-      case ExerciseStatisticType.maxWeight: return '${widget.exerciseName} 최고 중량 로그';
-      case ExerciseStatisticType.oneRM: return '${widget.exerciseName} 1RM 로그';
+      case ExerciseStatisticType.volume: return '${widget.exerciseName} 볼륨 추이';
+      case ExerciseStatisticType.maxWeight: return '${widget.exerciseName} 최대 무게 추이';
+      case ExerciseStatisticType.oneRM: return '${widget.exerciseName} 1RM 추이';
     }
   }
 
@@ -124,9 +124,9 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF151C29),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF243043)),
+          color: const Color(0xFF1E1E1E), // Match app theme approx
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white24),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -193,12 +193,12 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                     FlSpot(i.toDouble(), values[i]),
                                 ],
                                 isCurved: true,
-                                color: const Color(0xFF4BC2FF),
+                                color:Colors.deepPurpleAccent,
                                 barWidth: 3,
                                 dotData: FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: const Color(0xFF4BC2FF).withValues(alpha: 0.18),
+                                  color: Colors.deepPurpleAccent.withValues(alpha: 0.2),
                                 ),
                               ),
                             ],
@@ -220,7 +220,7 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
             ),
             const SizedBox(height: 16),
             const Text(
-              '최근 7회 로그',
+              '최근 7회 기록',
               style: TextStyle(color: Colors.grey, fontSize: 12),
               textAlign: TextAlign.center,
             ),
