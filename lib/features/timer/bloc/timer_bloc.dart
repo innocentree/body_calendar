@@ -89,13 +89,22 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   void _onDurationUpdated(TimerDurationUpdated event, Emitter<TimerState> emit) {
     if (state is TimerRunInProgress) {
       final oldState = state as TimerRunInProgress;
-      final currentRemaining = oldState.duration;
+      final delta = event.duration - oldState.initialDuration;
+      final adjustedRemaining = (oldState.duration + delta).clamp(0, event.duration);
 
-      _expiresAt = DateTime.now().add(Duration(seconds: currentRemaining));
-      emit(TimerRunInProgress(currentRemaining, event.duration, expiresAt: _expiresAt));
+      _expiresAt = DateTime.now().add(Duration(seconds: adjustedRemaining));
+      emit(
+        TimerRunInProgress(
+          adjustedRemaining,
+          event.duration,
+          expiresAt: _expiresAt,
+        ),
+      );
     } else if (state is TimerRunPause) {
       final oldState = state as TimerRunPause;
-      emit(TimerRunPause(oldState.duration, event.duration));
+      final delta = event.duration - oldState.initialDuration;
+      final adjustedRemaining = (oldState.duration + delta).clamp(0, event.duration);
+      emit(TimerRunPause(adjustedRemaining, event.duration));
     }
   }
 
