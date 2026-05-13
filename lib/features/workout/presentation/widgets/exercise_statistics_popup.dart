@@ -104,9 +104,9 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
 
   String get _title {
     switch (widget.type) {
-      case ExerciseStatisticType.volume: return '${widget.exerciseName} 볼륨 전적';
-      case ExerciseStatisticType.maxWeight: return '${widget.exerciseName} 최고 중량 전적';
-      case ExerciseStatisticType.oneRM: return '${widget.exerciseName} 1RM 전적';
+      case ExerciseStatisticType.volume: return '${widget.exerciseName} 볼륨 로그';
+      case ExerciseStatisticType.maxWeight: return '${widget.exerciseName} 최고 중량 로그';
+      case ExerciseStatisticType.oneRM: return '${widget.exerciseName} 1RM 로그';
     }
   }
 
