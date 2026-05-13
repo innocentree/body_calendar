@@ -43,9 +43,16 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF151C29),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFF243043), width: 1.4),
+          color: Colors.black.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.neonLime, width: 2),
+          boxShadow: [
+             BoxShadow(
+               color: AppColors.neonLime.withValues(alpha: 0.3),
+               blurRadius: 8,
+               offset: const Offset(0, 4),
+             )
+          ]
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -61,7 +68,7 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
              Row(
                mainAxisAlignment: MainAxisAlignment.center,
                children: [
-                 const Icon(Icons.timelapse_rounded, color: AppColors.primary, size: 20),
+                 const Icon(Icons.timer, color: AppColors.neonLime, size: 20),
                  const SizedBox(width: 8),
                  Text(
                    _formatDuration(_remainingTime),
@@ -76,7 +83,7 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
              ),
              const SizedBox(height: 4),
              Text(
-               '탭해서 세트 로그로 돌아가기',
+               '터치하여 앱으로 돌아가기',
                style: TextStyle(
                  color: Colors.white.withValues(alpha: 0.7),
                  fontSize: 10,
