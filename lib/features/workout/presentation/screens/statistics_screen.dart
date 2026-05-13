@@ -48,7 +48,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const Text('전적 보드'),
+            title: const Text('운동 통계'),
           ),
           body: _exerciseNames.isEmpty
               ? const Center(child: Text('기록된 운동 종목이 아직 없어요.'))
@@ -74,7 +74,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            '종목별 전적과 성장 흐름을 스테이지 기록처럼 살펴볼 수 있어요.',
+                            '종목별 로그와 성장 흐름을 전적판처럼 살펴볼 수 있어요.',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Theme.of(context)
                                       .textTheme
