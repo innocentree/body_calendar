@@ -1677,7 +1677,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     _saveSets();
                                                   });
                                                   _showTopNotification(
-                                                      '모든 세트에 횟수를 동기화했어요.');
+                                                      '모든 세트에 횟수가 적용되었습니다.');
                                                 },
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
@@ -1712,7 +1712,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     _saveSets();
                                                   });
                                                   _showTopNotification(
-                                                      '이후 미완료 세트에 횟수를 동기화했어요.');
+                                                      '이후 미완료 세트에 횟수가 적용되었습니다.');
                                                 },
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
@@ -1879,7 +1879,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     }
                                                   });
                                                   _showTopNotification(
-                                                      '모든 세트에 쿨다운을 동기화했어요.');
+                                                      '모든 세트에 쿨다운 시간이 적용되었습니다.');
                                                 },
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
