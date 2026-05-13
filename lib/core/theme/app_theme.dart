@@ -31,8 +31,8 @@ class AppTheme {
       secondary: AppColors.secondary,
       tertiary: AppColors.accent,
       surface: AppColors.surfaceLight,
-      onPrimary: Colors.black,
-      onSecondary: Colors.black,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
       onSurface: AppColors.textPrimaryLight,
     ),
     scaffoldBackgroundColor: AppColors.backgroundLight,
@@ -48,12 +48,12 @@ class AppTheme {
       color: AppColors.surfaceLight,
       elevation: 0,
       shadowColor: Colors.black.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFF243043), width: 1)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 0,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -62,7 +62,7 @@ class AppTheme {
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: AppColors.primary,
-      foregroundColor: Colors.black,
+      foregroundColor: Colors.white,
       elevation: 2,
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -114,8 +114,8 @@ class AppTheme {
       secondary: AppColors.secondary,
       tertiary: AppColors.accent,
       surface: AppColors.customBackground,
-      onPrimary: Colors.black,
-      onSecondary: Colors.black,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
       onSurface: AppColors.textPrimaryDark,
       error: AppColors.error,
     ),
@@ -162,8 +162,8 @@ class AppTheme {
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: AppColors.primary,
-      foregroundColor: Colors.black,
-      elevation: 4,
+      foregroundColor: Colors.white,
+      elevation: 2,
       shape: CircleBorder(),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -177,7 +177,7 @@ class AppTheme {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.customBackground,
-      indicatorColor: const Color(0xFF223047),
+      indicatorColor: const Color(0xFF2C2925),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const IconThemeData(color: AppColors.textPrimaryDark);
