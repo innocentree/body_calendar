@@ -35,17 +35,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   void _onStarted(TimerStarted event, Emitter<TimerState> emit) {
     _expiresAt = DateTime.now().add(Duration(seconds: event.duration));
     emit(TimerRunInProgress(event.duration, event.duration, expiresAt: _expiresAt));
-    _tickerSubscription?.cancel();
-    _tickerSubscription = _ticker
-        .tick(ticks: event.duration) // Ticker still ticks 1 second at a time
-        .listen((_) {
-          // Instead of relying on the ticker's count, we calculate remaining time
-          final now = DateTime.now();
-          if (_expiresAt != null) {
-            final remaining = _expiresAt!.difference(now).inSeconds;
-             add(_TimerTicked(duration: remaining < 0 ? 0 : remaining, expiresAt: _expiresAt));
-          }
-        });
+    _restartTicker(event.duration);
     exerciseName = event.exerciseName;
     selectedDate = event.selectedDate;
   }
@@ -62,18 +52,10 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
 
   void _onResumed(TimerResumed event, Emitter<TimerState> emit) {
     if (state is TimerRunPause) {
-      _tickerSubscription?.resume();
-      // On resume, strictly speaking, we might want to recalculate expiresAt if we wanted to "extend" the timer by the paused duration.
-      // However, usually "active" timer in background implies it keeps running. 
-      // If the user hit PAUSE, they expect it to stop. 
-      // If the USER hit HOME (background), we want it to keep running (handled by _onTicked checking DateTime).
-      
-      // If we are coming back from a PAUSE state (user action), we should probably reset _expiresAt based on current remaining duration?
-      // For now, let's assume "Resumed" means continuing from where we left off.
-      // Re-calculating expiresAt:
       final remaining = state.duration;
       _expiresAt = DateTime.now().add(Duration(seconds: remaining));
-      
+      _restartTicker(remaining);
+
       emit(TimerRunInProgress(state.duration, (state as TimerRunPause).initialDuration, expiresAt: _expiresAt));
     }
   }
@@ -93,6 +75,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
       final adjustedRemaining = (oldState.duration + delta).clamp(0, event.duration);
 
       _expiresAt = DateTime.now().add(Duration(seconds: adjustedRemaining));
+      _restartTicker(adjustedRemaining);
       emit(
         TimerRunInProgress(
           adjustedRemaining,
@@ -106,6 +89,18 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
       final adjustedRemaining = (oldState.duration + delta).clamp(0, event.duration);
       emit(TimerRunPause(adjustedRemaining, event.duration));
     }
+  }
+
+  void _restartTicker(int ticks) {
+    _tickerSubscription?.cancel();
+    if (ticks <= 0) return;
+    _tickerSubscription = _ticker.tick(ticks: ticks).listen((_) {
+      final now = DateTime.now();
+      if (_expiresAt != null) {
+        final remaining = _expiresAt!.difference(now).inSeconds;
+        add(_TimerTicked(duration: remaining < 0 ? 0 : remaining, expiresAt: _expiresAt));
+      }
+    });
   }
 
   void _onTicked(_TimerTicked event, Emitter<TimerState> emit) {
