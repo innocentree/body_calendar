@@ -364,8 +364,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       eventLoader: _getEventsForDay,
                       calendarStyle: CalendarStyle(
                         outsideDaysVisible: false,
-                        weekendTextStyle: TextStyle(color: Colors.red[300]),
-                        holidayTextStyle: TextStyle(color: Colors.red[300]),
+                        weekendTextStyle: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.red[300]
+                              : const Color(0xFFB42318),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        holidayTextStyle: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.red[300]
+                              : const Color(0xFFB42318),
+                          fontWeight: FontWeight.w600,
+                        ),
                         selectedDecoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
@@ -378,14 +388,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withValues(alpha: 0.14),
+                              .withValues(alpha: 0.18),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: Theme.of(context)
                                 .colorScheme
                                 .primary
-                                .withValues(alpha: 0.6),
-                            width: 1,
+                                .withValues(alpha: 0.9),
+                            width: 1.6,
                           ),
                         ),
                         todayTextStyle: TextStyle(
@@ -470,8 +480,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 Text(
                                   '${day.day}',
                                   style: TextStyle(
-                                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                                    fontWeight: hasEvents ? FontWeight.w700 : FontWeight.w500,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Theme.of(context).textTheme.bodyMedium?.color
+                                        : const Color(0xFF101828),
+                                    fontWeight: hasEvents ? FontWeight.w700 : FontWeight.w600,
                                   ),
                                 ),
                                 if (hasEvents)
@@ -545,19 +557,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           }
                           final hasEvents = _getEventsForDay(day).isNotEmpty;
                           return Container(
-                            margin: const EdgeInsets.all(4),
+                            margin: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
                               color: Theme.of(context)
                                   .colorScheme
                                   .primary
-                                  .withValues(alpha: 0.14),
+                                  .withValues(alpha: 0.18),
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Theme.of(context)
                                     .colorScheme
                                     .primary
-                                    .withValues(alpha: 0.6),
-                                width: 1,
+                                    .withValues(alpha: 0.9),
+                                width: 1.6,
                               ),
                             ),
                             child: Stack(

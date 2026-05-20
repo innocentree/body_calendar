@@ -33,35 +33,31 @@ android {
         versionName = flutter.versionName
     }
 
+    val keyPropsFile = rootProject.file("key.properties")
+    val keyProps = Properties()
+    val hasKeyProps = keyPropsFile.exists()
+    if (hasKeyProps) {
+        keyProps.load(FileInputStream(keyPropsFile))
+    }
+
     signingConfigs {
-        create("release") {
-            val keystoreFile = file("upload-keystore.jks") // Ensure this file exists
-            if (keystoreFile.exists()) {
-                 storeFile = keystoreFile
-                 // Load key.properties if it exists, otherwise use env vars (useful for CI if passing envs)
-                 // But for this setup, we will rely on creating key.properties in CI or having it locally.
-                 val keyPropsFile = rootProject.file("key.properties")
-                 if (keyPropsFile.exists()) {
-                     val p = Properties()
-                     p.load(FileInputStream(keyPropsFile))
-                     storePassword = p.getProperty("storePassword")
-                     keyAlias = p.getProperty("keyAlias")
-                     keyPassword = p.getProperty("keyPassword")
-                 } else {
-                     // Fallback to environment variables or throw error
-                     storePassword = System.getenv("KEY_STORE_PASSWORD")
-                     keyAlias = System.getenv("KEY_ALIAS")
-                     keyPassword = System.getenv("KEY_PASSWORD")
-                 }
-            } else {
-                println("Release keystore not found, skipping signing configuration")
+        if (hasKeyProps) {
+            create("release") {
+                storeFile = rootProject.file(keyProps.getProperty("storeFile"))
+                storePassword = keyProps.getProperty("storePassword")
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasKeyProps) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
