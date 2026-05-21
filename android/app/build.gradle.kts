@@ -43,7 +43,12 @@ android {
     signingConfigs {
         if (hasKeyProps) {
             create("release") {
-                storeFile = rootProject.file(keyProps.getProperty("storeFile"))
+                val storeFilePath = keyProps.getProperty("storeFile")
+                storeFile = if (storeFilePath.contains("/") || storeFilePath.contains("\\")) {
+                    rootProject.file(storeFilePath)
+                } else {
+                    file(storeFilePath)
+                }
                 storePassword = keyProps.getProperty("storePassword")
                 keyAlias = keyProps.getProperty("keyAlias")
                 keyPassword = keyProps.getProperty("keyPassword")
