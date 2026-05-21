@@ -95,15 +95,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final Map<DateTime, List<String>> loadedEvents = {};
 
     for (final key in keys) {
-      if (key.startsWith('workout_records_')) {
-        final dateString = key.replaceFirst('workout_records_', '');
+      if (key.startsWith('workouts_')) {
+        final dateString = key.replaceFirst('workouts_', '');
         try {
           final date = DateTime.parse(dateString);
           final List<String> stored = prefs.getStringList(key) ?? [];
           final names = stored.map((json) {
             final map = jsonDecode(json);
             return map['name']?.toString() ?? '운동';
-          }).toList();
+          }).where((name) => name.isNotEmpty).toList();
           if (names.isNotEmpty) {
             loadedEvents[DateTime(date.year, date.month, date.day)] = names;
           }
@@ -464,7 +464,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           }
                           final hasEvents = _getEventsForDay(day).isNotEmpty;
                           return Container(
-                            margin: const EdgeInsets.all(4),
+                            margin: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
                               color: hasEvents
                                   ? Theme.of(context)
@@ -515,7 +515,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           }
                           final hasEvents = _getEventsForDay(day).isNotEmpty;
                           return Container(
-                            margin: const EdgeInsets.all(4),
+                            margin: const EdgeInsets.all(1),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,

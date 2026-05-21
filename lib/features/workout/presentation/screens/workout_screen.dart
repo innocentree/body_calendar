@@ -150,6 +150,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
         'workouts_$dateKey',
         updatedWorkouts.map((workout) => jsonEncode(workout.toJson())).toList(),
       );
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
       debugPrint('Error saving workouts: $e');
     }
