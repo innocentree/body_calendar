@@ -514,15 +514,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             );
                           }
                           final hasEvents = _getEventsForDay(day).isNotEmpty;
-                          return Container(
-                            margin: const EdgeInsets.all(1),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
+                          return Center(
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
                                 Text(
                                   '${day.day}',
                                   style: const TextStyle(
@@ -542,7 +544,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       ),
                                     ),
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         },
@@ -556,25 +559,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             );
                           }
                           final hasEvents = _getEventsForDay(day).isNotEmpty;
-                          return Container(
-                            margin: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withValues(alpha: 0.18),
-                              shape: BoxShape.circle,
-                              border: Border.all(
+                          return Center(
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
                                 color: Theme.of(context)
                                     .colorScheme
                                     .primary
-                                    .withValues(alpha: 0.9),
-                                width: 1.6,
+                                    .withValues(alpha: 0.18),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.9),
+                                  width: 1.6,
+                                ),
                               ),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
                                 Text(
                                   '${day.day}',
                                   style: TextStyle(
@@ -594,7 +599,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       ),
                                     ),
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         },
