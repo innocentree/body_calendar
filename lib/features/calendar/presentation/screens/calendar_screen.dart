@@ -258,15 +258,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
     required bool hasEvents,
     required bool isSelected,
     required bool isToday,
+    Color? textColorOverride,
   }) {
     final theme = Theme.of(context);
     final Color? textColor = isSelected
         ? Colors.white
         : isToday
             ? theme.colorScheme.primary
-            : theme.brightness == Brightness.dark
-                ? theme.textTheme.bodyMedium?.color
-                : const Color(0xFF101828);
+            : textColorOverride ??
+                (theme.brightness == Brightness.dark
+                    ? theme.textTheme.bodyMedium?.color
+                    : const Color(0xFF101828));
 
     final BoxDecoration? dateDecoration = isSelected
         ? BoxDecoration(
@@ -565,12 +567,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: isSameDay(day, DateTime.now()),
                             );
                           }
+                          final isWeekend = day.weekday == DateTime.saturday ||
+                              day.weekday == DateTime.sunday;
                           return _buildMonthDayCell(
                             context,
                             day,
                             hasEvents: _getEventsForDay(day).isNotEmpty,
                             isSelected: false,
                             isToday: false,
+                            textColorOverride: isWeekend
+                                ? (Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.red[300]
+                                    : const Color(0xFFB42318))
+                                : null,
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
