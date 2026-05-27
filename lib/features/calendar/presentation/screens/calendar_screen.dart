@@ -100,10 +100,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
         try {
           final date = DateTime.parse(dateString);
           final List<String> stored = prefs.getStringList(key) ?? [];
-          final names = stored.map((json) {
-            final map = jsonDecode(json);
-            return map['name']?.toString() ?? '운동';
-          }).where((name) => name.isNotEmpty).toList();
+          final names = stored
+              .map((json) {
+                final map = jsonDecode(json);
+                return map['name']?.toString() ?? '운동';
+              })
+              .where((name) => name.isNotEmpty)
+              .toList();
           if (names.isNotEmpty) {
             loadedEvents[DateTime(date.year, date.month, date.day)] = names;
           }
@@ -193,7 +196,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
             : _calendarBorderColor.withValues(alpha: 0.72));
     final textColor = isSelected || isToday
         ? Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white
-        : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.72) ??
+        : Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.color
+                ?.withValues(alpha: 0.72) ??
             Colors.grey;
 
     return AnimatedContainer(
@@ -241,6 +248,91 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMonthDayCell(
+    BuildContext context,
+    DateTime day, {
+    required bool hasEvents,
+    required bool isSelected,
+    required bool isToday,
+  }) {
+    final theme = Theme.of(context);
+    final Color? textColor = isSelected
+        ? Colors.white
+        : isToday
+            ? theme.colorScheme.primary
+            : theme.brightness == Brightness.dark
+                ? theme.textTheme.bodyMedium?.color
+                : const Color(0xFF101828);
+
+    final BoxDecoration? dateDecoration = isSelected
+        ? BoxDecoration(
+            color: theme.colorScheme.primary,
+            shape: BoxShape.circle,
+          )
+        : isToday
+            ? BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.9),
+                  width: 1.6,
+                ),
+              )
+            : hasEvents
+                ? BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  )
+                : null;
+
+    final Color markerColor =
+        isSelected ? Colors.white : theme.colorScheme.primary;
+
+    return Center(
+      child: SizedBox(
+        width: 40,
+        height: 44,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: dateDecoration,
+              alignment: Alignment.center,
+              child: Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: hasEvents || isSelected || isToday
+                      ? FontWeight.w700
+                      : FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 14,
+              height: 8,
+              child: Center(
+                child: hasEvents
+                    ? Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: markerColor,
+                          shape: BoxShape.circle,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -297,9 +389,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       children: [
                         Text(
                           '운동 캘린더',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -319,9 +412,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.customBackground.withValues(alpha: 0.55)
-                                : Colors.black.withValues(alpha: 0.05),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.customBackground
+                                        .withValues(alpha: 0.55)
+                                    : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color:
@@ -331,7 +426,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildViewToggleButton('월간', CalendarFormat.month),
+                              _buildViewToggleButton(
+                                  '월간', CalendarFormat.month),
                               _buildViewToggleButton('주간', CalendarFormat.week),
                             ],
                           ),
@@ -355,9 +451,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       lastDay: DateTime.utc(2030, 12, 31),
                       focusedDay: _focusedDay,
                       calendarFormat: _calendarFormat,
-                      rowHeight: _calendarFormat == CalendarFormat.week ? 85 : 52,
-                      daysOfWeekVisible: _calendarFormat == CalendarFormat.month,
-                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                      rowHeight:
+                          _calendarFormat == CalendarFormat.week ? 85 : 52,
+                      daysOfWeekVisible:
+                          _calendarFormat == CalendarFormat.month,
+                      selectedDayPredicate: (day) =>
+                          isSameDay(_selectedDay, day),
                       onDaySelected: _onDaySelected,
                       onFormatChanged: _onFormatChanged,
                       onPageChanged: _onPageChanged,
@@ -426,9 +525,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         leftChevronIcon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.customBackground.withValues(alpha: 0.45)
-                                : Colors.black.withValues(alpha: 0.05),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.customBackground
+                                        .withValues(alpha: 0.45)
+                                    : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -440,9 +541,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         rightChevronIcon: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? AppColors.customBackground.withValues(alpha: 0.45)
-                                : Colors.black.withValues(alpha: 0.05),
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.customBackground
+                                        .withValues(alpha: 0.45)
+                                    : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -462,46 +565,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: isSameDay(day, DateTime.now()),
                             );
                           }
-                          final hasEvents = _getEventsForDay(day).isNotEmpty;
-                          return Container(
-                            margin: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: hasEvents
-                                  ? Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.10)
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Text(
-                                  '${day.day}',
-                                  style: TextStyle(
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? Theme.of(context).textTheme.bodyMedium?.color
-                                        : const Color(0xFF101828),
-                                    fontWeight: hasEvents ? FontWeight.w700 : FontWeight.w600,
-                                  ),
-                                ),
-                                if (hasEvents)
-                                  Positioned(
-                                    bottom: 6,
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                          return _buildMonthDayCell(
+                            context,
+                            day,
+                            hasEvents: _getEventsForDay(day).isNotEmpty,
+                            isSelected: false,
+                            isToday: false,
                           );
                         },
                         selectedBuilder: (context, day, focusedDay) {
@@ -513,40 +582,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: isSameDay(day, DateTime.now()),
                             );
                           }
-                          final hasEvents = _getEventsForDay(day).isNotEmpty;
-                          return Center(
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                Text(
-                                  '${day.day}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                if (hasEvents)
-                                  Positioned(
-                                    bottom: 6,
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          return _buildMonthDayCell(
+                            context,
+                            day,
+                            hasEvents: _getEventsForDay(day).isNotEmpty,
+                            isSelected: true,
+                            isToday: false,
                           );
                         },
                         todayBuilder: (context, day, focusedDay) {
@@ -558,50 +599,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               isToday: true,
                             );
                           }
-                          final hasEvents = _getEventsForDay(day).isNotEmpty;
-                          return Center(
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.18),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.9),
-                                  width: 1.6,
-                                ),
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                Text(
-                                  '${day.day}',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                if (hasEvents)
-                                  Positioned(
-                                    bottom: 6,
-                                    child: Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          return _buildMonthDayCell(
+                            context,
+                            day,
+                            hasEvents: _getEventsForDay(day).isNotEmpty,
+                            isSelected: false,
+                            isToday: true,
                           );
                         },
                         markerBuilder: (context, day, events) {
@@ -671,7 +674,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               : _getEventsForDay(_selectedDay!).map((event) {
                                   final name = event.split('#').first;
                                   final accent = AppColors.chartColors[
-                                      name.hashCode % AppColors.chartColors.length];
+                                      name.hashCode %
+                                          AppColors.chartColors.length];
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 12),
@@ -690,7 +694,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => WorkoutScreen(
+                                              builder: (context) =>
+                                                  WorkoutScreen(
                                                 selectedDate: _selectedDay!,
                                               ),
                                             ),
@@ -704,8 +709,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                 width: 44,
                                                 height: 44,
                                                 decoration: BoxDecoration(
-                                                  color:
-                                                      accent.withValues(alpha: 0.16),
+                                                  color: accent.withValues(
+                                                      alpha: 0.16),
                                                   borderRadius:
                                                       BorderRadius.circular(14),
                                                 ),
@@ -738,7 +743,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                           .textTheme
                                                           .bodySmall
                                                           ?.copyWith(
-                                                            color: Theme.of(context)
+                                                            color: Theme.of(
+                                                                    context)
                                                                 .textTheme
                                                                 .bodySmall
                                                                 ?.color
@@ -752,11 +758,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                       height: 4,
                                                       width: 88,
                                                       decoration: BoxDecoration(
-                                                        color: accent.withValues(
+                                                        color:
+                                                            accent.withValues(
                                                           alpha: 0.8,
                                                         ),
                                                         borderRadius:
-                                                            BorderRadius.circular(
+                                                            BorderRadius
+                                                                .circular(
                                                           999,
                                                         ),
                                                       ),
