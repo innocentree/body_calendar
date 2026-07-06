@@ -49,3 +49,7 @@ app.*.map.json
 
 # Local preview exports
 assets/icons/png_preview/
+
+# Local Supabase/dev config
+.config/
+.vscode/launch.json

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_routine_repository.dart';
@@ -23,6 +24,12 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _useLbs = false;
   bool _isLoading = true;
+  bool _isCloudBusy = false;
+  String? _cloudUserEmail;
+  String? _lastUploadedAt;
+  String? _lastDownloadedAt;
+
+  CloudSyncService get _cloudSyncService => GetIt.I<CloudSyncService>();
 
   @override
   void initState() {
@@ -35,6 +42,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _useLbs = prefs.getBool('use_lbs') ?? false;
       _isLoading = false;
+      _cloudUserEmail = _cloudSyncService.currentUserEmail;
+      _lastUploadedAt = _cloudSyncService.lastUploadedAt;
+      _lastDownloadedAt = _cloudSyncService.lastDownloadedAt;
     });
   }
 
@@ -111,6 +121,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: _toggleWeightUnit,
             ),
           const Divider(height: 32),
+          _buildSectionHeader(context, '클라우드 백업'),
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            tileColor: Theme.of(context).cardTheme.color,
+            leading: const Icon(Icons.cloud_outlined),
+            title: const Text('Google 로그인 + 클라우드 업로드'),
+            subtitle: Text(_buildCloudSubtitle()),
+            trailing: _isCloudBusy
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: _isCloudBusy ? null : () => _uploadToCloud(context),
+          ),
+          const SizedBox(height: 10),
+          ListTile(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            tileColor: Theme.of(context).cardTheme.color,
+            leading: const Icon(Icons.cloud_download_outlined),
+            title: const Text('클라우드에서 복원'),
+            subtitle: Text(_buildCloudRestoreSubtitle()),
+            trailing: _isCloudBusy
+                ? const SizedBox.shrink()
+                : const Icon(Icons.chevron_right),
+            onTap: _isCloudBusy ? null : () => _restoreFromCloud(context),
+          ),
+          if (_cloudSyncService.isAvailable && _cloudUserEmail != null) ...[
+            const SizedBox(height: 10),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              tileColor: Theme.of(context).cardTheme.color,
+              leading: const Icon(Icons.logout),
+              title: const Text('클라우드 계정 로그아웃'),
+              subtitle: Text(_cloudUserEmail!),
+              onTap: _isCloudBusy ? null : () => _signOutFromCloud(context),
+            ),
+          ],
+          const Divider(height: 32),
           _buildSectionHeader(context, '데이터 관리'),
           ListTile(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -144,6 +194,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Theme.of(context).primaryColor,
             ),
       ),
+    );
+  }
+
+  String _buildCloudSubtitle() {
+    if (!_cloudSyncService.isAvailable) {
+      return 'Supabase URL/Key를 연결하면 필요할 때만 Google 로그인 후 업로드할 수 있어요.';
+    }
+
+    final parts = <String>[];
+    if (_cloudUserEmail != null) {
+      parts.add('현재 계정: $_cloudUserEmail');
+    } else {
+      parts.add('업로드를 누를 때만 Google 로그인을 요청해요.');
+    }
+    if (_lastUploadedAt != null) {
+      parts.add('마지막 업로드: ${_formatIso(_lastUploadedAt!)}');
+    }
+    return parts.join('\n');
+  }
+
+  String _buildCloudRestoreSubtitle() {
+    if (!_cloudSyncService.isAvailable) {
+      return '새 기기에서도 이어서 쓰려면 Supabase 설정이 먼저 필요해요.';
+    }
+    if (_lastDownloadedAt != null) {
+      return '마지막 복원: ${_formatIso(_lastDownloadedAt!)}';
+    }
+    return '새 기기에서 클라우드 백업을 바로 내려받을 수 있어요.';
+  }
+
+  String _formatIso(String iso) {
+    final parsed = DateTime.tryParse(iso);
+    if (parsed == null) return iso;
+    return DateFormat('yyyy.MM.dd HH:mm').format(parsed.toLocal());
+  }
+
+  Future<void> _uploadToCloud(BuildContext context) async {
+    if (!_cloudSyncService.isAvailable) {
+      _showSnackBar(context, '먼저 Supabase 설정을 넣어 주세요. README와 supabase/sql 파일을 같이 추가해뒀어요.');
+      return;
+    }
+
+    setState(() => _isCloudBusy = true);
+    try {
+      final result = await _cloudSyncService.uploadSnapshot();
+      if (!mounted) return;
+      _showSnackBar(context, result.message);
+      await _loadSettings();
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(context, '클라우드 업로드 중 문제가 생겼어요: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isCloudBusy = false);
+      }
+    }
+  }
+
+  Future<void> _restoreFromCloud(BuildContext context) async {
+    if (!_cloudSyncService.isAvailable) {
+      _showSnackBar(context, 'Supabase 설정이 아직 없어요.');
+      return;
+    }
+
+    setState(() => _isCloudBusy = true);
+    try {
+      final result = await _cloudSyncService.restoreLatestSnapshot();
+      if (!mounted) return;
+
+      final isDarkMode = (await SharedPreferences.getInstance()).getBool('isDarkMode') ?? false;
+      context.read<ThemeBloc>().add(ThemeChanged(isDarkMode: isDarkMode));
+      await _loadSettings();
+      _showSnackBar(context, result.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(context, '클라우드 복원 중 문제가 생겼어요: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isCloudBusy = false);
+      }
+    }
+  }
+
+  Future<void> _signOutFromCloud(BuildContext context) async {
+    setState(() => _isCloudBusy = true);
+    try {
+      await _cloudSyncService.signOut();
+      await _loadSettings();
+      if (!mounted) return;
+      _showSnackBar(context, '클라우드 계정에서 로그아웃했어요.');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(context, '로그아웃 중 문제가 생겼어요: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isCloudBusy = false);
+      }
+    }
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

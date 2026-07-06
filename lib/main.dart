@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:window_manager/window_manager.dart';
 
+import 'package:body_calendar/core/config/cloud_sync_config.dart';
 import 'package:body_calendar/core/utils/ticker.dart';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/timer/presentation/widgets/timer_overlay_manager.dart';
@@ -19,6 +21,7 @@ import 'features/calendar/presentation/screens/calendar_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
 import 'package:body_calendar/features/workout/data/repositories/exercise_repository_impl.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_routine_repository.dart';
@@ -35,6 +38,7 @@ Future<void> setupLocator() async {
   getIt.registerLazySingleton<ExerciseRepository>(() => ExerciseRepositoryImpl(getIt()));
   getIt.registerLazySingleton<WorkoutRoutineRepository>(() => WorkoutRoutineRepositoryImpl(getIt()));
   getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepositoryImpl(getIt()));
+  getIt.registerLazySingleton<CloudSyncService>(() => CloudSyncService(getIt()));
 }
 
 Future<void> _restore() async {
@@ -85,6 +89,15 @@ void overlayMain() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (CloudSyncConfig.isConfigured) {
+    await Supabase.initialize(
+      url: CloudSyncConfig.supabaseUrl,
+      anonKey: CloudSyncConfig.supabaseAnonKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+      ),
+    );
+  }
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();
     // 기본적인 창 옵션 설정 (필요시)

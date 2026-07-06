@@ -35,6 +35,36 @@
 - 일부 repository 계층과 실제 화면 저장 구조가 완전히 통일되어 있지 않습니다.
 - 후속 리팩터링 시 저장 경로 통합이 필요합니다.
 
+## 클라우드 백업 / Google 로그인
+
+이번에 추가한 구조는 **로컬 우선 + 필요할 때만 로그인**입니다.
+
+- 평소에는 로그인 없이 로컬에 저장
+- 사용자가 설정 화면에서 **클라우드 업로드 / 복원**을 눌렀을 때만 Google 로그인 요청
+- 로그인 후에는 `Supabase`의 `user_sync_snapshots` 테이블에 전체 앱 스냅샷 저장
+- 새 폰/재설치 후에도 같은 Google 계정으로 복원 가능
+
+### 설정 방법
+
+1. Supabase 프로젝트 생성
+2. `supabase/cloud_sync_schema.sql` 실행
+3. Supabase Auth에서 Google provider 활성화
+4. Redirect URL에 아래 값 추가
+   - `bodycalendar://login-callback/`
+5. 앱 실행 시 dart-define 전달
+
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY \
+  --dart-define=SUPABASE_REDIRECT_URL=bodycalendar://login-callback/
+```
+
+### 참고
+
+- 현재 클라우드에는 운동기록/세트/체형기록/루틴 등 앱의 `SharedPreferences` 스냅샷 전체를 올립니다.
+- 즉시 제품화는 가능하지만, 장기적으로는 workout/day/set 단위 정규화 테이블로 분리하면 통계/분석이 더 편합니다.
+
 ## 개발 상태
 
 로컬에서 저장소 클론과 git 연결은 완료되었습니다.

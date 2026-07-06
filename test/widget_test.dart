@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
@@ -30,6 +32,13 @@ void main() {
 
   testWidgets('MyApp should load and show CalendarScreen', (WidgetTester tester) async {
     final prefs = GetIt.I<SharedPreferences>();
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+    binding.window.physicalSizeTestValue = const Size(1440, 2200);
+    binding.window.devicePixelRatioTestValue = 2.0;
+    addTearDown(() {
+      binding.window.clearPhysicalSizeTestValue();
+      binding.window.clearDevicePixelRatioTestValue();
+    });
     
     await tester.pumpWidget(
       MultiBlocProvider(
