@@ -33,12 +33,17 @@ final GetIt getIt = GetIt.instance;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> setupLocator() async {
-  final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+  final SharedPreferences sharedPreferences =
+      await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
-  getIt.registerLazySingleton<ExerciseRepository>(() => ExerciseRepositoryImpl(getIt()));
-  getIt.registerLazySingleton<WorkoutRoutineRepository>(() => WorkoutRoutineRepositoryImpl(getIt()));
-  getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepositoryImpl(getIt()));
-  getIt.registerLazySingleton<CloudSyncService>(() => CloudSyncService(getIt()));
+  getIt.registerLazySingleton<ExerciseRepository>(
+      () => ExerciseRepositoryImpl(getIt()));
+  getIt.registerLazySingleton<WorkoutRoutineRepository>(
+      () => WorkoutRoutineRepositoryImpl(getIt()));
+  getIt.registerLazySingleton<WorkoutRepository>(
+      () => WorkoutRepositoryImpl(getIt()));
+  getIt
+      .registerLazySingleton<CloudSyncService>(() => CloudSyncService(getIt()));
 }
 
 Future<void> _restore() async {
@@ -79,16 +84,15 @@ Future<void> _restore() async {
 @pragma("vm:entry-point")
 void overlayMain() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: TimerOverlayScreen(),
-    )
-  );
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: TimerOverlayScreen(),
+  ));
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await CloudSyncConfig.load();
   if (CloudSyncConfig.isConfigured) {
     await Supabase.initialize(
       url: CloudSyncConfig.supabaseUrl,
@@ -108,7 +112,7 @@ void main() async {
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
     );
-     windowManager.waitUntilReadyToShow(windowOptions, () async {
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
     });

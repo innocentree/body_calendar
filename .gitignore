@@ -52,4 +52,5 @@ assets/icons/png_preview/
 
 # Local Supabase/dev config
 .config/
+assets/config/local.supabase.json
 .vscode/launch.json

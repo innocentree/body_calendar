@@ -105,6 +105,8 @@ flutter:
   assets:
     - assets/data/exercises.json
     - assets/sounds/
+    - assets/config/local.supabase.json
+    - .config/local.supabase.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
