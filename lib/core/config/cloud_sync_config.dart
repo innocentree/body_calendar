@@ -19,10 +19,7 @@ class CloudSyncConfig {
       return;
     }
 
-    const candidatePaths = [
-      'assets/config/local.supabase.json',
-      '.config/local.supabase.json',
-    ];
+    const candidatePaths = ['assets/config/local.supabase.json'];
 
     for (final path in candidatePaths) {
       try {
