@@ -175,14 +175,21 @@ class CloudSyncService {
     }
 
     final completer = Completer<CloudSyncResult>();
+    Timer? sessionPollTimer;
     late final StreamSubscription<AuthState> subscription;
-    subscription = _client.auth.onAuthStateChange.listen((event) {
-      final session = event.session;
-      if (session?.user != null && !completer.isCompleted) {
+
+    void completeIfSignedIn([String message = 'Google 로그인을 완료했어요.']) {
+      if (currentUser != null && !completer.isCompleted) {
         completer.complete(CloudSyncResult(
           success: true,
-          message: 'Google 로그인을 완료했어요.',
+          message: message,
         ));
+      }
+    }
+
+    subscription = _client.auth.onAuthStateChange.listen((event) {
+      if (event.session?.user != null) {
+        completeIfSignedIn();
       }
     });
 
@@ -200,13 +207,21 @@ class CloudSyncService {
             message: 'Google 로그인 창을 열지 못했어요.',
           ));
         }
+      } else {
+        completeIfSignedIn();
+        sessionPollTimer = Timer.periodic(
+          const Duration(milliseconds: 400),
+          (_) => completeIfSignedIn(),
+        );
       }
 
       return await completer.future.timeout(
-        const Duration(minutes: 2),
-        onTimeout: () => const CloudSyncResult(
-          success: false,
-          message: 'Google 로그인 확인이 지연됐어요. 다시 시도해 주세요.',
+        const Duration(seconds: 20),
+        onTimeout: () => CloudSyncResult(
+          success: currentUser != null,
+          message: currentUser != null
+              ? 'Google 로그인은 되었지만 확인 신호가 늦어서, 현재 세션으로 계속 진행할게요.'
+              : 'Google 로그인 확인이 지연됐어요. 다시 시도해 주세요.',
         ),
       );
     } catch (error) {
@@ -215,6 +230,7 @@ class CloudSyncService {
         message: 'Google 로그인 중 문제가 생겼어요: $error',
       );
     } finally {
+      sessionPollTimer?.cancel();
       await subscription.cancel();
     }
   }
