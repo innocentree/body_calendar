@@ -1,4 +1,5 @@
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -173,7 +174,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   // Maybe user wants that. Or maybe only when crossing the threshold?
   // "최고값을 갱신하면" -> Whenever it updates. So yes.
 
-
   @override
   void initState() {
     super.initState();
@@ -296,6 +296,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
     if (!_prefs.containsKey(key)) {
       await _prefs.setString(key, todayStr);
+      await GetIt.I<CloudSyncService>().notifyLocalChange();
       _firstRecordDate = widget.selectedDate;
     } else {
       final saved = _prefs.getString(key);
@@ -327,11 +328,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       }
       _recordedDates = _recordedDates.toSet().toList()..sort();
       await _prefs.setStringList(key, _recordedDates);
+      await GetIt.I<CloudSyncService>().notifyLocalChange();
       if (mounted) setState(() {});
     } catch (e, st) {
       debugPrint('Error in _updateRecordedDates: $e\n$st');
       // 예외 발생 시 기록일 리스트를 강제로 초기화
       await _prefs.setStringList(key, []);
+      await GetIt.I<CloudSyncService>().notifyLocalChange();
       _recordedDates = [];
       if (mounted) setState(() {});
     }
@@ -364,6 +367,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       final key = _getStorageKey();
       final setsJson = _sets.map((set) => jsonEncode(set.toJson())).toList();
       await _prefs.setStringList(key, setsJson);
+      await GetIt.I<CloudSyncService>().notifyLocalChange();
     } catch (e) {
       debugPrint('Error saving sets: $e');
     }
@@ -503,40 +507,49 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(title),
                   if (showUnitToggle)
-                        SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment(value: false, label: Text('kg', style: TextStyle(fontSize: 12))),
-                            ButtonSegment(value: true, label: Text('lb', style: TextStyle(fontSize: 12))),
-                          ],
-                          selected: {tempIsLbs},
-                          onSelectionChanged: (value) {
-                            setStateDialog(() {
-                              bool nextIsLbs = value.first;
-                              if (nextIsLbs != tempIsLbs) {
-                                tempIsLbs = nextIsLbs;
-                                if (tempIsLbs) {
-                                  tempValue *= 2.20462;
-                                } else {
-                                  tempValue /= 2.20462;
-                                }
-                              }
-                            });
-                          },
-                          style: SegmentedButton.styleFrom(
-                            selectedBackgroundColor: AppColors.neonCyan,
-                            selectedForegroundColor: Colors.black,
-                            backgroundColor: AppColors.customSurface,
-                            foregroundColor: Colors.white70,
-                            visualDensity: VisualDensity.compact,
-                            side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45)),
-                          ),
-                        ),
+                    SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment(
+                            value: false,
+                            label: Text('kg', style: TextStyle(fontSize: 12))),
+                        ButtonSegment(
+                            value: true,
+                            label: Text('lb', style: TextStyle(fontSize: 12))),
+                      ],
+                      selected: {tempIsLbs},
+                      onSelectionChanged: (value) {
+                        setStateDialog(() {
+                          bool nextIsLbs = value.first;
+                          if (nextIsLbs != tempIsLbs) {
+                            tempIsLbs = nextIsLbs;
+                            if (tempIsLbs) {
+                              tempValue *= 2.20462;
+                            } else {
+                              tempValue /= 2.20462;
+                            }
+                          }
+                        });
+                      },
+                      style: SegmentedButton.styleFrom(
+                        selectedBackgroundColor: AppColors.neonCyan,
+                        selectedForegroundColor: Colors.black,
+                        backgroundColor: AppColors.customSurface,
+                        foregroundColor: Colors.white70,
+                        visualDensity: VisualDensity.compact,
+                        side: BorderSide(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.45)),
+                      ),
+                    ),
                 ],
               ),
               content: SizedBox(
@@ -546,7 +559,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   maxValue: isDouble ? 1000 : 500,
                   initialValue: tempValue,
                   step: isDouble ? 0.5 : 1.0,
-                  unit: title.contains('휴식') ? '초' : (showUnitToggle ? (tempIsLbs ? 'lb' : 'kg') : (title.contains('횟수') ? '회' : '')),
+                  unit: title.contains('휴식')
+                      ? '초'
+                      : (showUnitToggle
+                          ? (tempIsLbs ? 'lb' : 'kg')
+                          : (title.contains('횟수') ? '회' : '')),
                   onChanged: (value) {
                     tempValue = value;
                   },
@@ -590,15 +607,20 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('세트 조정'),
               SegmentedButton<bool>(
                 segments: const [
-                  ButtonSegment(value: false, label: Text('kg', style: TextStyle(fontSize: 12))),
-                  ButtonSegment(value: true, label: Text('lb', style: TextStyle(fontSize: 12))),
+                  ButtonSegment(
+                      value: false,
+                      label: Text('kg', style: TextStyle(fontSize: 12))),
+                  ButtonSegment(
+                      value: true,
+                      label: Text('lb', style: TextStyle(fontSize: 12))),
                 ],
                 selected: {_isLbs},
                 onSelectionChanged: (value) {
@@ -612,7 +634,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   backgroundColor: AppColors.customSurface,
                   foregroundColor: Colors.white70,
                   visualDensity: VisualDensity.compact,
-                  side: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45)),
+                  side: BorderSide(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.45)),
                 ),
               ),
             ],
@@ -629,12 +655,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('무게 (${_unitStr(isLbs: _isLbs)})',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         HorizontalDialPicker(
                           minValue: 0,
                           maxValue: 1000,
-                          initialValue: _toDisplayWeight(tempWeight, isLbs: _isLbs),
+                          initialValue:
+                              _toDisplayWeight(tempWeight, isLbs: _isLbs),
                           step: _weightStep,
                           unit: _unitStr(isLbs: _isLbs),
                           onChanged: (value) {
@@ -823,7 +851,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     }
   }
 
-  Widget _buildUnitAdjuster(BuildContext context, String title, String value, VoidCallback onTap) {
+  Widget _buildUnitAdjuster(
+      BuildContext context, String title, String value, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1000,7 +1029,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                 ),
                 Text(
                   widget.exerciseName,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -1116,7 +1146,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         borderRadius: BorderRadius.circular(16),
                         border: index == _currentSetIndex
                             ? Border.all(
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.45),
                                 width: 1)
                             : null,
                       ),
@@ -1149,9 +1182,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold)),
                             backgroundColor: set.isCompleted
-                                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.8)
                                 : index == _currentSetIndex
-                                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.55)
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withValues(alpha: 0.55)
                                     : Colors.grey.withValues(alpha: 0.3),
                             foregroundColor:
                                 set.isCompleted || index == _currentSetIndex
@@ -1437,7 +1476,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       children: [
                                         SizedBox(
                                           width: 90,
-                                          child: Text('무게(${_unitStr(isLbs: _isLbs)})',
+                                          child: Text(
+                                              '무게(${_unitStr(isLbs: _isLbs)})',
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white)),
@@ -1447,10 +1487,21 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                             IconButton(
                                               onPressed: () {
                                                 setState(() {
-                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: _isLbs);
-                                                  double newDisplay = (currentDisplay - _weightStep).clamp(0.0, 1000.0);
-                                                  _sets[index] = _sets[index].copyWith(
-                                                      weight: _toStorageWeight(newDisplay, isLbs: set.isLbs));
+                                                  double currentDisplay =
+                                                      _toDisplayWeight(
+                                                          _sets[index].weight,
+                                                          isLbs: _isLbs);
+                                                  double newDisplay =
+                                                      (currentDisplay -
+                                                              _weightStep)
+                                                          .clamp(0.0, 1000.0);
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          weight:
+                                                              _toStorageWeight(
+                                                                  newDisplay,
+                                                                  isLbs: set
+                                                                      .isLbs));
                                                   _saveSets();
                                                 });
                                               },
@@ -1465,14 +1516,20 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                   _showNumberInputDialog(
                                                     context,
                                                     '무게 입력',
-                                                    _toDisplayWeight(_sets[index].weight, isLbs: _isLbs),
+                                                    _toDisplayWeight(
+                                                        _sets[index].weight,
+                                                        isLbs: _isLbs),
                                                     (value) {
                                                       setState(() {
                                                         _sets[index] = _sets[
                                                                 index]
                                                             .copyWith(
                                                                 weight: _toStorageWeight(
-                                                                    value.clamp(0.0, 1000.0), isLbs: _isLbs));
+                                                                    value.clamp(
+                                                                        0.0,
+                                                                        1000.0),
+                                                                    isLbs:
+                                                                        _isLbs));
                                                         _saveSets();
                                                       });
                                                     },
@@ -1482,7 +1539,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                 },
                                                 child: Center(
                                                     child: Text(
-                                                        _toDisplayWeight(_sets[index].weight, isLbs: _isLbs)
+                                                        _toDisplayWeight(
+                                                                _sets[index]
+                                                                    .weight,
+                                                                isLbs: _isLbs)
                                                             .toStringAsFixed(1),
                                                         style: const TextStyle(
                                                             color:
@@ -1492,10 +1552,21 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                             IconButton(
                                               onPressed: () {
                                                 setState(() {
-                                                  double currentDisplay = _toDisplayWeight(_sets[index].weight, isLbs: _isLbs);
-                                                  double newDisplay = (currentDisplay + _weightStep).clamp(0.0, 1000.0);
-                                                  _sets[index] = _sets[index].copyWith(
-                                                      weight: _toStorageWeight(newDisplay, isLbs: _isLbs));
+                                                  double currentDisplay =
+                                                      _toDisplayWeight(
+                                                          _sets[index].weight,
+                                                          isLbs: _isLbs);
+                                                  double newDisplay =
+                                                      (currentDisplay +
+                                                              _weightStep)
+                                                          .clamp(0.0, 1000.0);
+                                                  _sets[index] = _sets[index]
+                                                      .copyWith(
+                                                          weight:
+                                                              _toStorageWeight(
+                                                                  newDisplay,
+                                                                  isLbs:
+                                                                      _isLbs));
                                                   _saveSets();
                                                 });
                                               },
@@ -1962,30 +2033,37 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             if (_exercise?.needsWeight == true)
-                              _buildUnitAdjuster(context, '무게 단위', '${_weightStep.toStringAsFixed(1)}${_unitStr(isLbs: _isLbs)}', () {
-                                  _showNumberInputDialog(
-                                    context,
-                                    '무게 단위 입력',
-                                    _weightStep,
-                                    (value) => setState(() => _weightStep = value.clamp(0.5, 10.0)),
-                                    isDouble: true,
-                                    showUnitToggle: true,
-                                  );
+                              _buildUnitAdjuster(context, '무게 단위',
+                                  '${_weightStep.toStringAsFixed(1)}${_unitStr(isLbs: _isLbs)}',
+                                  () {
+                                _showNumberInputDialog(
+                                  context,
+                                  '무게 단위 입력',
+                                  _weightStep,
+                                  (value) => setState(() =>
+                                      _weightStep = value.clamp(0.5, 10.0)),
+                                  isDouble: true,
+                                  showUnitToggle: true,
+                                );
                               }),
-                            _buildUnitAdjuster(context, '횟수 단위', '$_repsStep회', () {
+                            _buildUnitAdjuster(context, '횟수 단위', '$_repsStep회',
+                                () {
                               _showNumberInputDialog(
                                 context,
                                 '횟수 단위 입력',
                                 _repsStep.toDouble(),
-                                (value) => setState(() => _repsStep = value.toInt().clamp(1, 100)),
+                                (value) => setState(() =>
+                                    _repsStep = value.toInt().clamp(1, 100)),
                               );
                             }),
-                            _buildUnitAdjuster(context, '휴식 단위', '$_restTimeStep초', () {
+                            _buildUnitAdjuster(
+                                context, '휴식 단위', '$_restTimeStep초', () {
                               _showNumberInputDialog(
                                 context,
                                 '휴식시간 단위 입력(초)',
                                 _restTimeStep.toDouble(),
-                                (value) => setState(() => _restTimeStep = value.toInt().clamp(5, 300)),
+                                (value) => setState(() => _restTimeStep =
+                                    value.toInt().clamp(5, 300)),
                               );
                             }),
                           ],
@@ -2217,7 +2295,8 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary, size: 20),
+                Icon(Icons.check_circle,
+                    color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

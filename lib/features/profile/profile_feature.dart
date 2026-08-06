@@ -1,4 +1,6 @@
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -64,20 +66,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final data = prefs.getStringList(key) ?? [];
         if (data.isNotEmpty) {
           bool hasDataForSelectedDate = false;
-          final chartData = data.map((e) {
-            try {
-              final parts = e.split(',');
-              if (parts.length == 2) {
-                final date = DateTime.parse(parts[0]);
-                final value = double.parse(parts[1]);
-                if (DateUtils.isSameDay(date, widget.selectedDate)) {
-                  hasDataForSelectedDate = true;
-                }
-                return FlSpot(date.millisecondsSinceEpoch.toDouble(), value);
-              }
-            } catch (e) { /* Ignore */ }
-            return null;
-          }).whereType<FlSpot>().toList();
+          final chartData = data
+              .map((e) {
+                try {
+                  final parts = e.split(',');
+                  if (parts.length == 2) {
+                    final date = DateTime.parse(parts[0]);
+                    final value = double.parse(parts[1]);
+                    if (DateUtils.isSameDay(date, widget.selectedDate)) {
+                      hasDataForSelectedDate = true;
+                    }
+                    return FlSpot(
+                        date.millisecondsSinceEpoch.toDouble(), value);
+                  }
+                } catch (e) {/* Ignore */}
+                return null;
+              })
+              .whereType<FlSpot>()
+              .toList();
 
           if (chartData.isNotEmpty) {
             chartData.sort((a, b) => a.x.compareTo(b.x));
@@ -99,7 +105,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _measurementRecords = loadedMeasurementRecords;
       _hasBodyCompDataForDate = compDataForDate;
       _hasMeasurementDataForDate = measureDataForDate;
-      _enableWorkoutRecommendation = prefs.getBool('enable_workout_recommendation') ?? true;
+      _enableWorkoutRecommendation =
+          prefs.getBool('enable_workout_recommendation') ?? true;
       _isLoading = false;
     });
   }
@@ -107,6 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _toggleRecommendation(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('enable_workout_recommendation', value);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
     setState(() {
       _enableWorkoutRecommendation = value;
     });
@@ -116,7 +124,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('바디 로그 · ${DateFormat('yyyy-MM-dd').format(widget.selectedDate)}'),
+        title: Text(
+            '바디 로그 · ${DateFormat('yyyy-MM-dd').format(widget.selectedDate)}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -129,14 +138,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? const Center(child: CircularProgressIndicator())
           : !_hasBodyCompDataForDate && !_hasMeasurementDataForDate
               ? const Center(
-                  child: Text('선택한 날짜에 저장된 데이터가 없어요.', textAlign: TextAlign.center),
+                  child: Text('선택한 날짜에 저장된 데이터가 없어요.',
+                      textAlign: TextAlign.center),
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
                   child: Column(
                     children: [
                       if (_hasBodyCompDataForDate)
-                        _buildCategoryCard('체중/체성분', _bodyCompositionRecords, 0),
+                        _buildCategoryCard(
+                            '체중/체성분', _bodyCompositionRecords, 0),
                       if (_hasMeasurementDataForDate)
                         _buildCategoryCard('치수', _measurementRecords, 1),
                       const SizedBox(height: 16),
@@ -149,7 +160,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SelectBodyPartScreen(selectedDate: widget.selectedDate),
+              builder: (context) =>
+                  SelectBodyPartScreen(selectedDate: widget.selectedDate),
             ),
           );
           _loadRecords();
@@ -159,8 +171,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildCategoryCard(String title, List<BodyRecord> records, int tabIndex) {
-    final List<Color> colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.brown];
+  Widget _buildCategoryCard(
+      String title, List<BodyRecord> records, int tabIndex) {
+    final List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.brown
+    ];
     final List<LineChartBarData> lineBarsData = [];
     for (int i = 0; i < records.length; i++) {
       lineBarsData.add(
@@ -196,7 +216,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(title,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
               SizedBox(
                 height: 200,
@@ -205,22 +227,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     lineBarsData: lineBarsData,
                     lineTouchData: LineTouchData(enabled: false),
                     titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+                      leftTitles: const AxisTitles(
+                          sideTitles:
+                              SideTitles(showTitles: true, reservedSize: 40)),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
-                            final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                            final date = DateTime.fromMillisecondsSinceEpoch(
+                                value.toInt());
                             return SideTitleWidget(
                               axisSide: meta.axisSide,
-                              child: Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10)),
+                              child: Text(DateFormat('MM/dd').format(date),
+                                  style: const TextStyle(fontSize: 10)),
                             );
                           },
                           interval: _getInterval(records),
                         ),
                       ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     gridData: const FlGridData(show: false),
@@ -287,7 +315,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('설정', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('설정',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             SwitchListTile(
               title: const Text('지난 주 운동 추천'),
@@ -404,7 +433,10 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) {
-                    final int initialTabIndex = selectedItems.any((item) => _bodyCompositionItems.contains(item)) ? 0 : 1;
+                    final int initialTabIndex = selectedItems
+                            .any((item) => _bodyCompositionItems.contains(item))
+                        ? 0
+                        : 1;
                     return RecordBodyChangeScreen(
                       selectedItems: selectedItems,
                       initialTabIndex: initialTabIndex,
@@ -476,7 +508,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
     for (var item in widget.selectedItems) {
       _controllers[item] = TextEditingController();
       _chartData[item] = [];
-      _itemColors[item] = _availableColors[colorIndex % _availableColors.length];
+      _itemColors[item] =
+          _availableColors[colorIndex % _availableColors.length];
       _focusNodes[item] = FocusNode();
       _focusNodes[item]?.addListener(() {
         if (!(_focusNodes[item]?.hasFocus ?? false)) {
@@ -510,17 +543,21 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
         final key = 'body_change_record_$item';
         final data = prefs.getStringList(key) ?? [];
         if (data.isNotEmpty) {
-          _chartData[item] = data.map((e) {
-            try {
-              final parts = e.split(',');
-              if (parts.length == 2) {
-                final date = DateTime.parse(parts[0]);
-                final value = double.parse(parts[1]);
-                return FlSpot(date.millisecondsSinceEpoch.toDouble(), value);
-              }
-            } catch (e) { /* Ignore bad data */ }
-            return null;
-          }).whereType<FlSpot>().toList();
+          _chartData[item] = data
+              .map((e) {
+                try {
+                  final parts = e.split(',');
+                  if (parts.length == 2) {
+                    final date = DateTime.parse(parts[0]);
+                    final value = double.parse(parts[1]);
+                    return FlSpot(
+                        date.millisecondsSinceEpoch.toDouble(), value);
+                  }
+                } catch (e) {/* Ignore bad data */}
+                return null;
+              })
+              .whereType<FlSpot>()
+              .toList();
           _chartData[item]?.sort((a, b) => a.x.compareTo(b.x));
         }
       }
@@ -535,6 +572,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
       return '${date.toIso8601String()},${spot.y}';
     }).toList();
     await prefs.setStringList(key, dataToSave ?? []);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 
   Future<void> _saveRecord(String item, String value, DateTime date) async {
@@ -542,14 +580,16 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
     if (doubleValue != null) {
       setState(() {
         final updatedData = List<FlSpot>.from(_chartData[item] ?? []);
-        final index = updatedData.indexWhere((spot) => DateUtils.isSameDay(DateTime.fromMillisecondsSinceEpoch(spot.x.toInt()), date));
+        final index = updatedData.indexWhere((spot) => DateUtils.isSameDay(
+            DateTime.fromMillisecondsSinceEpoch(spot.x.toInt()), date));
 
         if (index != -1) {
           // Update existing entry for the same day
           updatedData[index] = FlSpot(updatedData[index].x, doubleValue);
         } else {
           // Add new entry
-          updatedData.add(FlSpot(date.millisecondsSinceEpoch.toDouble(), doubleValue));
+          updatedData
+              .add(FlSpot(date.millisecondsSinceEpoch.toDouble(), doubleValue));
         }
         updatedData.sort((a, b) => a.x.compareTo(b.x));
         _chartData[item] = updatedData;
@@ -575,7 +615,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
               child: const Text('삭제'),
               onPressed: () {
                 setState(() {
-                  _chartData[item]?.removeWhere((s) => s.x == spot.x && s.y == spot.y);
+                  _chartData[item]
+                      ?.removeWhere((s) => s.x == spot.x && s.y == spot.y);
                 });
                 _saveRecords(item);
                 Navigator.of(context).pop();
@@ -591,7 +632,9 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                 final doubleValue = double.tryParse(editController.text);
                 if (doubleValue != null) {
                   setState(() {
-                    final index = _chartData[item]?.indexWhere((s) => s.x == spot.x && s.y == spot.y) ?? -1;
+                    final index = _chartData[item]?.indexWhere(
+                            (s) => s.x == spot.x && s.y == spot.y) ??
+                        -1;
                     if (index != -1) {
                       _chartData[item]![index] = FlSpot(spot.x, doubleValue);
                     }
@@ -659,7 +702,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                     getTooltipItems: (List<LineBarSpot> touchedSpots) {
                       return touchedSpots.map((barSpot) {
                         final flSpot = barSpot;
-                        final date = DateTime.fromMillisecondsSinceEpoch(flSpot.x.toInt());
+                        final date = DateTime.fromMillisecondsSinceEpoch(
+                            flSpot.x.toInt());
                         final dateText = DateFormat('yyyy-MM-dd').format(date);
                         final valueText = flSpot.y.toString();
                         return LineTooltipItem(
@@ -669,7 +713,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                       }).toList();
                     },
                   ),
-                  touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
+                  touchCallback:
+                      (FlTouchEvent event, LineTouchResponse? response) {
                     if (event is FlTapUpEvent &&
                         response != null &&
                         response.lineBarSpots != null &&
@@ -683,22 +728,28 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                 ),
                 lineBarsData: lineBarsData,
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+                  leftTitles: const AxisTitles(
+                      sideTitles:
+                          SideTitles(showTitles: true, reservedSize: 40)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                        final date =
+                            DateTime.fromMillisecondsSinceEpoch(value.toInt());
                         return SideTitleWidget(
                           axisSide: meta.axisSide,
-                          child: Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10)),
+                          child: Text(DateFormat('MM/dd').format(date),
+                              style: const TextStyle(fontSize: 10)),
                         );
                       },
                       interval: _getInterval(items),
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                 ),
               ),
             ),
@@ -712,7 +763,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
               child: TextField(
                 controller: _controllers[item],
                 focusNode: _focusNodes[item],
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: '$item 값 입력',
                   border: const OutlineInputBorder(),

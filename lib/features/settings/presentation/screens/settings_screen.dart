@@ -51,6 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleWeightUnit(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('use_lbs', value);
+    await _cloudSyncService.notifyLocalChange();
     setState(() {
       _useLbs = value;
     });
@@ -85,7 +86,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   '테마, 단위, 데이터 관리 옵션을 한곳에서 정리해보세요.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.68),
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withValues(alpha: 0.68),
                       ),
                 ),
               ],
@@ -95,11 +100,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionHeader(context, '일반'),
           BlocBuilder<ThemeBloc, ThemeState>(
             builder: (context, state) {
-              final isDarkMode =
-                  state.themeData.brightness == Brightness.dark;
+              final isDarkMode = state.themeData.brightness == Brightness.dark;
               return SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
                 title: const Text('다크 모드'),
                 subtitle: const Text('차분한 다크 테마로 전환해요.'),
                 value: isDarkMode,
@@ -114,7 +119,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (!_isLoading)
             SwitchListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18)),
               title: const Text('무게 단위 (Lbs)'),
               subtitle: Text(_useLbs ? '현재 단위: 파운드 (lbs)' : '현재 단위: 킬로그램 (kg)'),
               value: _useLbs,
@@ -123,7 +129,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 32),
           _buildSectionHeader(context, '클라우드 백업'),
           ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             tileColor: Theme.of(context).cardTheme.color,
             leading: const Icon(Icons.cloud_outlined),
             title: const Text('Google 로그인 + 클라우드 업로드'),
@@ -139,7 +146,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 10),
           ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             tileColor: Theme.of(context).cardTheme.color,
             leading: const Icon(Icons.cloud_download_outlined),
             title: const Text('클라우드에서 복원'),
@@ -152,7 +160,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_cloudSyncService.isAvailable && _cloudUserEmail != null) ...[
             const SizedBox(height: 10),
             ListTile(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18)),
               tileColor: Theme.of(context).cardTheme.color,
               leading: const Icon(Icons.logout),
               title: const Text('클라우드 계정 로그아웃'),
@@ -163,7 +172,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 32),
           _buildSectionHeader(context, '데이터 관리'),
           ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             tileColor: Theme.of(context).cardTheme.color,
             leading: const Icon(Icons.download),
             title: const Text('데이터 백업'),
@@ -172,7 +182,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 10),
           ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             tileColor: Theme.of(context).cardTheme.color,
             leading: const Icon(Icons.upload),
             title: const Text('데이터 복원'),
@@ -232,7 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _uploadToCloud(BuildContext context) async {
     if (!_cloudSyncService.isAvailable) {
-      _showSnackBar(context, '먼저 Supabase 설정을 넣어 주세요. README와 supabase/sql 파일을 같이 추가해뒀어요.');
+      _showSnackBar(context,
+          '먼저 Supabase 설정을 넣어 주세요. README와 supabase/sql 파일을 같이 추가해뒀어요.');
       return;
     }
 
@@ -263,7 +275,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final result = await _cloudSyncService.restoreLatestSnapshot();
       if (!mounted) return;
 
-      final isDarkMode = (await SharedPreferences.getInstance()).getBool('isDarkMode') ?? false;
+      final isDarkMode =
+          (await SharedPreferences.getInstance()).getBool('isDarkMode') ??
+              false;
       context.read<ThemeBloc>().add(ThemeChanged(isDarkMode: isDarkMode));
       await _loadSettings();
       _showSnackBar(context, result.message);

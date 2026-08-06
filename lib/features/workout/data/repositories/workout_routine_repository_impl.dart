@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_routine.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_routine_repository.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkoutRoutineRepositoryImpl implements WorkoutRoutineRepository {
@@ -32,10 +34,10 @@ class WorkoutRoutineRepositoryImpl implements WorkoutRoutineRepository {
   }
 
   Future<void> _saveRoutines(List<WorkoutRoutine> routines) async {
-    final routinesJson = routines
-        .map((routine) => json.encode(routine.toJson()))
-        .toList();
+    final routinesJson =
+        routines.map((routine) => json.encode(routine.toJson())).toList();
     await _prefs.setStringList(_routinesKey, routinesJson);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 
   @override
@@ -51,5 +53,6 @@ class WorkoutRoutineRepositoryImpl implements WorkoutRoutineRepository {
     final List<dynamic> jsonList = jsonDecode(jsonString);
     final List<String> routinesJson = jsonList.cast<String>();
     await _prefs.setStringList(_routinesKey, routinesJson);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 }

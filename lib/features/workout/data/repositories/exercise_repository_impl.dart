@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:get_it/get_it.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +16,8 @@ class ExerciseRepositoryImpl implements ExerciseRepository {
 
   @override
   Future<List<ExerciseCategory>> getExerciseCategories() async {
-    final jsonString = await rootBundle.loadString('assets/data/exercises.json');
+    final jsonString =
+        await rootBundle.loadString('assets/data/exercises.json');
     final Map<String, dynamic> data = json.decode(jsonString);
 
     return data.entries.map((entry) {
@@ -45,10 +48,10 @@ class ExerciseRepositoryImpl implements ExerciseRepository {
   }
 
   Future<void> _saveCustomExercises(List<Exercise> exercises) async {
-    final jsonStringList = exercises
-        .map((exercise) => json.encode(exercise.toJson()))
-        .toList();
+    final jsonStringList =
+        exercises.map((exercise) => json.encode(exercise.toJson())).toList();
     await _prefs.setStringList(_customExercisesKey, jsonStringList);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 
   @override

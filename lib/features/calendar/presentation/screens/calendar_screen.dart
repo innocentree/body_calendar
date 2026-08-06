@@ -1,5 +1,7 @@
 import 'package:body_calendar/features/settings/presentation/screens/settings_screen.dart';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../workout/presentation/screens/workout_screen.dart';
@@ -31,6 +33,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Duration _restRemain = Duration.zero;
   final Offset _fabOffset = const Offset(0, 0);
   Timer? _restFabTimer;
+  String? _lastShownSyncError;
+  String? _lastShownUploadedAt;
+
+  CloudSyncService get _cloudSyncService => GetIt.I<CloudSyncService>();
 
   @override
   void initState() {
@@ -38,12 +44,45 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _selectedDay = _focusedDay;
     _loadEvents();
     _restoreRestFabState();
+    _cloudSyncService.addListener(_handleCloudSyncChanged);
   }
 
   @override
   void dispose() {
+    _cloudSyncService.removeListener(_handleCloudSyncChanged);
     _restFabTimer?.cancel();
     super.dispose();
+  }
+
+  void _handleCloudSyncChanged() {
+    if (!mounted) return;
+
+    final error = _cloudSyncService.lastError;
+    if (error != null && error.isNotEmpty && error != _lastShownSyncError) {
+      _lastShownSyncError = error;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.redAccent.withValues(alpha: 0.92),
+        ),
+      );
+      return;
+    }
+
+    final uploadedAt = _cloudSyncService.lastUploadedAt;
+    if (!_cloudSyncService.isSyncing &&
+        uploadedAt != null &&
+        uploadedAt != _lastShownUploadedAt &&
+        _cloudSyncService.lastError == null) {
+      _lastShownUploadedAt = uploadedAt;
+      _lastShownSyncError = null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('클라우드 동기화가 완료됐어요.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _restoreRestFabState() async {
@@ -142,6 +181,188 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   void _onPageChanged(DateTime focusedDay) {
     _focusedDay = focusedDay;
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SettingsScreen(),
+      ),
+    );
+    await _loadEvents();
+  }
+
+  Future<void> _openStatistics() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const StatisticsScreen(),
+      ),
+    );
+    await _loadEvents();
+  }
+
+  Future<void> _openWorkoutScreen() async {
+    if (_selectedDay == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WorkoutScreen(
+          selectedDate: _selectedDay!,
+        ),
+      ),
+    );
+    await _loadEvents();
+  }
+
+  Future<void> _handleSyncPressed() async {
+    if (_cloudSyncService.isSyncing) return;
+
+    final state = _cloudSyncService.visualState;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _calendarMutedSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      _syncIconForState(state),
+                      color: _syncColorForState(context, state),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _syncTitleForState(state),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _buildSyncDetailText(),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withValues(alpha: 0.8),
+                      ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _openSettings();
+                        },
+                        child: const Text('설정 열기'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await _cloudSyncService.uploadSnapshot();
+                          if (!mounted) return;
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.cloud_upload_rounded),
+                        label: const Text('지금 동기화'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _syncTitleForState(CloudSyncVisualState state) {
+    switch (state) {
+      case CloudSyncVisualState.synced:
+        return '클라우드 동기화 완료';
+      case CloudSyncVisualState.syncing:
+        return '클라우드 동기화 중';
+      case CloudSyncVisualState.unsynced:
+        return '클라우드 동기화 필요';
+      case CloudSyncVisualState.unavailable:
+        return '클라우드 동기화 미설정';
+    }
+  }
+
+  String _buildSyncDetailText() {
+    final parts = <String>[_cloudSyncService.statusLabel];
+
+    if (_cloudSyncService.currentUserEmail != null) {
+      parts.add('계정: ${_cloudSyncService.currentUserEmail}');
+    }
+    if (_cloudSyncService.lastUploadedAt != null) {
+      parts
+          .add('마지막 업로드: ${_formatSyncIso(_cloudSyncService.lastUploadedAt!)}');
+    }
+    if (_cloudSyncService.lastLocalChangeAt != null) {
+      parts.add(
+          '마지막 로컬 변경: ${_formatSyncIso(_cloudSyncService.lastLocalChangeAt!)}');
+    }
+    if (_cloudSyncService.lastError != null &&
+        _cloudSyncService.lastError!.isNotEmpty) {
+      parts.add('최근 오류: ${_cloudSyncService.lastError!}');
+    }
+
+    return parts.join('\n');
+  }
+
+  String _formatSyncIso(String iso) {
+    final parsed = DateTime.tryParse(iso);
+    if (parsed == null) return iso;
+    return DateFormat('yyyy.MM.dd HH:mm:ss').format(parsed.toLocal());
+  }
+
+  IconData _syncIconForState(CloudSyncVisualState state) {
+    switch (state) {
+      case CloudSyncVisualState.synced:
+        return Icons.cloud_done_rounded;
+      case CloudSyncVisualState.syncing:
+        return Icons.cloud_sync_rounded;
+      case CloudSyncVisualState.unsynced:
+        return Icons.cloud_off_rounded;
+      case CloudSyncVisualState.unavailable:
+        return Icons.cloud_off_rounded;
+    }
+  }
+
+  Color _syncColorForState(BuildContext context, CloudSyncVisualState state) {
+    switch (state) {
+      case CloudSyncVisualState.synced:
+        return Colors.lightGreenAccent;
+      case CloudSyncVisualState.syncing:
+        return Theme.of(context).colorScheme.primary;
+      case CloudSyncVisualState.unsynced:
+        return const Color(0xFFFF8A65);
+      case CloudSyncVisualState.unavailable:
+        return Theme.of(context).disabledColor;
+    }
   }
 
   Widget _buildViewToggleButton(String text, CalendarFormat format) {
@@ -347,29 +568,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
           appBar: AppBar(
             title: const Text('캘린더'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                tooltip: '설정',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
+              AnimatedBuilder(
+                animation: _cloudSyncService,
+                builder: (context, _) {
+                  final state = _cloudSyncService.visualState;
+                  return IconButton(
+                    icon: Icon(
+                      _syncIconForState(state),
+                      color: _syncColorForState(context, state),
                     ),
+                    tooltip: _cloudSyncService.statusLabel,
+                    onPressed: _handleSyncPressed,
                   );
                 },
               ),
               IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: '설정',
+                onPressed: _openSettings,
+              ),
+              IconButton(
                 icon: const Icon(Icons.analytics),
                 tooltip: '통계',
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const StatisticsScreen(),
-                    ),
-                  );
-                },
+                onPressed: _openStatistics,
               ),
             ],
           ),
@@ -700,17 +921,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       color: Colors.transparent,
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(22),
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  WorkoutScreen(
-                                                selectedDate: _selectedDay!,
-                                              ),
-                                            ),
-                                          );
-                                        },
+                                        onTap: _openWorkoutScreen,
                                         child: Padding(
                                           padding: const EdgeInsets.all(18),
                                           child: Row(
@@ -802,18 +1013,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              if (_selectedDay != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WorkoutScreen(
-                      selectedDate: _selectedDay!,
-                    ),
-                  ),
-                );
-              }
-            },
+            onPressed: _openWorkoutScreen,
             child: const Icon(Icons.add_rounded),
           ),
         ),

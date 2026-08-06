@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/workout/domain/models/workout.dart';
+import 'package:get_it/get_it.dart';
 import 'package:flutter/foundation.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
 import 'package:path_provider/path_provider.dart';
@@ -50,6 +52,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     final workoutsJson =
         workouts.map((workout) => jsonEncode(workout.toJson())).toList();
     await _prefs.setStringList(_workoutsKey, workoutsJson);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
     await _backup();
   }
 
@@ -59,7 +62,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         try {
           final directory = await getExternalStorageDirectory();
           if (directory != null) {
-            final backupDir = Directory('${directory.path}/body_calendar_backup');
+            final backupDir =
+                Directory('${directory.path}/body_calendar_backup');
             if (!await backupDir.exists()) {
               await backupDir.create(recursive: true);
             }
@@ -91,5 +95,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     final List<dynamic> jsonList = jsonDecode(jsonString);
     final List<String> workoutsJson = jsonList.cast<String>();
     await _prefs.setStringList(_workoutsKey, workoutsJson);
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:body_calendar/core/utils/ticker.dart';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,23 +15,29 @@ import 'package:body_calendar/features/workout/domain/repositories/workout_repos
 import 'package:mockito/mockito.dart';
 
 class MockExerciseRepository extends Mock implements ExerciseRepository {}
-class MockWorkoutRoutineRepository extends Mock implements WorkoutRoutineRepository {}
+
+class MockWorkoutRoutineRepository extends Mock
+    implements WorkoutRoutineRepository {}
+
 class MockWorkoutRepository extends Mock implements WorkoutRepository {}
 
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
-    
+
     final getIt = GetIt.instance;
     getIt.reset();
     getIt.registerSingleton<SharedPreferences>(prefs);
     getIt.registerSingleton<ExerciseRepository>(MockExerciseRepository());
-    getIt.registerSingleton<WorkoutRoutineRepository>(MockWorkoutRoutineRepository());
+    getIt.registerSingleton<WorkoutRoutineRepository>(
+        MockWorkoutRoutineRepository());
     getIt.registerSingleton<WorkoutRepository>(MockWorkoutRepository());
+    getIt.registerSingleton<CloudSyncService>(CloudSyncService(prefs));
   });
 
-  testWidgets('MyApp should load and show CalendarScreen', (WidgetTester tester) async {
+  testWidgets('MyApp should load and show CalendarScreen',
+      (WidgetTester tester) async {
     final prefs = GetIt.I<SharedPreferences>();
     final binding = TestWidgetsFlutterBinding.ensureInitialized();
     binding.window.physicalSizeTestValue = const Size(1440, 2200);
@@ -39,7 +46,7 @@ void main() {
       binding.window.clearPhysicalSizeTestValue();
       binding.window.clearDevicePixelRatioTestValue();
     });
-    
+
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
