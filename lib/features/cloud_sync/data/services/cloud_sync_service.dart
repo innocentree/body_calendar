@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_links/app_links.dart';
 import 'package:body_calendar/core/config/cloud_sync_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -41,6 +42,7 @@ class CloudSyncService extends ChangeNotifier {
   static const String _isDirtyKey = 'cloud_sync_is_dirty';
   static const String _lastErrorKey = 'cloud_sync_last_error';
   static const Duration _autoUploadDebounce = Duration(seconds: 2);
+  static const Duration _interactiveSignInTimeout = Duration(minutes: 2);
   static const List<String> _trackedExactKeys = [
     'workout_routines',
     'custom_exercises',
@@ -257,6 +259,7 @@ class CloudSyncService extends ChangeNotifier {
 
     final completer = Completer<CloudSyncResult>();
     Timer? sessionPollTimer;
+    StreamSubscription<Uri>? deepLinkSubscription;
     late final StreamSubscription<AuthState> subscription;
 
     void completeIfSignedIn([String message = 'Google 로그인을 완료했어요.']) {
@@ -268,6 +271,30 @@ class CloudSyncService extends ChangeNotifier {
       }
     }
 
+    bool isAuthCallbackUri(Uri uri) {
+      final expected = Uri.parse(CloudSyncConfig.supabaseRedirectUrl);
+      final sameScheme = uri.scheme == expected.scheme;
+      final expectedHost = expected.host;
+      final sameHost = expectedHost.isEmpty || uri.host == expectedHost;
+      return sameScheme && sameHost;
+    }
+
+    Future<void> handleAuthCallback(Uri uri) async {
+      if (!isAuthCallbackUri(uri)) return;
+      if (!uri.queryParameters.containsKey('code') &&
+          !uri.fragment.contains('access_token') &&
+          !uri.fragment.contains('error_description')) {
+        return;
+      }
+
+      try {
+        await _client.auth.getSessionFromUrl(uri);
+        completeIfSignedIn();
+      } catch (error) {
+        debugPrint('CloudSyncService.handleAuthCallback failed: $error');
+      }
+    }
+
     subscription = _client.auth.onAuthStateChange.listen((event) {
       if (event.session?.user != null) {
         completeIfSignedIn();
@@ -275,6 +302,17 @@ class CloudSyncService extends ChangeNotifier {
     });
 
     try {
+      deepLinkSubscription = AppLinks().uriLinkStream.listen(
+        (uri) {
+          if (uri != null) {
+            handleAuthCallback(uri);
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint('CloudSyncService.uriLinkStream error: $error');
+        },
+      );
+
       final launched = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: CloudSyncConfig.supabaseRedirectUrl,
@@ -297,12 +335,12 @@ class CloudSyncService extends ChangeNotifier {
       }
 
       return await completer.future.timeout(
-        const Duration(seconds: 20),
+        _interactiveSignInTimeout,
         onTimeout: () => CloudSyncResult(
           success: currentUser != null,
           message: currentUser != null
               ? 'Google 로그인은 되었지만 확인 신호가 늦어서, 현재 세션으로 계속 진행할게요.'
-              : 'Google 로그인 확인이 지연됐어요. 다시 시도해 주세요.',
+              : 'Google 로그인이 아직 앱으로 돌아오지 않았어요. 브라우저에서 로그인을 마치고 앱으로 돌아와 다시 시도해 주세요.',
         ),
       );
     } catch (error) {
@@ -312,6 +350,7 @@ class CloudSyncService extends ChangeNotifier {
       );
     } finally {
       sessionPollTimer?.cancel();
+      await deepLinkSubscription?.cancel();
       await subscription.cancel();
     }
   }

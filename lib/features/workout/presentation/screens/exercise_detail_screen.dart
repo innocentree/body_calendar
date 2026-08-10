@@ -180,11 +180,27 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     WidgetsBinding.instance.addObserver(this);
     _currentWeight = widget.initialWeight.toDouble();
     _exerciseRepository = GetIt.I<ExerciseRepository>();
+    unawaited(_configureCueAudioPlayer());
     _loadExercise().then((_) {
       _initializePrefs();
     });
     // 화면이 꺼지지 않게 설정
     WakelockPlus.enable();
+  }
+
+  Future<void> _configureCueAudioPlayer() async {
+    try {
+      await _audioPlayer.setPlayerMode(PlayerMode.lowLatency);
+      await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+      await _audioPlayer.setAudioContext(
+        AudioContextConfig(
+          route: AudioContextConfigRoute.system,
+          duckAudio: true,
+        ).build(),
+      );
+    } catch (error) {
+      debugPrint('Failed to configure cue audio player: $error');
+    }
   }
 
   @override
