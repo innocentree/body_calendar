@@ -258,6 +258,7 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     final completer = Completer<CloudSyncResult>();
+    final appLinks = AppLinks();
     Timer? sessionPollTimer;
     StreamSubscription<Uri>? deepLinkSubscription;
     late final StreamSubscription<AuthState> subscription;
@@ -289,9 +290,21 @@ class CloudSyncService extends ChangeNotifier {
 
       try {
         await _client.auth.getSessionFromUrl(uri);
-        completeIfSignedIn();
       } catch (error) {
         debugPrint('CloudSyncService.handleAuthCallback failed: $error');
+      } finally {
+        completeIfSignedIn();
+      }
+    }
+
+    Future<void> tryHandleLatestAuthLink() async {
+      try {
+        final latestUri = await appLinks.getLatestLink();
+        if (latestUri != null) {
+          await handleAuthCallback(latestUri);
+        }
+      } catch (error) {
+        debugPrint('CloudSyncService.getLatestLink failed: $error');
       }
     }
 
@@ -302,7 +315,7 @@ class CloudSyncService extends ChangeNotifier {
     });
 
     try {
-      deepLinkSubscription = AppLinks().uriLinkStream.listen(
+      deepLinkSubscription = appLinks.uriLinkStream.listen(
         (uri) {
           if (uri != null) {
             handleAuthCallback(uri);
@@ -312,6 +325,8 @@ class CloudSyncService extends ChangeNotifier {
           debugPrint('CloudSyncService.uriLinkStream error: $error');
         },
       );
+
+      await tryHandleLatestAuthLink();
 
       final launched = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
@@ -330,7 +345,10 @@ class CloudSyncService extends ChangeNotifier {
         completeIfSignedIn();
         sessionPollTimer = Timer.periodic(
           const Duration(milliseconds: 400),
-          (_) => completeIfSignedIn(),
+          (_) {
+            unawaited(tryHandleLatestAuthLink());
+            completeIfSignedIn();
+          },
         );
       }
 
