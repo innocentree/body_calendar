@@ -272,6 +272,34 @@ class CloudSyncService extends ChangeNotifier {
       }
     }
 
+    void completeWithFailure(String message) {
+      if (!completer.isCompleted) {
+        completer.complete(CloudSyncResult(
+          success: false,
+          message: message,
+        ));
+      }
+    }
+
+    String? extractAuthError(Uri uri) {
+      final fragmentUri = Uri.tryParse('dummy://callback?${uri.fragment}');
+      final fragmentParams = fragmentUri?.queryParameters ?? const {};
+      final rawDescription = uri.queryParameters['error_description'] ??
+          fragmentParams['error_description'];
+      final rawError = uri.queryParameters['error'] ?? fragmentParams['error'];
+
+      final description = rawDescription?.replaceAll('+', ' ').trim();
+      final error = rawError?.replaceAll('+', ' ').trim();
+
+      if (description != null && description.isNotEmpty) {
+        return description;
+      }
+      if (error != null && error.isNotEmpty) {
+        return error;
+      }
+      return null;
+    }
+
     bool isAuthCallbackUri(Uri uri) {
       final expected = Uri.parse(CloudSyncConfig.supabaseRedirectUrl);
       final sameScheme = uri.scheme == expected.scheme;
@@ -284,7 +312,16 @@ class CloudSyncService extends ChangeNotifier {
       if (!isAuthCallbackUri(uri)) return;
       if (!uri.queryParameters.containsKey('code') &&
           !uri.fragment.contains('access_token') &&
-          !uri.fragment.contains('error_description')) {
+          !uri.fragment.contains('error_description') &&
+          !uri.queryParameters.containsKey('error') &&
+          !uri.queryParameters.containsKey('error_description') &&
+          !uri.fragment.contains('error=')) {
+        return;
+      }
+
+      final authError = extractAuthError(uri);
+      if (authError != null) {
+        completeWithFailure('Google 로그인에 실패했어요: $authError');
         return;
       }
 
@@ -292,9 +329,11 @@ class CloudSyncService extends ChangeNotifier {
         await _client.auth.getSessionFromUrl(uri);
       } catch (error) {
         debugPrint('CloudSyncService.handleAuthCallback failed: $error');
-      } finally {
-        completeIfSignedIn();
+        completeWithFailure('로그인 콜백 처리 중 문제가 생겼어요: $error');
+        return;
       }
+
+      completeIfSignedIn();
     }
 
     Future<void> tryHandleLatestAuthLink() async {
