@@ -364,6 +364,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         _sets = setsJson
             .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
             .toList();
+        if (_sets.isNotEmpty) {
+          _isLbs = _sets.last.isLbs;
+        }
         // 완료되지 않은 첫 세트로 인덱스 이동, 모두 완료면 마지막 세트
         final firstIncomplete = _sets.indexWhere((set) => !set.isCompleted);
         if (firstIncomplete == -1) {
@@ -835,6 +838,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
               _currentWeight = lastSet.weight;
               _currentReps = lastSet.reps;
               _currentRestTime = lastSet.restTime;
+              _isLbs = lastSet.isLbs;
             });
 
             // 이전 세트들을 현재 날짜에 복사
@@ -853,6 +857,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     ? 70.0 - set.weight
                                     : null)),
                         isCompleted: false, // 완료 상태는 초기화
+                        isLbs: set.isLbs,
                       ))
                   .toList();
               _currentSetIndex = 0;
