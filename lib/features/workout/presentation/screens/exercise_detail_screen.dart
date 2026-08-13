@@ -1131,21 +1131,45 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             ),
                           ),
                         ] else ...[
-                          _StatBox(
-                            title: '최대 횟수',
-                            value: todayMaxReps.toDouble(),
-                            prev: prevMaxReps.toDouble(),
-                            best: bestMaxReps.toDouble(),
-                            unit: '회',
-                            formatter: (v) => v.toInt().toString(),
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) => ExerciseStatisticsPopup(
+                                  exerciseName: widget.exerciseName,
+                                  type: ExerciseStatisticType.maxReps,
+                                ),
+                              );
+                            },
+                            child: _StatBox(
+                              title: '최대 횟수',
+                              value: todayMaxReps.toDouble(),
+                              prev: prevMaxReps.toDouble(),
+                              best: bestMaxReps.toDouble(),
+                              unit: '회',
+                              formatter: (v) => v.toInt().toString(),
+                            ),
                           ),
-                          _StatBox(
-                            title: '총 횟수',
-                            value: todayTotalReps.toDouble(),
-                            prev: prevTotalReps.toDouble(),
-                            best: bestTotalReps.toDouble(),
-                            unit: '회',
-                            formatter: (v) => v.toInt().toString(),
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                builder: (context) => ExerciseStatisticsPopup(
+                                  exerciseName: widget.exerciseName,
+                                  type: ExerciseStatisticType.totalReps,
+                                ),
+                              );
+                            },
+                            child: _StatBox(
+                              title: '총 횟수',
+                              value: todayTotalReps.toDouble(),
+                              prev: prevTotalReps.toDouble(),
+                              best: bestTotalReps.toDouble(),
+                              unit: '회',
+                              formatter: (v) => v.toInt().toString(),
+                            ),
                           ),
                         ]
                       ],
