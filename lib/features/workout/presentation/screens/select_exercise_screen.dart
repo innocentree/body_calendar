@@ -11,7 +11,16 @@ import '../../domain/models/exercise.dart';
 import '../../../../core/utils/hangul_utils.dart';
 
 class SelectExerciseScreen extends StatefulWidget {
-  const SelectExerciseScreen({super.key});
+  final String title;
+  final String? helperText;
+  final String? preferredBodyPart;
+
+  const SelectExerciseScreen({
+    super.key,
+    this.title = '운동 선택',
+    this.helperText,
+    this.preferredBodyPart,
+  });
 
   @override
   State<SelectExerciseScreen> createState() => _SelectExerciseScreenState();
@@ -67,7 +76,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       final prefs = await SharedPreferences.getInstance();
 
       final Map<String, List<Exercise>> exercisesMap = {};
-      
+
       // Create a map for quick body part lookup by exercise name
       final Map<String, String> exerciseBodyPartMap = {};
 
@@ -81,8 +90,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       // Add custom exercises
       exercisesMap['나만의 운동'] = customExercises;
       for (var exercise in customExercises) {
-        if (exercise.bodyPart != null && exercisesMap.containsKey(exercise.bodyPart)) {
-          if (exercisesMap[exercise.bodyPart!]!.any((e) => e.id == exercise.id) == false) {
+        if (exercise.bodyPart != null &&
+            exercisesMap.containsKey(exercise.bodyPart)) {
+          if (exercisesMap[exercise.bodyPart!]!
+                  .any((e) => e.id == exercise.id) ==
+              false) {
             exercisesMap[exercise.bodyPart!]!.add(exercise);
           }
         }
@@ -102,15 +114,17 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         for (var exercise in workout.exercises) {
           final bodyPart = exerciseBodyPartMap[exercise.name];
           if (bodyPart != null) {
-            bodyPartFrequency[bodyPart] = (bodyPartFrequency[bodyPart] ?? 0) + 1;
+            bodyPartFrequency[bodyPart] =
+                (bodyPartFrequency[bodyPart] ?? 0) + 1;
           }
         }
       }
 
       // Sort body parts
       final fixedParts = ['분류', '최근 운동', '전체', '나만의 운동'];
-      final sortableParts = _bodyParts.where((part) => !fixedParts.contains(part)).toList();
-      
+      final sortableParts =
+          _bodyParts.where((part) => !fixedParts.contains(part)).toList();
+
       sortableParts.sort((a, b) {
         final freqA = bodyPartFrequency[a] ?? 0;
         final freqB = bodyPartFrequency[b] ?? 0;
@@ -122,11 +136,12 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       final Map<String, int> exerciseRecencyMap = {};
       int recencyCounter = 0;
 
-      final workoutKeys = prefs.getKeys()
+      final workoutKeys = prefs
+          .getKeys()
           .where((k) => k.startsWith('workouts_'))
           .toList()
         ..sort((a, b) => b.compareTo(a));
-      
+
       // Collect all available exercises from categories and custom ones for lookup
       final Map<String, Exercise> allAvailableExercises = {};
       for (var list in exercisesMap.values) {
@@ -181,7 +196,8 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
       // Sort all exercise lists by recency (primary) and frequency (secondary)
       for (var entry in exercisesMap.entries) {
-        if (entry.key == '최근 운동') continue; // Keep recent exercises in chronological order
+        if (entry.key == '최근 운동')
+          continue; // Keep recent exercises in chronological order
 
         entry.value.sort((a, b) {
           final recencyA = exerciseRecencyMap[a.name] ?? 999999;
@@ -193,7 +209,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
           final freqA = exerciseFrequencyMap[a.name] ?? 0;
           final freqB = exerciseFrequencyMap[b.name] ?? 0;
-          
+
           if (freqA != freqB) {
             return freqB.compareTo(freqA);
           }
@@ -204,6 +220,10 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       setState(() {
         _exercises = exercisesMap;
         _bodyParts = [...fixedParts, ...sortableParts];
+        if (widget.preferredBodyPart != null &&
+            sortableParts.contains(widget.preferredBodyPart)) {
+          _selectedTab = widget.preferredBodyPart!;
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -292,21 +312,30 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                     Expanded(
                       child: TabBarView(
                         children: [
-                          _buildVariationList(exercise.variations, scrollController),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '덤벨').toList(),
+                              exercise.variations, scrollController),
+                          _buildVariationList(
+                            exercise.variations
+                                .where((v) => v.equipment == '덤벨')
+                                .toList(),
                             scrollController,
                           ),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '케이블').toList(),
+                            exercise.variations
+                                .where((v) => v.equipment == '케이블')
+                                .toList(),
                             scrollController,
                           ),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '머신').toList(),
+                            exercise.variations
+                                .where((v) => v.equipment == '머신')
+                                .toList(),
                             scrollController,
                           ),
                           _buildVariationList(
-                            exercise.variations.where((v) => v.equipment == '밴드').toList(),
+                            exercise.variations
+                                .where((v) => v.equipment == '밴드')
+                                .toList(),
                             scrollController,
                           ),
                         ],
@@ -322,7 +351,8 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     );
   }
 
-  Widget _buildVariationList(List<Exercise> variations, ScrollController scrollController) {
+  Widget _buildVariationList(
+      List<Exercise> variations, ScrollController scrollController) {
     if (variations.isEmpty) {
       return const Center(
         child: Text('표시할 운동이 없어요.'),
@@ -384,30 +414,65 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
               }
             },
           ),
-          title: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '운동 검색',
-                hintStyle: TextStyle(color: Colors.grey[600]),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              onChanged: (value) {
-                setState(() {});
-              },
-            ),
-          ),
+          title: Text(widget.title),
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
+            preferredSize:
+                Size.fromHeight(widget.helperText == null ? 64 : 118),
             child: Column(
               children: [
+                if (widget.helperText != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.18),
+                        ),
+                      ),
+                      child: Text(
+                        widget.helperText!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: '운동 검색',
+                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.grey),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                      ),
+                      onChanged: (value) {
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ),
                 Row(
                   children: [
                     _buildTabButton('분류'),
@@ -457,7 +522,8 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     }
 
     if (_selectedTab == '전체') {
-      final allExercises = _exercises.values.expand((exercises) => exercises).toSet().toList();
+      final allExercises =
+          _exercises.values.expand((exercises) => exercises).toSet().toList();
       return _buildExerciseList(allExercises);
     }
 
@@ -466,11 +532,13 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   }
 
   Widget _buildSearchResults() {
-    final allExercises = _exercises.values.expand((exercises) => exercises).toSet().toList();
+    final allExercises =
+        _exercises.values.expand((exercises) => exercises).toSet().toList();
     // final searchText = _searchController.text.toLowerCase(); // Unused
 
     final filteredExercises = allExercises.where((exercise) {
-      return HangulUtils.containsChoseong(exercise.name, _searchController.text);
+      return HangulUtils.containsChoseong(
+          exercise.name, _searchController.text);
     }).toList();
 
     return _buildExerciseList(filteredExercises);
@@ -536,7 +604,8 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   }
 
   Widget _buildCategoryButtons() {
-    final categories = _bodyParts.where((part) => part != '분류' && part != '전체').toList();
+    final categories =
+        _bodyParts.where((part) => part != '분류' && part != '전체').toList();
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

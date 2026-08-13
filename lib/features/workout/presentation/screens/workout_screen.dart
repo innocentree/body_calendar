@@ -27,6 +27,11 @@ class WorkoutRecord {
   final DateTime timestamp;
   final int sessionIndex;
   final String equipment;
+  final String? bodyPart;
+  final String? groupId;
+  final String? groupType;
+  final String? groupLabel;
+  final int? groupOrder;
 
   WorkoutRecord({
     required this.id,
@@ -37,7 +42,14 @@ class WorkoutRecord {
     required this.timestamp,
     required this.sessionIndex,
     this.equipment = '',
+    this.bodyPart,
+    this.groupId,
+    this.groupType,
+    this.groupLabel,
+    this.groupOrder,
   });
+
+  bool get isGrouped => groupId != null && groupId!.isNotEmpty;
 
   // JSON으로 변환
   Map<String, dynamic> toJson() => {
@@ -49,6 +61,11 @@ class WorkoutRecord {
         'timestamp': timestamp.toIso8601String(),
         'sessionIndex': sessionIndex,
         'equipment': equipment,
+        'bodyPart': bodyPart,
+        'groupId': groupId,
+        'groupType': groupType,
+        'groupLabel': groupLabel,
+        'groupOrder': groupOrder,
       };
 
   // JSON에서 객체 생성
@@ -61,8 +78,28 @@ class WorkoutRecord {
         timestamp: DateTime.parse(json['timestamp']),
         sessionIndex: json['sessionIndex'],
         equipment: json['equipment'] ?? '',
+        bodyPart: json['bodyPart'],
+        groupId: json['groupId'],
+        groupType: json['groupType'],
+        groupLabel: json['groupLabel'],
+        groupOrder: json['groupOrder'],
       );
 }
+
+class WorkoutListEntry {
+  final WorkoutRecord? workout;
+  final List<WorkoutRecord>? groupWorkouts;
+
+  const WorkoutListEntry.single(this.workout) : groupWorkouts = null;
+  const WorkoutListEntry.group(this.groupWorkouts) : workout = null;
+
+  bool get isGroup => groupWorkouts != null;
+  String get key => isGroup
+      ? 'group_${groupWorkouts!.first.groupId ?? groupWorkouts!.first.id}'
+      : 'single_${workout!.id}';
+}
+
+enum _WorkoutAddMode { single, superset, compound }
 
 class WorkoutScreen extends StatefulWidget {
   final DateTime selectedDate;
@@ -85,6 +122,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   late SharedPreferences _prefs;
   int _recordDay = 0;
   late final WorkoutRoutineRepository _workoutRoutineRepository;
+  int _groupSequence = 0;
 
   @override
   void initState() {
@@ -160,6 +198,58 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       }
     } catch (e) {
       debugPrint('Error saving workouts: $e');
+    }
+  }
+
+  String _nextGroupLabel() {
+    _groupSequence += 1;
+    return String.fromCharCode(64 + ((_groupSequence - 1) % 26) + 1);
+  }
+
+  List<WorkoutListEntry> _buildWorkoutEntries(List<WorkoutRecord> workouts) {
+    final List<WorkoutListEntry> entries = [];
+    for (int i = 0; i < workouts.length; i++) {
+      final workout = workouts[i];
+      if (!workout.isGrouped) {
+        entries.add(WorkoutListEntry.single(workout));
+        continue;
+      }
+
+      final groupId = workout.groupId;
+      final groupItems = workouts.where((w) => w.groupId == groupId).toList()
+        ..sort((a, b) => (a.groupOrder ?? 0).compareTo(b.groupOrder ?? 0));
+
+      final alreadyAdded = entries.any(
+        (entry) =>
+            entry.isGroup && entry.groupWorkouts!.first.groupId == groupId,
+      );
+
+      if (!alreadyAdded) {
+        entries.add(WorkoutListEntry.group(groupItems));
+      }
+    }
+    return entries;
+  }
+
+  Color _groupAccentColor(String? groupType) {
+    switch (groupType) {
+      case 'superset':
+        return const Color(0xFF8B5CF6);
+      case 'compound':
+        return const Color(0xFFF97316);
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
+
+  String _groupTypeLabel(String? groupType) {
+    switch (groupType) {
+      case 'superset':
+        return '슈퍼세트';
+      case 'compound':
+        return '컴파운드 세트';
+      default:
+        return '그룹';
     }
   }
 
@@ -710,242 +800,48 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                           : ReorderableListView.builder(
                               padding:
                                   const EdgeInsets.fromLTRB(16, 0, 16, 120),
-                              itemCount: sessionWorkouts.length,
+                              itemCount:
+                                  _buildWorkoutEntries(sessionWorkouts).length,
                               buildDefaultDragHandles: false,
                               onReorder: (oldIndex, newIndex) {
+                                final entries =
+                                    _buildWorkoutEntries(sessionWorkouts);
                                 setState(() {
                                   if (newIndex > oldIndex) {
                                     newIndex -= 1;
                                   }
-                                  final item =
-                                      sessionWorkouts.removeAt(oldIndex);
-                                  sessionWorkouts.insert(newIndex, item);
+                                  final moved = entries.removeAt(oldIndex);
+                                  entries.insert(newIndex, moved);
+
+                                  final reordered = <WorkoutRecord>[];
+                                  for (final entry in entries) {
+                                    if (entry.isGroup) {
+                                      reordered.addAll(entry.groupWorkouts!);
+                                    } else {
+                                      reordered.add(entry.workout!);
+                                    }
+                                  }
+
                                   _workouts.removeWhere((w) =>
                                       w.sessionIndex ==
                                       _tabController.index + 1);
-                                  _workouts.addAll(sessionWorkouts);
+                                  _workouts.addAll(reordered);
                                   _saveWorkouts();
                                 });
                               },
                               itemBuilder: (context, i) {
-                                final workout = sessionWorkouts[i];
+                                final entry =
+                                    _buildWorkoutEntries(sessionWorkouts)[i];
                                 return ReorderableDelayedDragStartListener(
-                                  key: ValueKey(workout.id),
+                                  key: ValueKey(entry.key),
                                   index: i,
-                                  child: Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: _workoutSurface,
-                                      borderRadius: BorderRadius.circular(22),
-                                      border: Border.all(
-                                          color: _workoutBorderColor),
-                                    ),
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(22),
-                                        onTap: () async {
-                                          await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ExerciseDetailScreen(
-                                                exerciseName: workout.name,
-                                                selectedDate:
-                                                    widget.selectedDate,
-                                                initialWeight:
-                                                    workout.weight.toInt(),
-                                                initialSets: workout.sets,
-                                                recordDay: _recordDay,
-                                              ),
-                                            ),
-                                          );
-                                          _loadWorkouts();
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(18),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    width: 44,
-                                                    height: 44,
-                                                    decoration: BoxDecoration(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .primary
-                                                          .withValues(
-                                                              alpha: 0.10),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              14),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons
-                                                          .fitness_center_rounded,
-                                                      size: 20,
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .primary,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 14),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          workout.name,
-                                                          style: Theme.of(
-                                                                  context)
-                                                              .textTheme
-                                                              .titleMedium
-                                                              ?.copyWith(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                        const SizedBox(
-                                                            height: 4),
-                                                        if (workout.equipment
-                                                            .isNotEmpty)
-                                                          Text(
-                                                            workout.equipment,
-                                                            style:
-                                                                Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodySmall
-                                                                    ?.copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .textTheme
-                                                                          .bodySmall
-                                                                          ?.color
-                                                                          ?.withValues(
-                                                                              alpha: 0.8),
-                                                                    ),
-                                                          )
-                                                        else
-                                                          Text(
-                                                            '세트 기록 열기',
-                                                            style:
-                                                                Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .bodySmall
-                                                                    ?.copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .textTheme
-                                                                          .bodySmall
-                                                                          ?.color
-                                                                          ?.withValues(
-                                                                              alpha: 0.72),
-                                                                    ),
-                                                          ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Icon(
-                                                    Icons
-                                                        .drag_indicator_rounded,
-                                                    color: Theme.of(context)
-                                                        .iconTheme
-                                                        .color
-                                                        ?.withValues(
-                                                            alpha: 0.48),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 14),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 14,
-                                                        vertical: 12),
-                                                decoration: BoxDecoration(
-                                                  color: _workoutSoftSurface,
-                                                  borderRadius:
-                                                      BorderRadius.circular(16),
-                                                ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    FutureBuilder<
-                                                        List<dynamic>>(
-                                                      future: _getSetInfo(
-                                                          workout.name,
-                                                          widget.selectedDate),
-                                                      builder:
-                                                          (context, snapshot) {
-                                                        if (!snapshot.hasData) {
-                                                          return Text(
-                                                            '세트 정보를 불러오는 중...',
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodySmall,
-                                                          );
-                                                        }
-                                                        final sets = snapshot
-                                                            .data![0] as int;
-                                                        final completed =
-                                                            snapshot.data![1]
-                                                                as int;
-                                                        return Text(
-                                                          '$completed / $sets 세트',
-                                                          style:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyMedium
-                                                                  ?.copyWith(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                        );
-                                                      },
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          _deleteWorkout(
-                                                              workout),
-                                                      style:
-                                                          TextButton.styleFrom(
-                                                        foregroundColor:
-                                                            const Color(
-                                                                0xFFD47A63),
-                                                        minimumSize: Size.zero,
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                horizontal: 8,
-                                                                vertical: 4),
-                                                        tapTargetSize:
-                                                            MaterialTapTargetSize
-                                                                .shrinkWrap,
-                                                      ),
-                                                      child: const Text('삭제'),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                  child: entry.isGroup
+                                      ? _buildGroupedWorkoutCard(
+                                          entry.groupWorkouts!,
+                                        )
+                                      : _buildSingleWorkoutCard(
+                                          entry.workout!,
                                         ),
-                                      ),
-                                    ),
-                                  ),
                                 );
                               },
                             ),
@@ -1004,19 +900,49 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       );
 
       if (selectedExercise != null) {
-        setState(() {
-          _workouts.add(WorkoutRecord(
-            id: DateTime.now().millisecondsSinceEpoch,
-            name: selectedExercise.name,
-            imagePath: selectedExercise.imagePath,
-            sets: selectedExercise.sets,
-            weight: selectedExercise.weight,
-            timestamp: DateTime.now(),
-            sessionIndex: _tabController.index + 1,
-            equipment: selectedExercise.equipment,
-          ));
-          _saveWorkouts();
-        });
+        final addMode = await _showAddModeSheet(selectedExercise);
+        if (addMode == null) return;
+
+        if (addMode == _WorkoutAddMode.single) {
+          await _addSingleWorkout(selectedExercise);
+          return;
+        }
+
+        final secondExercise = await Navigator.push<Exercise>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SelectExerciseScreen(
+              title: addMode == _WorkoutAddMode.superset
+                  ? '슈퍼세트 만들기'
+                  : '컴파운드 세트 만들기',
+              helperText: addMode == _WorkoutAddMode.superset
+                  ? '첫 운동: ${selectedExercise.name}\n함께 묶을 두 번째 운동을 선택하세요.'
+                  : '첫 운동: ${selectedExercise.name}\n같은 부위 운동을 추천해요.',
+              preferredBodyPart: addMode == _WorkoutAddMode.compound
+                  ? selectedExercise.bodyPart
+                  : null,
+            ),
+          ),
+        );
+
+        if (secondExercise == null) return;
+
+        if (addMode == _WorkoutAddMode.compound &&
+            selectedExercise.bodyPart != null &&
+            secondExercise.bodyPart != null &&
+            selectedExercise.bodyPart != secondExercise.bodyPart) {
+          final proceed = await _confirmCrossBodyPartCompound(
+            selectedExercise,
+            secondExercise,
+          );
+          if (!proceed) return;
+        }
+
+        await _addWorkoutGroup(
+          first: selectedExercise,
+          second: secondExercise,
+          type: addMode,
+        );
       }
     } catch (e) {
       debugPrint('Error adding workout: $e');
@@ -1026,6 +952,212 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         );
       }
     }
+  }
+
+  Future<void> _addSingleWorkout(Exercise exercise) async {
+    setState(() {
+      _workouts.add(_createWorkoutRecord(exercise));
+    });
+    await _saveWorkouts();
+  }
+
+  WorkoutRecord _createWorkoutRecord(
+    Exercise exercise, {
+    String? groupId,
+    String? groupType,
+    String? groupLabel,
+    int? groupOrder,
+  }) {
+    return WorkoutRecord(
+      id: DateTime.now().microsecondsSinceEpoch + (_workouts.length * 10),
+      name: exercise.name,
+      imagePath: exercise.imagePath,
+      sets: exercise.sets,
+      weight: exercise.weight,
+      timestamp: DateTime.now(),
+      sessionIndex: _tabController.index + 1,
+      equipment: exercise.equipment,
+      bodyPart: exercise.bodyPart,
+      groupId: groupId,
+      groupType: groupType,
+      groupLabel: groupLabel,
+      groupOrder: groupOrder,
+    );
+  }
+
+  Future<_WorkoutAddMode?> _showAddModeSheet(Exercise exercise) async {
+    return showModalBottomSheet<_WorkoutAddMode>(
+      context: context,
+      backgroundColor: _workoutSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exercise.name,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '어떤 방식으로 추가할까요?',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white70,
+                      ),
+                ),
+                const SizedBox(height: 18),
+                _buildAddModeTile(
+                  mode: _WorkoutAddMode.single,
+                  icon: Icons.add_circle_outline_rounded,
+                  title: '일반 추가',
+                  subtitle: '단일 운동으로 바로 추가',
+                ),
+                const SizedBox(height: 10),
+                _buildAddModeTile(
+                  mode: _WorkoutAddMode.superset,
+                  icon: Icons.link_rounded,
+                  title: '슈퍼세트',
+                  subtitle: '다른 운동 1개와 묶어서 추가',
+                  accentColor: const Color(0xFF8B5CF6),
+                ),
+                const SizedBox(height: 10),
+                _buildAddModeTile(
+                  mode: _WorkoutAddMode.compound,
+                  icon: Icons.local_fire_department_rounded,
+                  title: '컴파운드 세트',
+                  subtitle: '같은 부위 운동 조합을 추천',
+                  accentColor: const Color(0xFFF97316),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAddModeTile({
+    required _WorkoutAddMode mode,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? accentColor,
+  }) {
+    final color = accentColor ?? Theme.of(context).colorScheme.primary;
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () => Navigator.pop(context, mode),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _workoutSoftSurface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: 0.24)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _confirmCrossBodyPartCompound(
+    Exercise first,
+    Exercise second,
+  ) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('다른 부위 조합이에요'),
+        content: Text(
+          '${first.name}(${first.bodyPart ?? '미지정'})와 ${second.name}(${second.bodyPart ?? '미지정'})는 다른 부위예요.\n그래도 컴파운드 세트로 추가할까요?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('추가'),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  Future<void> _addWorkoutGroup({
+    required Exercise first,
+    required Exercise second,
+    required _WorkoutAddMode type,
+  }) async {
+    final groupId = DateTime.now().microsecondsSinceEpoch.toString();
+    final groupType =
+        type == _WorkoutAddMode.superset ? 'superset' : 'compound';
+    final label = _nextGroupLabel();
+
+    setState(() {
+      _workouts.addAll([
+        _createWorkoutRecord(
+          first,
+          groupId: groupId,
+          groupType: groupType,
+          groupLabel: label,
+          groupOrder: 0,
+        ),
+        _createWorkoutRecord(
+          second,
+          groupId: groupId,
+          groupType: groupType,
+          groupLabel: label,
+          groupOrder: 1,
+        ),
+      ]);
+    });
+    await _saveWorkouts();
   }
 
   void _deleteWorkout(WorkoutRecord workout) async {
@@ -1042,6 +1174,332 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         );
       }
     }
+  }
+
+  void _deleteWorkoutGroup(List<WorkoutRecord> workouts) async {
+    try {
+      final ids = workouts.map((w) => w.id).toSet();
+      setState(() {
+        _workouts.removeWhere((w) => ids.contains(w.id));
+      });
+      await _saveWorkouts();
+    } catch (e) {
+      debugPrint('Error deleting workout group: $e');
+    }
+  }
+
+  Widget _buildSingleWorkoutCard(WorkoutRecord workout) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: _workoutSurface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _workoutBorderColor),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExerciseDetailScreen(
+                  exerciseName: workout.name,
+                  selectedDate: widget.selectedDate,
+                  initialWeight: workout.weight.toInt(),
+                  initialSets: workout.sets,
+                  recordDay: _recordDay,
+                ),
+              ),
+            );
+            _loadWorkouts();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.fitness_center_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            workout.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            workout.equipment.isNotEmpty
+                                ? workout.equipment
+                                : '세트 기록 열기',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.color
+                                          ?.withValues(alpha: 0.76),
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.drag_indicator_rounded,
+                      color: Theme.of(context)
+                          .iconTheme
+                          .color
+                          ?.withValues(alpha: 0.48),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: _workoutSoftSurface,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      FutureBuilder<List<dynamic>>(
+                        future: _getSetInfo(workout.name, widget.selectedDate),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return Text(
+                              '세트 정보를 불러오는 중...',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            );
+                          }
+                          final sets = snapshot.data![0] as int;
+                          final completed = snapshot.data![1] as int;
+                          return Text(
+                            '$completed / $sets 세트',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          );
+                        },
+                      ),
+                      TextButton(
+                        onPressed: () => _deleteWorkout(workout),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFD47A63),
+                          minimumSize: Size.zero,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupedWorkoutCard(List<WorkoutRecord> workouts) {
+    final first = workouts.first;
+    final accent = _groupAccentColor(first.groupType);
+    final label = _groupTypeLabel(first.groupType);
+    final groupBadge = first.groupLabel != null ? ' ${first.groupLabel}' : '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: _workoutSurface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accent.withValues(alpha: 0.55)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$label$groupBadge',
+                    style: TextStyle(
+                      color: accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.drag_indicator_rounded,
+                  color: Theme.of(context)
+                      .iconTheme
+                      .color
+                      ?.withValues(alpha: 0.48),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            ...workouts.asMap().entries.map((entry) {
+              final index = entry.key;
+              final workout = entry.value;
+              return Padding(
+                padding: EdgeInsets.only(
+                    bottom: index == workouts.length - 1 ? 0 : 10),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ExerciseDetailScreen(
+                          exerciseName: workout.name,
+                          selectedDate: widget.selectedDate,
+                          initialWeight: workout.weight.toInt(),
+                          initialSets: workout.sets,
+                          recordDay: _recordDay,
+                        ),
+                      ),
+                    );
+                    _loadWorkouts();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: _workoutSoftSurface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${first.groupLabel ?? ''}${index + 1}',
+                            style: TextStyle(
+                              color: accent,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                workout.name,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                workout.equipment.isNotEmpty
+                                    ? workout.equipment
+                                    : (workout.bodyPart ?? '세트 기록 열기'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FutureBuilder<List<dynamic>>(
+                          future:
+                              _getSetInfo(workout.name, widget.selectedDate),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const SizedBox.shrink();
+                            }
+                            final sets = snapshot.data![0] as int;
+                            final completed = snapshot.data![1] as int;
+                            return Text(
+                              '$completed/$sets',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Text(
+                  '${workouts.map((w) => w.name).join(' · ')}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white70,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => _deleteWorkoutGroup(workouts),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFD47A63),
+                    minimumSize: Size.zero,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('그룹 삭제'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // 운동별 세트 정보 불러오기
