@@ -185,6 +185,55 @@ class _GroupedExerciseDetailScreenState
     return true;
   }
 
+  int get _completedRoundCount {
+    final rounds = _resolvedRoundCount();
+    var count = 0;
+    for (var i = 0; i < rounds; i++) {
+      if (_isRoundFullyCompleted(i)) count++;
+    }
+    return count;
+  }
+
+  int get _completedSetCount {
+    var count = 0;
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name] ?? const <ExerciseSet>[];
+      count += sets.where((set) => set.isCompleted).length;
+    }
+    return count;
+  }
+
+  double get _totalCompletedVolume {
+    var total = 0.0;
+    for (final workout in _workouts) {
+      final exercise = _exerciseByName[workout.name];
+      if (exercise?.needsWeight == false) continue;
+      final sets = _setsByExerciseName[workout.name] ?? const <ExerciseSet>[];
+      for (final set in sets) {
+        if (set.isCompleted) {
+          total += set.weight * set.reps;
+        }
+      }
+    }
+    return total;
+  }
+
+  int get _completedWorkSeconds {
+    var total = 0;
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name] ?? const <ExerciseSet>[];
+      for (final set in sets) {
+        if (!set.isCompleted) continue;
+        if (set.startTime != null && set.endTime != null) {
+          total += set.endTime!.difference(set.startTime!).inSeconds;
+        } else {
+          total += set.restTime.inSeconds;
+        }
+      }
+    }
+    return total;
+  }
+
   Duration _roundRestTime(int roundIndex) {
     var seconds = 60;
     for (final workout in _workouts) {
@@ -246,6 +295,31 @@ class _GroupedExerciseDetailScreenState
     if (willComplete &&
         !wasRoundComplete &&
         _isRoundFullyCompleted(roundIndex)) {
+      final duration = _roundRestTime(roundIndex).inSeconds;
+      context.read<TimerBloc>().add(TimerStarted(
+            duration: duration,
+            exerciseName: _workouts.map((w) => w.name).join(' · '),
+            selectedDate: widget.selectedDate,
+          ));
+    }
+  }
+
+  Future<void> _toggleRoundCompletion(int roundIndex) async {
+    final shouldComplete = !_isRoundFullyCompleted(roundIndex);
+    final wasRoundComplete = _isRoundFullyCompleted(roundIndex);
+
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name]!;
+      final current = sets[roundIndex];
+      sets[roundIndex] = current.copyWith(
+        isCompleted: shouldComplete,
+        endTime: shouldComplete ? DateTime.now() : null,
+      );
+    }
+
+    await _persistAllSets(triggerSync: true);
+
+    if (shouldComplete && !wasRoundComplete) {
       final duration = _roundRestTime(roundIndex).inSeconds;
       context.read<TimerBloc>().add(TimerStarted(
             duration: duration,
@@ -334,6 +408,13 @@ class _GroupedExerciseDetailScreenState
         : '${set.weight.toStringAsFixed(1)}kg';
   }
 
+  String _formatVolume(double kg) {
+    if (kg >= 1000) {
+      return '${(kg / 1000).toStringAsFixed(1)}톤';
+    }
+    return '${kg.toStringAsFixed(0)}kg';
+  }
+
   @override
   Widget build(BuildContext context) {
     final accent = _groupAccentColor(_workouts.first.groupType);
@@ -389,6 +470,23 @@ class _GroupedExerciseDetailScreenState
                                 color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _InfoPill(
+                                  label:
+                                      '운동 ${widget.recordDay > 0 ? '${widget.recordDay}번째 기록' : '기록'}',
+                                  color: accent,
+                                ),
+                                _InfoPill(
+                                  label:
+                                      '완료 라운드 $_completedRoundCount/$roundCount',
+                                  color: Colors.greenAccent,
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -422,6 +520,38 @@ class _GroupedExerciseDetailScreenState
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          title: '완료 세트',
+                          value: '$_completedSetCount개',
+                          subtitle: '${_workouts.length}개 운동',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryCard(
+                          title: '볼륨',
+                          value: _formatVolume(_totalCompletedVolume),
+                          subtitle: '완료 세트 기준',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryCard(
+                          title: '진행 시간',
+                          value: _formatDuration(
+                              Duration(seconds: _completedWorkSeconds)),
+                          subtitle: '대략치',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
@@ -485,12 +615,41 @@ class _GroupedExerciseDetailScreenState
                                       size: 18),
                                   label: Text(_formatDuration(rest)),
                                 ),
+                                FilledButton.tonalIcon(
+                                  onPressed: () =>
+                                      _toggleRoundCompletion(roundIndex),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: isDone
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : accent.withValues(alpha: 0.16),
+                                    foregroundColor:
+                                        isDone ? Colors.white70 : accent,
+                                  ),
+                                  icon: Icon(isDone
+                                      ? Icons.undo_rounded
+                                      : Icons.done_all_rounded),
+                                  label: Text(isDone ? '라운드 되돌리기' : '라운드 완료'),
+                                ),
                                 if (roundCount > 1)
                                   IconButton(
                                     onPressed: () => _removeRound(roundIndex),
                                     icon: const Icon(Icons.delete_outline),
                                   ),
                               ],
+                            ),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: (_workouts
+                                      .where((workout) => _setsByExerciseName[
+                                              workout.name]![roundIndex]
+                                          .isCompleted)
+                                      .length) /
+                                  _workouts.length,
+                              minHeight: 8,
+                              borderRadius: BorderRadius.circular(999),
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.08),
+                              valueColor: AlwaysStoppedAnimation<Color>(accent),
                             ),
                             const SizedBox(height: 12),
                             ..._workouts.map((workout) {
@@ -749,6 +908,88 @@ class _AdjustChip extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: onPlus,
             icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _InfoPill({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+
+  const _SummaryCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _detailSurface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: _detailMutedText,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _detailMutedText,
+              fontSize: 11,
+            ),
           ),
         ],
       ),
