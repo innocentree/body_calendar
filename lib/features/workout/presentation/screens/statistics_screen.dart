@@ -19,6 +19,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   List<_GroupStatEntry> _groupEntries = [];
   int _groupExerciseCount = 0;
   int _singleExerciseCount = 0;
+  Map<DateTime, int> _heatmapCounts = {};
+  List<_BodyPartStatEntry> _bodyPartEntries = [];
+  List<_RoutineUsageEntry> _routineEntries = [];
 
   @override
   void initState() {
@@ -31,17 +34,30 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final keys = prefs.getKeys().where((k) => k.startsWith('workouts_'));
     final Set<String> names = {};
     final Map<String, _GroupStatEntry> groups = {};
+    final Map<String, int> heatmapCountByDate = {};
+    final Map<String, int> bodyPartCount = {};
+    final Map<String, Set<String>> performedNamesByDate = {};
     var groupedEntries = 0;
     var singleEntries = 0;
     for (final key in keys) {
+      final dateStr = key.replaceFirst('workouts_', '');
       final workoutsJson = prefs.getStringList(key) ?? [];
       final Map<String, List<Map<String, dynamic>>> groupedWorkouts = {};
+      final performedNames =
+          performedNamesByDate.putIfAbsent(dateStr, () => {});
       for (final jsonStr in workoutsJson) {
         try {
           final workout = jsonDecode(jsonStr);
-          if (workout['name'] != null) {
-            names.add(workout['name']);
+          final name = workout['name']?.toString();
+          if (name != null && name.isNotEmpty) {
+            names.add(name);
+            performedNames.add(name);
           }
+          final bodyPart = workout['bodyPart']?.toString();
+          if (bodyPart != null && bodyPart.isNotEmpty) {
+            bodyPartCount[bodyPart] = (bodyPartCount[bodyPart] ?? 0) + 1;
+          }
+          heatmapCountByDate[dateStr] = (heatmapCountByDate[dateStr] ?? 0) + 1;
           final groupId = workout['groupId']?.toString();
           if (groupId != null && groupId.isNotEmpty) {
             groupedEntries++;
@@ -71,12 +87,65 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         );
       }
     }
+
+    final routinesJson = prefs.getStringList('workout_routines') ?? [];
+    final routineEntries = <_RoutineUsageEntry>[];
+    for (final raw in routinesJson) {
+      try {
+        final routine = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+        final routineName = routine['name']?.toString() ?? '이름 없는 루틴';
+        final exercises = (routine['exercises'] as List<dynamic>? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .map((e) => e['name']?.toString() ?? '')
+            .where((name) => name.isNotEmpty)
+            .toSet();
+        if (exercises.isEmpty) continue;
+
+        var matchedDays = 0;
+        var bestMatchCount = 0;
+        for (final performed in performedNamesByDate.values) {
+          final overlap = performed.intersection(exercises).length;
+          if (overlap > 0) {
+            matchedDays++;
+            if (overlap > bestMatchCount) {
+              bestMatchCount = overlap;
+            }
+          }
+        }
+
+        routineEntries.add(
+          _RoutineUsageEntry(
+            name: routineName,
+            exerciseCount: exercises.length,
+            matchedDays: matchedDays,
+            bestMatchRate: bestMatchCount / exercises.length,
+          ),
+        );
+      } catch (_) {}
+    }
+
     setState(() {
       _exerciseNames = names.toList()..sort();
       _groupEntries = groups.values.toList()
         ..sort((a, b) => a.title.compareTo(b.title));
       _groupExerciseCount = groupedEntries;
       _singleExerciseCount = singleEntries;
+      _heatmapCounts = {
+        for (final entry in heatmapCountByDate.entries)
+          if (DateTime.tryParse(entry.key) case final date?)
+            DateTime(date.year, date.month, date.day): entry.value,
+      };
+      _bodyPartEntries = bodyPartCount.entries
+          .map((entry) =>
+              _BodyPartStatEntry(name: entry.key, count: entry.value))
+          .toList()
+        ..sort((a, b) => b.count.compareTo(a.count));
+      _routineEntries = routineEntries
+        ..sort((a, b) {
+          final dayCompare = b.matchedDays.compareTo(a.matchedDays);
+          if (dayCompare != 0) return dayCompare;
+          return b.bestMatchRate.compareTo(a.bestMatchRate);
+        });
     });
   }
 
@@ -175,6 +244,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       singleCount: _singleExerciseCount,
                     ),
                     const SizedBox(height: 18),
+                    _SectionTitle(
+                      title: '월간 활동 히트맵',
+                      subtitle: '최근 12주 운동 밀도를 빠르게 볼 수 있어요.',
+                    ),
+                    const SizedBox(height: 10),
+                    _HeatmapCard(counts: _heatmapCounts),
+                    const SizedBox(height: 18),
+                    _SectionTitle(
+                      title: '부위별 통계',
+                      subtitle: '어느 부위를 자주 기록했는지 보여줘요.',
+                    ),
+                    const SizedBox(height: 10),
+                    _BodyPartStatsCard(entries: _bodyPartEntries),
+                    const SizedBox(height: 18),
+                    _SectionTitle(
+                      title: '루틴별 통계',
+                      subtitle: '저장된 루틴이 실제 기록과 얼마나 겹쳤는지 봐요.',
+                    ),
+                    const SizedBox(height: 10),
+                    _RoutineStatsCard(entries: _routineEntries),
+                    const SizedBox(height: 18),
                     if (_groupEntries.isNotEmpty) ...[
                       Text(
                         '그룹 운동 통계',
@@ -272,6 +362,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 }
 
+class _BodyPartStatEntry {
+  final String name;
+  final int count;
+
+  const _BodyPartStatEntry({required this.name, required this.count});
+}
+
+class _RoutineUsageEntry {
+  final String name;
+  final int exerciseCount;
+  final int matchedDays;
+  final double bestMatchRate;
+
+  const _RoutineUsageEntry({
+    required this.name,
+    required this.exerciseCount,
+    required this.matchedDays,
+    required this.bestMatchRate,
+  });
+}
+
 class _GroupStatEntry {
   final String signature;
   final String title;
@@ -338,6 +449,274 @@ class _DashboardCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _SectionTitle({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withValues(alpha: 0.72),
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeatmapCard extends StatelessWidget {
+  final Map<DateTime, int> counts;
+
+  const _HeatmapCard({required this.counts});
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final start = DateTime(today.year, today.month, today.day)
+        .subtract(const Duration(days: 83));
+    final values = counts.values.where((v) => v > 0).toList();
+    final maxCount =
+        values.isEmpty ? 1 : values.reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: List.generate(84, (index) {
+              final date = start.add(Duration(days: index));
+              final day = DateTime(date.year, date.month, date.day);
+              final count = counts[day] ?? 0;
+              return Tooltip(
+                message: '${date.month}/${date.day} · ${count}개 기록',
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: _heatColor(context, count, maxCount),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text('적음', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(width: 6),
+              ...List.generate(4, (index) {
+                final sample = ((maxCount * (index + 1)) / 4).round();
+                return Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: _heatColor(context, sample, maxCount),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(width: 2),
+              Text('많음', style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _heatColor(BuildContext context, int count, int maxCount) {
+    if (count <= 0) {
+      return Theme.of(context).dividerColor.withValues(alpha: 0.35);
+    }
+    final ratio = (count / maxCount).clamp(0.0, 1.0);
+    return Color.lerp(
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.22),
+          Theme.of(context).colorScheme.primary,
+          ratio,
+        ) ??
+        Theme.of(context).colorScheme.primary;
+  }
+}
+
+class _BodyPartStatsCard extends StatelessWidget {
+  final List<_BodyPartStatEntry> entries;
+
+  const _BodyPartStatsCard({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return _EmptyCard(message: '아직 부위 정보가 쌓인 기록이 없어요.');
+    }
+
+    final topEntries = entries.take(5).toList();
+    final maxCount = topEntries.first.count;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        children: topEntries.map((entry) {
+          final ratio = maxCount == 0 ? 0.0 : entry.count / maxCount;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Text(entry.name)),
+                    Text('${entry.count}회'),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 10,
+                    backgroundColor:
+                        Theme.of(context).dividerColor.withValues(alpha: 0.22),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _RoutineStatsCard extends StatelessWidget {
+  final List<_RoutineUsageEntry> entries;
+
+  const _RoutineStatsCard({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return _EmptyCard(message: '저장된 루틴이 아직 없어요.');
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        children: entries.take(5).map((entry) {
+          final percent = (entry.bestMatchRate * 100).round();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .scaffoldBackgroundColor
+                    .withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.name,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${entry.exerciseCount}개 운동 · 기록과 겹친 날 ${entry.matchedDays}일',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: LinearProgressIndicator(
+                            value: entry.bestMatchRate.clamp(0.0, 1.0),
+                            minHeight: 10,
+                            backgroundColor: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.22),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('최대 일치 $percent%'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _EmptyCard extends StatelessWidget {
+  final String message;
+
+  const _EmptyCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
     );
   }
 }
