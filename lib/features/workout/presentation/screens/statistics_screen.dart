@@ -17,6 +17,8 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen> {
   List<String> _exerciseNames = [];
   List<_GroupStatEntry> _groupEntries = [];
+  int _groupExerciseCount = 0;
+  int _singleExerciseCount = 0;
 
   @override
   void initState() {
@@ -29,6 +31,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final keys = prefs.getKeys().where((k) => k.startsWith('workouts_'));
     final Set<String> names = {};
     final Map<String, _GroupStatEntry> groups = {};
+    var groupedEntries = 0;
+    var singleEntries = 0;
     for (final key in keys) {
       final workoutsJson = prefs.getStringList(key) ?? [];
       final Map<String, List<Map<String, dynamic>>> groupedWorkouts = {};
@@ -40,9 +44,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           }
           final groupId = workout['groupId']?.toString();
           if (groupId != null && groupId.isNotEmpty) {
+            groupedEntries++;
             groupedWorkouts.putIfAbsent(groupId, () => []).add(
                   Map<String, dynamic>.from(workout as Map),
                 );
+          } else {
+            singleEntries++;
           }
         } catch (_) {}
       }
@@ -68,6 +75,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _exerciseNames = names.toList()..sort();
       _groupEntries = groups.values.toList()
         ..sort((a, b) => a.title.compareTo(b.title));
+      _groupExerciseCount = groupedEntries;
+      _singleExerciseCount = singleEntries;
     });
   }
 
@@ -141,6 +150,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DashboardCard(
+                            title: '개별 운동 종목',
+                            value: '${_exerciseNames.length}',
+                            subtitle: '통계 진입 가능 종목 수',
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _DashboardCard(
+                            title: '그룹 조합',
+                            value: '${_groupEntries.length}',
+                            subtitle: '슈퍼세트/컴파운드 조합 수',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _ComparisonBanner(
+                      groupCount: _groupExerciseCount,
+                      singleCount: _singleExerciseCount,
+                    ),
+                    const SizedBox(height: 18),
                     if (_groupEntries.isNotEmpty) ...[
                       Text(
                         '그룹 운동 통계',
@@ -248,4 +282,157 @@ class _GroupStatEntry {
     required this.title,
     required this.exerciseNames,
   });
+}
+
+class _DashboardCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+
+  const _DashboardCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.7),
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.7),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonBanner extends StatelessWidget {
+  final int groupCount;
+  final int singleCount;
+
+  const _ComparisonBanner({
+    required this.groupCount,
+    required this.singleCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hint = groupCount > singleCount
+        ? '최근 누적 기록 기준으로 그룹 운동 비중이 더 높아요.'
+        : singleCount > groupCount
+            ? '최근 누적 기록 기준으로 단일 운동 비중이 더 높아요.'
+            : '그룹/단일 운동 비중이 비슷해요.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '그룹 vs 단일 운동 비중',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                  child: _CompareMiniCard(label: '그룹', value: '$groupCount개')),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: _CompareMiniCard(label: '단일', value: '$singleCount개')),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            hint,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.7),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompareMiniCard extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _CompareMiniCard({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
 }

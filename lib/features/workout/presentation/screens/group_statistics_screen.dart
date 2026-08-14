@@ -29,6 +29,8 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
   Map<String, double> _dateToMax1RM = {};
   Map<String, int> _dateToDurationSeconds = {};
   Map<String, int> _dateToSessionIndex = {};
+  Map<String, bool> _dateToComparedSingleWin = {};
+  _StatisticsPeriod _period = _StatisticsPeriod.all;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     final dateTo1RM = <String, double>{};
     final dateToDuration = <String, int>{};
     final dateToSession = <String, int>{};
+    final dateToComparedSingleWin = <String, bool>{};
 
     for (final key in workoutKeys) {
       final dateStr = key.replaceFirst('workouts_', '');
@@ -132,6 +135,36 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
         if (max1RM > 0) dateTo1RM[dateStr] = max1RM;
         dateToDuration[dateStr] = totalDuration;
         dateToSession[dateStr] = sessionIndex;
+
+        double singleVolume = 0.0;
+        for (final workout in decoded) {
+          final otherGroupId = workout['groupId']?.toString();
+          final sameName =
+              widget.exerciseNames.contains(workout['name']?.toString() ?? '');
+          if (sameName && (otherGroupId == null || otherGroupId.isEmpty)) {
+            final name = workout['name']?.toString();
+            if (name == null || name.isEmpty) continue;
+            final setsKey = 'exercise_sets_${name}_$dateStr';
+            final setsJson = prefs.getStringList(setsKey) ?? [];
+            for (final raw in setsJson) {
+              try {
+                final set = Map<String, dynamic>.from(jsonDecode(raw));
+                if (set['isCompleted'] == true) {
+                  final weight = (set['weight'] is int)
+                      ? (set['weight'] as int).toDouble()
+                      : (set['weight'] is double)
+                          ? set['weight'] as double
+                          : double.tryParse(set['weight'].toString()) ?? 0.0;
+                  final reps = (set['reps'] is int)
+                      ? set['reps'] as int
+                      : int.tryParse(set['reps'].toString()) ?? 0;
+                  singleVolume += weight * reps;
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        dateToComparedSingleWin[dateStr] = totalVolume >= singleVolume;
       }
     }
 
@@ -142,6 +175,7 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
       _dateToMax1RM = dateTo1RM;
       _dateToDurationSeconds = dateToDuration;
       _dateToSessionIndex = dateToSession;
+      _dateToComparedSingleWin = dateToComparedSingleWin;
       _loading = false;
     });
   }
@@ -162,17 +196,29 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     return '${minutes.toString().padLeft(2, '0')}:${remain.toString().padLeft(2, '0')}';
   }
 
+  List<String> _filterDates(Iterable<String> source) {
+    final dates = source.toList()..sort();
+    if (_period == _StatisticsPeriod.all) return dates;
+    final now = DateTime.now();
+    final days = _period == _StatisticsPeriod.days7 ? 7 : 30;
+    return dates.where((date) {
+      final parsed = DateTime.tryParse(date);
+      if (parsed == null) return false;
+      return now.difference(parsed).inDays < days;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final roundDates = _dateToCompletedRounds.keys.toList()..sort();
+    final roundDates = _filterDates(_dateToCompletedRounds.keys);
     final roundValues =
         roundDates.map((d) => _dateToCompletedRounds[d] ?? 0).toList();
-    final volumeDates = _dateToVolume.keys.toList()..sort();
+    final volumeDates = _filterDates(_dateToVolume.keys);
     final volumeValues =
         volumeDates.map((d) => _dateToVolume[d] ?? 0.0).toList();
-    final oneRmDates = _dateToMax1RM.keys.toList()..sort();
+    final oneRmDates = _filterDates(_dateToMax1RM.keys);
     final oneRmValues = oneRmDates.map((d) => _dateToMax1RM[d] ?? 0.0).toList();
-    final durationDates = _dateToDurationSeconds.keys.toList()..sort();
+    final durationDates = _filterDates(_dateToDurationSeconds.keys);
     final durationValues =
         durationDates.map((d) => _dateToDurationSeconds[d] ?? 0).toList();
 
@@ -183,6 +229,10 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     final longestDuration = durationValues.isEmpty
         ? 0
         : durationValues.reduce((a, b) => a > b ? a : b);
+    final compareWins =
+        roundDates.where((d) => _dateToComparedSingleWin[d] == true).length;
+    final compareLosses =
+        roundDates.where((d) => _dateToComparedSingleWin[d] == false).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -204,30 +254,53 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _StatSummaryCard(
-                          title: '최고 라운드',
-                          value: _formatRounds(bestRound),
-                          subtitle: '하루 최고 기록',
-                        ),
+                      _PeriodFilterBar(
+                        period: _period,
+                        onChanged: (period) => setState(() => _period = period),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _StatSummaryCard(
-                          title: '최고 1RM',
-                          value: best1RM == 0 ? '-' : _formatWeight(best1RM),
-                          subtitle: '그룹 내 최고 세트 기준',
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatSummaryCard(
+                              title: '최고 라운드',
+                              value: _formatRounds(bestRound),
+                              subtitle: '하루 최고 기록',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StatSummaryCard(
+                              title: '최고 1RM',
+                              value:
+                                  best1RM == 0 ? '-' : _formatWeight(best1RM),
+                              subtitle: '그룹 내 최고 세트 기준',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _StatSummaryCard(
+                              title: '최장 수행',
+                              value: _formatDuration(longestDuration),
+                              subtitle: '완료 세트 합산',
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _StatSummaryCard(
-                          title: '최장 수행',
-                          value: _formatDuration(longestDuration),
-                          subtitle: '완료 세트 합산',
-                        ),
+                      const SizedBox(height: 10),
+                      _CompareInfoCard(
+                        title: '그룹 vs 단일 볼륨 비교',
+                        leftLabel: '그룹 우세',
+                        leftValue: '$compareWins일',
+                        rightLabel: '단일 우세',
+                        rightValue: '$compareLosses일',
+                        hint: compareWins > compareLosses
+                            ? '같은 운동 조합 기준으로 그룹 수행 볼륨이 더 높은 날이 많아요.'
+                            : compareLosses > compareWins
+                                ? '단일 수행 볼륨이 더 높은 날이 많아요.'
+                                : '그룹/단일 볼륨 우세가 비슷해요.',
                       ),
                     ],
                   ),
@@ -383,6 +456,124 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _StatisticsPeriod { days7, days30, all }
+
+class _PeriodFilterBar extends StatelessWidget {
+  final _StatisticsPeriod period;
+  final ValueChanged<_StatisticsPeriod> onChanged;
+
+  const _PeriodFilterBar({required this.period, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SegmentedButton<_StatisticsPeriod>(
+        segments: const [
+          ButtonSegment(value: _StatisticsPeriod.days7, label: Text('7일')),
+          ButtonSegment(value: _StatisticsPeriod.days30, label: Text('30일')),
+          ButtonSegment(value: _StatisticsPeriod.all, label: Text('전체')),
+        ],
+        selected: {period},
+        onSelectionChanged: (selection) => onChanged(selection.first),
+      ),
+    );
+  }
+}
+
+class _CompareInfoCard extends StatelessWidget {
+  final String title;
+  final String leftLabel;
+  final String leftValue;
+  final String rightLabel;
+  final String rightValue;
+  final String hint;
+
+  const _CompareInfoCard({
+    required this.title,
+    required this.leftLabel,
+    required this.leftValue,
+    required this.rightLabel,
+    required this.rightValue,
+    required this.hint,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                  child: _CompareMetric(label: leftLabel, value: leftValue)),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: _CompareMetric(label: rightLabel, value: rightValue)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            hint,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.7),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompareMetric extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _CompareMetric({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color:
+            Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800)),
         ],
       ),
     );
