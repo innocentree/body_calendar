@@ -1,0 +1,755 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:body_calendar/core/theme/app_colors.dart';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
+import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/workout/domain/models/exercise.dart';
+import 'package:body_calendar/features/workout/domain/models/exercise_set.dart';
+import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
+import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const _detailSurface = Color(0xFF211D19);
+const _detailSoftSurface = Color(0xFF2A2520);
+const _detailMutedText = Color(0xFFA8A099);
+
+class GroupedExerciseDetailScreen extends StatefulWidget {
+  final List<WorkoutRecord> workouts;
+  final DateTime selectedDate;
+  final int recordDay;
+
+  const GroupedExerciseDetailScreen({
+    super.key,
+    required this.workouts,
+    required this.selectedDate,
+    required this.recordDay,
+  });
+
+  @override
+  State<GroupedExerciseDetailScreen> createState() =>
+      _GroupedExerciseDetailScreenState();
+}
+
+class _GroupedExerciseDetailScreenState
+    extends State<GroupedExerciseDetailScreen> {
+  late final ExerciseRepository _exerciseRepository;
+  late SharedPreferences _prefs;
+  late final List<WorkoutRecord> _workouts;
+  final Map<String, Exercise?> _exerciseByName = {};
+  final Map<String, List<ExerciseSet>> _setsByExerciseName = {};
+  bool _isLoading = true;
+  final double _weightStep = 5.0;
+  final int _repStep = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _exerciseRepository = GetIt.I<ExerciseRepository>();
+    _workouts = [...widget.workouts]
+      ..sort((a, b) => (a.groupOrder ?? 0).compareTo(b.groupOrder ?? 0));
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    _prefs = await SharedPreferences.getInstance();
+    await _checkAndSetFirstRecordDate();
+    for (final workout in _workouts) {
+      _exerciseByName[workout.name] =
+          await _exerciseRepository.getExerciseByName(workout.name);
+      _setsByExerciseName[workout.name] = _loadSets(workout.name);
+    }
+
+    final maxCount = _resolvedRoundCount();
+    _ensureRoundCount(maxCount == 0 ? 1 : maxCount, persist: false);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<ExerciseSet> _loadSets(String exerciseName) {
+    final setsJson = _prefs.getStringList(_storageKey(exerciseName)) ?? [];
+    return setsJson
+        .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
+        .toList();
+  }
+
+  Future<void> _checkAndSetFirstRecordDate() async {
+    const key = 'first_record_date';
+    if (_prefs.containsKey(key)) return;
+    final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    await _prefs.setString(key, todayStr);
+  }
+
+  String _storageKey(String exerciseName) {
+    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    return 'exercise_sets_${exerciseName}_$dateStr';
+  }
+
+  int _resolvedRoundCount() {
+    var count = 0;
+    for (final workout in _workouts) {
+      count = count < (_setsByExerciseName[workout.name]?.length ?? 0)
+          ? (_setsByExerciseName[workout.name]?.length ?? 0)
+          : count;
+    }
+    return count;
+  }
+
+  ExerciseSet _buildDefaultSet(WorkoutRecord workout) {
+    final exercise = _exerciseByName[workout.name];
+    final existing = _setsByExerciseName[workout.name];
+    final last = existing != null && existing.isNotEmpty ? existing.last : null;
+
+    return ExerciseSet(
+      weight: last?.weight ?? workout.weight,
+      reps: last?.reps ?? 12,
+      restTime: last?.restTime ?? const Duration(minutes: 1),
+      bodyWeight:
+          last?.bodyWeight ?? (exercise?.isAssisted == true ? 70.0 : null),
+      assistedWeight:
+          last?.assistedWeight ?? (exercise?.isAssisted == true ? 0.0 : null),
+      isLbs: last?.isLbs ?? false,
+    );
+  }
+
+  void _ensureRoundCount(int count, {bool persist = true}) {
+    var changed = false;
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName.putIfAbsent(workout.name, () => []);
+      while (sets.length < count) {
+        sets.add(_buildDefaultSet(workout));
+        changed = true;
+      }
+    }
+    if (changed && persist) {
+      unawaited(_persistAllSets());
+    }
+  }
+
+  Future<void> _persistAllSets() async {
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name] ?? [];
+      await _prefs.setStringList(
+        _storageKey(workout.name),
+        sets.map((set) => jsonEncode(set.toJson())).toList(),
+      );
+      await _updateRecordedDates(workout.name, sets);
+    }
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _updateRecordedDates(
+      String exerciseName, List<ExerciseSet> sets) async {
+    final key = 'recorded_dates_$exerciseName';
+    final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    final recordedDates = _prefs.getStringList(key) ?? [];
+    recordedDates.removeWhere((value) => value.isEmpty);
+    if (sets.isNotEmpty) {
+      if (!recordedDates.contains(todayStr)) {
+        recordedDates.add(todayStr);
+      }
+    } else {
+      recordedDates.remove(todayStr);
+    }
+    await _prefs.setStringList(key, recordedDates.toSet().toList()..sort());
+  }
+
+  int get _currentRoundIndex {
+    final rounds = _resolvedRoundCount();
+    for (var i = 0; i < rounds; i++) {
+      if (!_isRoundFullyCompleted(i)) {
+        return i;
+      }
+    }
+    return rounds == 0 ? 0 : rounds - 1;
+  }
+
+  bool _isRoundFullyCompleted(int roundIndex) {
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name] ?? [];
+      if (roundIndex >= sets.length || !sets[roundIndex].isCompleted) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Duration _roundRestTime(int roundIndex) {
+    var seconds = 60;
+    for (final workout in _workouts) {
+      final set = (_setsByExerciseName[workout.name] ??
+          const <ExerciseSet>[])[roundIndex];
+      if (set.restTime.inSeconds > seconds) {
+        seconds = set.restTime.inSeconds;
+      }
+    }
+    return Duration(seconds: seconds);
+  }
+
+  Future<void> _setRoundRestTime(int roundIndex, Duration duration) async {
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name]!;
+      sets[roundIndex] = sets[roundIndex].copyWith(restTime: duration);
+    }
+    await _persistAllSets();
+  }
+
+  Future<void> _addRound() async {
+    _ensureRoundCount(_resolvedRoundCount() + 1, persist: false);
+    await _persistAllSets();
+  }
+
+  Future<void> _removeRound(int roundIndex) async {
+    if (_resolvedRoundCount() <= 1) return;
+    for (final workout in _workouts) {
+      final sets = _setsByExerciseName[workout.name]!;
+      if (roundIndex < sets.length) {
+        sets.removeAt(roundIndex);
+      }
+    }
+    await _persistAllSets();
+  }
+
+  Future<void> _updateSet(
+    WorkoutRecord workout,
+    int roundIndex,
+    ExerciseSet Function(ExerciseSet current) transform,
+  ) async {
+    final sets = _setsByExerciseName[workout.name]!;
+    sets[roundIndex] = transform(sets[roundIndex]);
+    await _persistAllSets();
+  }
+
+  Future<void> _toggleComplete(WorkoutRecord workout, int roundIndex) async {
+    final sets = _setsByExerciseName[workout.name]!;
+    final current = sets[roundIndex];
+    final willComplete = !current.isCompleted;
+    final wasRoundComplete = _isRoundFullyCompleted(roundIndex);
+
+    sets[roundIndex] = current.copyWith(
+      isCompleted: willComplete,
+      endTime: willComplete ? DateTime.now() : null,
+    );
+    await _persistAllSets();
+
+    if (willComplete &&
+        !wasRoundComplete &&
+        _isRoundFullyCompleted(roundIndex)) {
+      final duration = _roundRestTime(roundIndex).inSeconds;
+      context.read<TimerBloc>().add(TimerStarted(
+            duration: duration,
+            exerciseName: _workouts.map((w) => w.name).join(' · '),
+            selectedDate: widget.selectedDate,
+          ));
+    }
+  }
+
+  Future<double?> _showNumberInputDialog(
+    String title,
+    double initialValue, {
+    bool isInt = false,
+  }) async {
+    final controller = TextEditingController(
+      text: isInt
+          ? initialValue.toInt().toString()
+          : initialValue.toStringAsFixed(1),
+    );
+
+    return showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: _detailSurface,
+        title: Text(title, style: const TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: '값 입력',
+            hintStyle: TextStyle(color: Colors.white54),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              final raw = controller.text.trim();
+              final parsed =
+                  isInt ? int.tryParse(raw)?.toDouble() : double.tryParse(raw);
+              Navigator.pop(context, parsed);
+            },
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _groupTypeLabel(String? groupType) {
+    switch (groupType) {
+      case 'superset':
+        return '슈퍼세트';
+      case 'compound':
+        return '컴파운드 세트';
+      default:
+        return '그룹';
+    }
+  }
+
+  Color _groupAccentColor(String? groupType) {
+    switch (groupType) {
+      case 'superset':
+        return const Color(0xFF8B5CF6);
+      case 'compound':
+        return const Color(0xFFF97316);
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String _weightText(ExerciseSet set) {
+    return set.isLbs
+        ? '${(set.weight * 2.20462).toStringAsFixed(1)}lb'
+        : '${set.weight.toStringAsFixed(1)}kg';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _groupAccentColor(_workouts.first.groupType);
+    final groupLabel = _groupTypeLabel(_workouts.first.groupType);
+    final badge = _workouts.first.groupLabel == null
+        ? ''
+        : ' ${_workouts.first.groupLabel}';
+    final roundCount = _resolvedRoundCount();
+
+    return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundDark,
+        title: Text('$groupLabel$badge'),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isLoading ? null : _addRound,
+        backgroundColor: accent,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add),
+        label: const Text('라운드 추가'),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _detailSurface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: accent.withValues(alpha: 0.45)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _workouts.map((w) => w.name).join(' · '),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '두 운동을 모두 완료해야 휴식 타이머가 시작돼요.',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '${_currentRoundIndex + 1}',
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              '현재 라운드',
+                              style: TextStyle(
+                                color: accent.withValues(alpha: 0.9),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                    itemCount: roundCount,
+                    itemBuilder: (context, roundIndex) {
+                      final isCurrent = roundIndex == _currentRoundIndex;
+                      final isDone = _isRoundFullyCompleted(roundIndex);
+                      final rest = _roundRestTime(roundIndex);
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _detailSurface,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: isCurrent
+                                ? accent.withValues(alpha: 0.75)
+                                : Colors.white.withValues(alpha: 0.08),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: (isDone ? Colors.green : accent)
+                                        .withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    '${roundIndex + 1}라운드',
+                                    style: TextStyle(
+                                      color:
+                                          isDone ? Colors.greenAccent : accent,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                TextButton.icon(
+                                  onPressed: () async {
+                                    final value = await _showNumberInputDialog(
+                                      '휴식 시간(초)',
+                                      rest.inSeconds.toDouble(),
+                                      isInt: true,
+                                    );
+                                    if (value != null) {
+                                      await _setRoundRestTime(
+                                        roundIndex,
+                                        Duration(
+                                            seconds:
+                                                value.toInt().clamp(0, 3600)),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.timer_outlined,
+                                      size: 18),
+                                  label: Text(_formatDuration(rest)),
+                                ),
+                                if (roundCount > 1)
+                                  IconButton(
+                                    onPressed: () => _removeRound(roundIndex),
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            ..._workouts.map((workout) {
+                              final exercise = _exerciseByName[workout.name];
+                              final set = _setsByExerciseName[workout.name]![
+                                  roundIndex];
+                              return _ExerciseRoundCard(
+                                accent: accent,
+                                workout: workout,
+                                exercise: exercise,
+                                set: set,
+                                weightText: _weightText(set),
+                                onDecreaseWeight: (exercise?.needsWeight ??
+                                        true)
+                                    ? () => _updateSet(
+                                          workout,
+                                          roundIndex,
+                                          (current) => current.copyWith(
+                                            weight:
+                                                (current.weight - _weightStep)
+                                                    .clamp(0, 9999),
+                                          ),
+                                        )
+                                    : null,
+                                onIncreaseWeight: (exercise?.needsWeight ??
+                                        true)
+                                    ? () => _updateSet(
+                                          workout,
+                                          roundIndex,
+                                          (current) => current.copyWith(
+                                              weight:
+                                                  current.weight + _weightStep),
+                                        )
+                                    : null,
+                                onTapWeight: (exercise?.needsWeight ?? true)
+                                    ? () async {
+                                        final value =
+                                            await _showNumberInputDialog(
+                                          '${workout.name} 무게',
+                                          set.weight,
+                                        );
+                                        if (value != null) {
+                                          await _updateSet(
+                                            workout,
+                                            roundIndex,
+                                            (current) =>
+                                                current.copyWith(weight: value),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                                onDecreaseReps: () => _updateSet(
+                                  workout,
+                                  roundIndex,
+                                  (current) => current.copyWith(
+                                    reps:
+                                        (current.reps - _repStep).clamp(1, 999),
+                                  ),
+                                ),
+                                onIncreaseReps: () => _updateSet(
+                                  workout,
+                                  roundIndex,
+                                  (current) => current.copyWith(
+                                      reps: current.reps + _repStep),
+                                ),
+                                onTapReps: () async {
+                                  final value = await _showNumberInputDialog(
+                                    '${workout.name} 횟수',
+                                    set.reps.toDouble(),
+                                    isInt: true,
+                                  );
+                                  if (value != null) {
+                                    await _updateSet(
+                                      workout,
+                                      roundIndex,
+                                      (current) => current.copyWith(
+                                          reps: value.toInt().clamp(1, 999)),
+                                    );
+                                  }
+                                },
+                                onToggleComplete: () =>
+                                    _toggleComplete(workout, roundIndex),
+                              );
+                            }),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _ExerciseRoundCard extends StatelessWidget {
+  final Color accent;
+  final WorkoutRecord workout;
+  final Exercise? exercise;
+  final ExerciseSet set;
+  final String weightText;
+  final VoidCallback? onDecreaseWeight;
+  final VoidCallback? onIncreaseWeight;
+  final VoidCallback? onTapWeight;
+  final VoidCallback onDecreaseReps;
+  final VoidCallback onIncreaseReps;
+  final VoidCallback onTapReps;
+  final VoidCallback onToggleComplete;
+
+  const _ExerciseRoundCard({
+    required this.accent,
+    required this.workout,
+    required this.exercise,
+    required this.set,
+    required this.weightText,
+    required this.onDecreaseWeight,
+    required this.onIncreaseWeight,
+    required this.onTapWeight,
+    required this.onDecreaseReps,
+    required this.onIncreaseReps,
+    required this.onTapReps,
+    required this.onToggleComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final needsWeight = exercise?.needsWeight ?? true;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _detailSoftSurface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workout.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      workout.equipment.isNotEmpty
+                          ? workout.equipment
+                          : (workout.bodyPart ?? '세트 기록'),
+                      style: const TextStyle(color: _detailMutedText),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton.tonal(
+                onPressed: onToggleComplete,
+                style: FilledButton.styleFrom(
+                  backgroundColor: set.isCompleted
+                      ? Colors.green.withValues(alpha: 0.18)
+                      : accent.withValues(alpha: 0.16),
+                  foregroundColor:
+                      set.isCompleted ? Colors.greenAccent : accent,
+                ),
+                child: Text(set.isCompleted ? '완료됨' : '완료'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              if (needsWeight)
+                _AdjustChip(
+                  label: '무게',
+                  value: weightText,
+                  onTapValue: onTapWeight,
+                  onMinus: onDecreaseWeight,
+                  onPlus: onIncreaseWeight,
+                ),
+              _AdjustChip(
+                label: '횟수',
+                value: '${set.reps}회',
+                onTapValue: onTapReps,
+                onMinus: onDecreaseReps,
+                onPlus: onIncreaseReps,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdjustChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback? onTapValue;
+  final VoidCallback? onMinus;
+  final VoidCallback? onPlus;
+
+  const _AdjustChip({
+    required this.label,
+    required this.value,
+    this.onTapValue,
+    this.onMinus,
+    this.onPlus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: const TextStyle(color: _detailMutedText)),
+          const SizedBox(width: 10),
+          IconButton(
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            onPressed: onMinus,
+            icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
+          ),
+          GestureDetector(
+            onTap: onTapValue,
+            child: SizedBox(
+              width: 78,
+              child: Text(
+                value,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            onPressed: onPlus,
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+}

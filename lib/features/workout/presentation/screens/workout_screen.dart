@@ -5,10 +5,12 @@ import 'dart:convert';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
+import '../../domain/models/workout_record.dart';
 import '../../domain/models/workout_routine.dart';
 import '../../domain/repositories/workout_routine_repository.dart';
 import 'select_exercise_screen.dart';
 import 'exercise_detail_screen.dart';
+import 'grouped_exercise_detail_screen.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
@@ -17,74 +19,6 @@ import '../../../../core/theme/app_colors.dart';
 const _workoutBorderColor = Color(0xFF3A342E);
 const _workoutSurface = Color(0xFF211D19);
 const _workoutSoftSurface = Color(0xFF2A2520);
-
-class WorkoutRecord {
-  final int id;
-  final String name;
-  final String imagePath;
-  final int sets;
-  final double weight;
-  final DateTime timestamp;
-  final int sessionIndex;
-  final String equipment;
-  final String? bodyPart;
-  final String? groupId;
-  final String? groupType;
-  final String? groupLabel;
-  final int? groupOrder;
-
-  WorkoutRecord({
-    required this.id,
-    required this.name,
-    this.imagePath = 'assets/images/default_exercise.png',
-    required this.sets,
-    required this.weight,
-    required this.timestamp,
-    required this.sessionIndex,
-    this.equipment = '',
-    this.bodyPart,
-    this.groupId,
-    this.groupType,
-    this.groupLabel,
-    this.groupOrder,
-  });
-
-  bool get isGrouped => groupId != null && groupId!.isNotEmpty;
-
-  // JSON으로 변환
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'imagePath': imagePath,
-        'sets': sets,
-        'weight': weight,
-        'timestamp': timestamp.toIso8601String(),
-        'sessionIndex': sessionIndex,
-        'equipment': equipment,
-        'bodyPart': bodyPart,
-        'groupId': groupId,
-        'groupType': groupType,
-        'groupLabel': groupLabel,
-        'groupOrder': groupOrder,
-      };
-
-  // JSON에서 객체 생성
-  factory WorkoutRecord.fromJson(Map<String, dynamic> json) => WorkoutRecord(
-        id: json['id'],
-        name: json['name'],
-        imagePath: json['imagePath'],
-        sets: json['sets'],
-        weight: json['weight'],
-        timestamp: DateTime.parse(json['timestamp']),
-        sessionIndex: json['sessionIndex'],
-        equipment: json['equipment'] ?? '',
-        bodyPart: json['bodyPart'],
-        groupId: json['groupId'],
-        groupType: json['groupType'],
-        groupLabel: json['groupLabel'],
-        groupOrder: json['groupOrder'],
-      );
-}
 
 class WorkoutListEntry {
   final WorkoutRecord? workout;
@@ -1343,160 +1277,162 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: 0.55)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GroupedExerciseDetailScreen(
+                  workouts: workouts,
+                  selectedDate: widget.selectedDate,
+                  recordDay: _recordDay,
+                ),
+              ),
+            );
+            _loadWorkouts();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '$label$groupBadge',
-                    style: TextStyle(
-                      color: accent,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  Icons.drag_indicator_rounded,
-                  color: Theme.of(context)
-                      .iconTheme
-                      .color
-                      ?.withValues(alpha: 0.48),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            ...workouts.asMap().entries.map((entry) {
-              final index = entry.key;
-              final workout = entry.value;
-              return Padding(
-                padding: EdgeInsets.only(
-                    bottom: index == workouts.length - 1 ? 0 : 10),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ExerciseDetailScreen(
-                          exerciseName: workout.name,
-                          selectedDate: widget.selectedDate,
-                          initialWeight: workout.weight.toInt(),
-                          initialSets: workout.sets,
-                          recordDay: _recordDay,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '$label$groupBadge',
+                        style: TextStyle(
+                          color: accent,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    );
-                    _loadWorkouts();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: _workoutSoftSurface,
-                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${first.groupLabel ?? ''}${index + 1}',
-                            style: TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.w800,
+                    const Spacer(),
+                    Icon(
+                      Icons.drag_indicator_rounded,
+                      color: Theme.of(context)
+                          .iconTheme
+                          .color
+                          ?.withValues(alpha: 0.48),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                ...workouts.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final workout = entry.value;
+                  return Padding(
+                    padding: EdgeInsets.only(
+                        bottom: index == workouts.length - 1 ? 0 : 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _workoutSoftSurface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${first.groupLabel ?? ''}${index + 1}',
+                              style: TextStyle(
+                                color: accent,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                workout.name,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                workout.equipment.isNotEmpty
-                                    ? workout.equipment
-                                    : (workout.bodyPart ?? '세트 기록 열기'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(color: Colors.white70),
-                              ),
-                            ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  workout.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  workout.equipment.isNotEmpty
+                                      ? workout.equipment
+                                      : (workout.bodyPart ?? '라운드 기록 열기'),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: Colors.white70),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        FutureBuilder<List<dynamic>>(
-                          future:
-                              _getSetInfo(workout.name, widget.selectedDate),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const SizedBox.shrink();
-                            }
-                            final sets = snapshot.data![0] as int;
-                            final completed = snapshot.data![1] as int;
-                            return Text(
-                              '$completed/$sets',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Text(
-                  '${workouts.map((w) => w.name).join(' · ')}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
+                          FutureBuilder<List<dynamic>>(
+                            future:
+                                _getSetInfo(workout.name, widget.selectedDate),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const SizedBox.shrink();
+                              }
+                              final sets = snapshot.data![0] as int;
+                              final completed = snapshot.data![1] as int;
+                              return Text(
+                                '$completed/$sets',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => _deleteWorkoutGroup(workouts),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFD47A63),
-                    minimumSize: Size.zero,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('그룹 삭제'),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${workouts.map((w) => w.name).join(' · ')}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _deleteWorkoutGroup(workouts),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFD47A63),
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('그룹 삭제'),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
