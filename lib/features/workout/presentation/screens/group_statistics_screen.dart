@@ -26,12 +26,14 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
   bool _loading = true;
   Map<String, int> _dateToCompletedRounds = {};
   Map<String, double> _dateToVolume = {};
+  Map<String, double> _dateToMax1RM = {};
+  Map<String, int> _dateToDurationSeconds = {};
   Map<String, int> _dateToSessionIndex = {};
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadStats();
   }
 
@@ -47,6 +49,8 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
 
     final dateToRounds = <String, int>{};
     final dateToVolume = <String, double>{};
+    final dateTo1RM = <String, double>{};
+    final dateToDuration = <String, int>{};
     final dateToSession = <String, int>{};
 
     for (final key in workoutKeys) {
@@ -75,7 +79,9 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
 
         var completedRounds = -1;
         var totalVolume = 0.0;
-        var sessionIndex =
+        var max1RM = 0.0;
+        var totalDuration = 0;
+        final sessionIndex =
             ((workouts.first['sessionIndex'] ?? 1) as num).toInt();
 
         for (final workout in workouts) {
@@ -98,6 +104,17 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
                     ? set['reps'] as int
                     : int.tryParse(set['reps'].toString()) ?? 0;
                 totalVolume += weight * reps;
+                final oneRM = weight * (1 + reps / 30.0);
+                if (oneRM > max1RM) max1RM = oneRM;
+                final startTime =
+                    DateTime.tryParse(set['startTime']?.toString() ?? '');
+                final endTime =
+                    DateTime.tryParse(set['endTime']?.toString() ?? '');
+                if (startTime != null && endTime != null) {
+                  totalDuration += endTime.difference(startTime).inSeconds;
+                } else {
+                  totalDuration += ((set['restTime'] ?? 0) as num).toInt();
+                }
               }
             } catch (_) {}
           }
@@ -112,6 +129,8 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
 
         dateToRounds[dateStr] = completedRounds < 0 ? 0 : completedRounds;
         dateToVolume[dateStr] = totalVolume;
+        if (max1RM > 0) dateTo1RM[dateStr] = max1RM;
+        dateToDuration[dateStr] = totalDuration;
         dateToSession[dateStr] = sessionIndex;
       }
     }
@@ -120,6 +139,8 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     setState(() {
       _dateToCompletedRounds = dateToRounds;
       _dateToVolume = dateToVolume;
+      _dateToMax1RM = dateTo1RM;
+      _dateToDurationSeconds = dateToDuration;
       _dateToSessionIndex = dateToSession;
       _loading = false;
     });
@@ -133,6 +154,14 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     return '$type::$names';
   }
 
+  String _formatWeight(double value) => '${value.toStringAsFixed(1)} kg';
+  String _formatRounds(int value) => '$value라운드';
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remain = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remain.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final roundDates = _dateToCompletedRounds.keys.toList()..sort();
@@ -141,40 +170,110 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     final volumeDates = _dateToVolume.keys.toList()..sort();
     final volumeValues =
         volumeDates.map((d) => _dateToVolume[d] ?? 0.0).toList();
+    final oneRmDates = _dateToMax1RM.keys.toList()..sort();
+    final oneRmValues = oneRmDates.map((d) => _dateToMax1RM[d] ?? 0.0).toList();
+    final durationDates = _dateToDurationSeconds.keys.toList()..sort();
+    final durationValues =
+        durationDates.map((d) => _dateToDurationSeconds[d] ?? 0).toList();
+
+    final bestRound =
+        roundValues.isEmpty ? 0 : roundValues.reduce((a, b) => a > b ? a : b);
+    final best1RM =
+        oneRmValues.isEmpty ? 0.0 : oneRmValues.reduce((a, b) => a > b ? a : b);
+    final longestDuration = durationValues.isEmpty
+        ? 0
+        : durationValues.reduce((a, b) => a > b ? a : b);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           tabs: const [
             Tab(text: '완료 라운드'),
             Tab(text: '총 볼륨'),
+            Tab(text: '1RM'),
+            Tab(text: '수행 시간'),
           ],
         ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
+          : Column(
               children: [
-                _buildChartTab<int>(
-                  dates: roundDates,
-                  values: roundValues,
-                  title: '날짜별 완료 라운드',
-                  emptyText: '이 그룹의 기록이 아직 없어요.',
-                  formatter: (value) => '$value라운드',
-                  yValue: (value) => value.toDouble(),
-                  color: Colors.deepPurple,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _StatSummaryCard(
+                          title: '최고 라운드',
+                          value: _formatRounds(bestRound),
+                          subtitle: '하루 최고 기록',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatSummaryCard(
+                          title: '최고 1RM',
+                          value: best1RM == 0 ? '-' : _formatWeight(best1RM),
+                          subtitle: '그룹 내 최고 세트 기준',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatSummaryCard(
+                          title: '최장 수행',
+                          value: _formatDuration(longestDuration),
+                          subtitle: '완료 세트 합산',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _buildChartTab<double>(
-                  dates: volumeDates,
-                  values: volumeValues,
-                  title: '날짜별 총 볼륨',
-                  emptyText: '이 그룹의 기록이 아직 없어요.',
-                  formatter: (value) => '${value.toStringAsFixed(1)} kg',
-                  yValue: (value) => value,
-                  color: Colors.orange,
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildChartTab<int>(
+                        dates: roundDates,
+                        values: roundValues,
+                        title: '날짜별 완료 라운드',
+                        emptyText: '이 그룹의 기록이 아직 없어요.',
+                        formatter: _formatRounds,
+                        yValue: (value) => value.toDouble(),
+                        color: Colors.deepPurple,
+                      ),
+                      _buildChartTab<double>(
+                        dates: volumeDates,
+                        values: volumeValues,
+                        title: '날짜별 총 볼륨',
+                        emptyText: '이 그룹의 기록이 아직 없어요.',
+                        formatter: _formatWeight,
+                        yValue: (value) => value,
+                        color: Colors.orange,
+                      ),
+                      _buildChartTab<double>(
+                        dates: oneRmDates,
+                        values: oneRmValues,
+                        title: '날짜별 최대 추정 1RM',
+                        emptyText: '이 그룹의 기록이 아직 없어요.',
+                        formatter: _formatWeight,
+                        yValue: (value) => value,
+                        color: Colors.teal,
+                      ),
+                      _buildChartTab<int>(
+                        dates: durationDates,
+                        values: durationValues,
+                        title: '날짜별 수행 시간',
+                        emptyText: '이 그룹의 기록이 아직 없어요.',
+                        formatter: _formatDuration,
+                        yValue: (value) => value.toDouble(),
+                        color: Colors.redAccent,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -204,7 +303,7 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
                   const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           SizedBox(
-            height: 240,
+            height: 220,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(show: true),
@@ -274,6 +373,7 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
               itemBuilder: (context, index) {
                 final date = dates[index];
                 return ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: Text(date),
                   subtitle: _dateToSessionIndex[date] != null
                       ? Text('${_dateToSessionIndex[date]}회차 수행')
@@ -282,6 +382,67 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatSummaryCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+
+  const _StatSummaryCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.68),
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.68),
+                ),
           ),
         ],
       ),
