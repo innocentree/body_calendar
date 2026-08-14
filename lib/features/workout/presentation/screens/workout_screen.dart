@@ -104,7 +104,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     }
   }
 
-  Future<void> _saveWorkouts() async {
+  Future<void> _saveWorkouts({bool triggerSync = false}) async {
     try {
       final dateKey = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
       final allWorkouts = _prefs.getStringList('workouts_$dateKey') ?? [];
@@ -126,7 +126,9 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         'workouts_$dateKey',
         updatedWorkouts.map((workout) => jsonEncode(workout.toJson())).toList(),
       );
-      await GetIt.I<CloudSyncService>().notifyLocalChange();
+      if (triggerSync) {
+        await GetIt.I<CloudSyncService>().notifyLocalChange();
+      }
       if (mounted) {
         setState(() {});
       }
@@ -1099,7 +1101,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       setState(() {
         _workouts.removeWhere((w) => w.id == workout.id);
       });
-      await _saveWorkouts();
+      await _saveWorkouts(triggerSync: true);
     } catch (e) {
       debugPrint('Error deleting workout: $e');
       if (mounted) {
@@ -1116,7 +1118,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       setState(() {
         _workouts.removeWhere((w) => ids.contains(w.id));
       });
-      await _saveWorkouts();
+      await _saveWorkouts(triggerSync: true);
     } catch (e) {
       debugPrint('Error deleting workout group: $e');
     }

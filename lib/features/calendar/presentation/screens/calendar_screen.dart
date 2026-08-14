@@ -35,6 +35,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Timer? _restFabTimer;
   String? _lastShownSyncError;
   String? _lastShownUploadedAt;
+  bool _showManualSyncSuccess = false;
 
   CloudSyncService get _cloudSyncService => GetIt.I<CloudSyncService>();
 
@@ -76,12 +77,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
         _cloudSyncService.lastError == null) {
       _lastShownUploadedAt = uploadedAt;
       _lastShownSyncError = null;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('클라우드 동기화가 완료됐어요.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      if (_showManualSyncSuccess) {
+        _showManualSyncSuccess = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('클라우드 동기화가 완료됐어요.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -280,7 +284,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       child: FilledButton.icon(
                         onPressed: () async {
                           Navigator.pop(context);
-                          await _cloudSyncService.uploadSnapshot();
+                          _showManualSyncSuccess = true;
+                          final result =
+                              await _cloudSyncService.uploadSnapshot();
+                          if (!result.success) {
+                            _showManualSyncSuccess = false;
+                          }
                           if (!mounted) return;
                           setState(() {});
                         },

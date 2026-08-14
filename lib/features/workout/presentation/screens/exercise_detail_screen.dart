@@ -230,7 +230,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
     if (!_prefs.containsKey(key)) {
       await _prefs.setString(key, todayStr);
-      await GetIt.I<CloudSyncService>().notifyLocalChange();
       _firstRecordDate = widget.selectedDate;
     } else {
       final saved = _prefs.getString(key);
@@ -262,13 +261,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       }
       _recordedDates = _recordedDates.toSet().toList()..sort();
       await _prefs.setStringList(key, _recordedDates);
-      await GetIt.I<CloudSyncService>().notifyLocalChange();
       if (mounted) setState(() {});
     } catch (e, st) {
       debugPrint('Error in _updateRecordedDates: $e\n$st');
       // 예외 발생 시 기록일 리스트를 강제로 초기화
       await _prefs.setStringList(key, []);
-      await GetIt.I<CloudSyncService>().notifyLocalChange();
       _recordedDates = [];
       if (mounted) setState(() {});
     }
@@ -304,7 +301,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       final key = _getStorageKey();
       final setsJson = _sets.map((set) => jsonEncode(set.toJson())).toList();
       await _prefs.setStringList(key, setsJson);
-      await GetIt.I<CloudSyncService>().notifyLocalChange();
     } catch (e) {
       debugPrint('Error saving sets: $e');
     }
@@ -340,19 +336,20 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     _updateRecordedDates();
   }
 
-  void _removeSet(int index) {
+  Future<void> _removeSet(int index) async {
     setState(() {
       _sets.removeAt(index);
       _tileControllers.removeAt(index);
       if (_currentSetIndex >= _sets.length) {
         _currentSetIndex = _sets.isEmpty ? 0 : _sets.length - 1;
       }
-      _saveSets();
     });
-    _updateRecordedDates();
+    await _saveSets();
+    await _updateRecordedDates();
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 
-  void _completeSet() {
+  Future<void> _completeSet() async {
     if (_sets.isEmpty || _currentSetIndex >= _sets.length) return;
 
     final timerDuration = _sets[_currentSetIndex].restTime.inSeconds;
@@ -366,7 +363,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         isCompleted: true,
         endTime: DateTime.now(),
       );
-      _saveSets();
 
       final nextIndex = _currentSetIndex + 1;
       if (nextIndex < _sets.length) {
@@ -375,6 +371,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
 
       _checkAndHighlightPRs();
     });
+    await _saveSets();
+    await _updateRecordedDates();
+    await GetIt.I<CloudSyncService>().notifyLocalChange();
   }
 
   void _checkAndHighlightPRs() {

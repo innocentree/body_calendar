@@ -134,7 +134,7 @@ class _GroupedExerciseDetailScreenState
     }
   }
 
-  Future<void> _persistAllSets() async {
+  Future<void> _persistAllSets({bool triggerSync = false}) async {
     for (final workout in _workouts) {
       final sets = _setsByExerciseName[workout.name] ?? [];
       await _prefs.setStringList(
@@ -143,7 +143,9 @@ class _GroupedExerciseDetailScreenState
       );
       await _updateRecordedDates(workout.name, sets);
     }
-    await GetIt.I<CloudSyncService>().notifyLocalChange();
+    if (triggerSync) {
+      await GetIt.I<CloudSyncService>().notifyLocalChange();
+    }
     if (mounted) setState(() {});
   }
 
@@ -216,7 +218,7 @@ class _GroupedExerciseDetailScreenState
         sets.removeAt(roundIndex);
       }
     }
-    await _persistAllSets();
+    await _persistAllSets(triggerSync: true);
   }
 
   Future<void> _updateSet(
@@ -239,7 +241,7 @@ class _GroupedExerciseDetailScreenState
       isCompleted: willComplete,
       endTime: willComplete ? DateTime.now() : null,
     );
-    await _persistAllSets();
+    await _persistAllSets(triggerSync: true);
 
     if (willComplete &&
         !wasRoundComplete &&
