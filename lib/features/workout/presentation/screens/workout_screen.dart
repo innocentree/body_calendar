@@ -16,9 +16,9 @@ import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 
-const _workoutBorderColor = Color(0xFF3A342E);
-const _workoutSurface = Color(0xFF211D19);
-const _workoutSoftSurface = Color(0xFF2A2520);
+const _workoutBorderColor = AppColors.separatorDark;
+const _workoutSurface = AppColors.surfaceDark;
+const _workoutSoftSurface = AppColors.customSurface;
 
 class WorkoutListEntry {
   final WorkoutRecord? workout;
@@ -924,7 +924,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   Future<_WorkoutAddMode?> _showAddModeSheet(Exercise exercise) async {
     return showModalBottomSheet<_WorkoutAddMode>(
       context: context,
-      backgroundColor: _workoutSurface,
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -946,7 +946,11 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                 Text(
                   '어떤 방식으로 추가할까요?',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withValues(alpha: 0.68),
                       ),
                 ),
                 const SizedBox(height: 18),
@@ -1024,13 +1028,20 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withValues(alpha: 0.72),
                         ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white54),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.54),
+            ),
           ],
         ),
       ),
@@ -1379,7 +1390,13 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(color: Colors.white70),
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color
+                                            ?.withValues(alpha: 0.72),
+                                      ),
                                 ),
                               ],
                             ),
@@ -1414,7 +1431,11 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                       child: Text(
                         '${workouts.map((w) => w.name).join(' · ')}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white70,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withValues(alpha: 0.72),
                             ),
                         overflow: TextOverflow.ellipsis,
                       ),

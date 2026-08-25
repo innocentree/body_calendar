@@ -13,9 +13,9 @@ import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_ov
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-const _calendarBorderColor = Color(0xFF3A342E);
-const _calendarMutedSurface = Color(0xFF211D19);
-const _calendarSoftSurface = Color(0xFF2A2520);
+const _calendarBorderColor = AppColors.separatorDark;
+const _calendarMutedSurface = AppColors.surfaceDark;
+const _calendarSoftSurface = AppColors.customSurface;
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -64,7 +64,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: Colors.redAccent.withValues(alpha: 0.92),
+          backgroundColor: AppColors.error.withValues(alpha: 0.96),
         ),
       );
       return;
@@ -226,7 +226,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final state = _cloudSyncService.visualState;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: _calendarMutedSurface,
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -364,11 +364,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Color _syncColorForState(BuildContext context, CloudSyncVisualState state) {
     switch (state) {
       case CloudSyncVisualState.synced:
-        return Colors.lightGreenAccent;
+        return AppColors.success;
       case CloudSyncVisualState.syncing:
         return Theme.of(context).colorScheme.primary;
       case CloudSyncVisualState.unsynced:
-        return const Color(0xFFFF8A65);
+        return AppColors.warning;
       case CloudSyncVisualState.unavailable:
         return Theme.of(context).disabledColor;
     }
@@ -383,7 +383,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? _calendarSoftSurface : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).cardTheme.color
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
@@ -417,8 +419,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }) {
     final hasEvent = _getEventsForDay(day).isNotEmpty;
     final backgroundColor = isSelected
-        ? _calendarSoftSurface
-        : (isToday ? _calendarMutedSurface : Colors.transparent);
+        ? Theme.of(context).cardTheme.color
+        : (isToday
+            ? Theme.of(context).cardTheme.color?.withValues(alpha: 0.82)
+            : Colors.transparent);
     final borderColor = isSelected
         ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.28)
         : (isToday
@@ -612,9 +616,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _calendarMutedSurface,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: _calendarBorderColor),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,11 +652,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 Theme.of(context).brightness == Brightness.dark
                                     ? AppColors.customBackground
                                         .withValues(alpha: 0.55)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                    : Colors.white.withValues(alpha: 0.72),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color:
-                                  _calendarBorderColor.withValues(alpha: 0.85),
+                              color: Theme.of(context).dividerColor,
                             ),
                           ),
                           child: Row(
@@ -673,9 +676,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                     decoration: BoxDecoration(
-                      color: _calendarMutedSurface,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: _calendarBorderColor),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: TableCalendar(
                       locale: 'ko_KR',
@@ -761,7 +764,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 Theme.of(context).brightness == Brightness.dark
                                     ? AppColors.customBackground
                                         .withValues(alpha: 0.45)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                    : Colors.white.withValues(alpha: 0.72),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -777,7 +780,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 Theme.of(context).brightness == Brightness.dark
                                     ? AppColors.customBackground
                                         .withValues(alpha: 0.45)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                    : Colors.white.withValues(alpha: 0.72),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -868,10 +871,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       vertical: 28,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: _calendarMutedSurface,
+                                      color: Theme.of(context).cardTheme.color,
                                       borderRadius: BorderRadius.circular(24),
                                       border: Border.all(
-                                        color: _calendarBorderColor,
+                                        color: Theme.of(context).dividerColor,
                                       ),
                                     ),
                                     child: Column(
@@ -920,10 +923,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(
-                                      color: _calendarMutedSurface,
+                                      color: Theme.of(context).cardTheme.color,
                                       borderRadius: BorderRadius.circular(22),
                                       border: Border.all(
-                                        color: _calendarBorderColor,
+                                        color: Theme.of(context).dividerColor,
                                       ),
                                     ),
                                     child: Material(
@@ -1046,7 +1049,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: _calendarMutedSurface.withValues(alpha: 0.96),
+                    color: Theme.of(context)
+                        .cardTheme
+                        .color
+                        ?.withValues(alpha: 0.96),
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
                       color: Theme.of(context)

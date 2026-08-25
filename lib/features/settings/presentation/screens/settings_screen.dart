@@ -101,97 +101,121 @@ class _SettingsScreenState extends State<SettingsScreen> {
           BlocBuilder<ThemeBloc, ThemeState>(
             builder: (context, state) {
               final isDarkMode = state.themeData.brightness == Brightness.dark;
-              return SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
-                title: const Text('다크 모드'),
-                subtitle: const Text('차분한 다크 테마로 전환해요.'),
-                value: isDarkMode,
-                onChanged: (value) {
-                  context
-                      .read<ThemeBloc>()
-                      .add(ThemeChanged(isDarkMode: value));
-                },
+              return _buildSettingsTile(
+                context,
+                child: SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18)),
+                  title: const Text('다크 모드'),
+                  subtitle: const Text('차분한 다크 테마로 전환해요.'),
+                  value: isDarkMode,
+                  onChanged: (value) {
+                    context
+                        .read<ThemeBloc>()
+                        .add(ThemeChanged(isDarkMode: value));
+                  },
+                ),
               );
             },
           ),
           if (!_isLoading)
-            SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18)),
-              title: const Text('무게 단위 (Lbs)'),
-              subtitle: Text(_useLbs ? '현재 단위: 파운드 (lbs)' : '현재 단위: 킬로그램 (kg)'),
-              value: _useLbs,
-              onChanged: _toggleWeightUnit,
+            _buildSettingsTile(
+              context,
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                title: const Text('무게 단위 (Lbs)'),
+                subtitle:
+                    Text(_useLbs ? '현재 단위: 파운드 (lbs)' : '현재 단위: 킬로그램 (kg)'),
+                value: _useLbs,
+                onChanged: _toggleWeightUnit,
+              ),
             ),
           const Divider(height: 32),
           _buildSectionHeader(context, '클라우드 백업'),
-          ListTile(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            tileColor: Theme.of(context).cardTheme.color,
-            leading: const Icon(Icons.cloud_outlined),
-            title: const Text('Google 로그인 + 클라우드 업로드'),
-            subtitle: Text(_buildCloudSubtitle()),
-            trailing: _isCloudBusy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.chevron_right),
-            onTap: _isCloudBusy ? null : () => _uploadToCloud(context),
+          _buildSettingsTile(
+            context,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.cloud_outlined),
+              title: const Text('Google 로그인 + 클라우드 업로드'),
+              subtitle: Text(_buildCloudSubtitle()),
+              trailing: _isCloudBusy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _isCloudBusy ? null : () => _uploadToCloud(context),
+            ),
           ),
           const SizedBox(height: 10),
-          ListTile(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            tileColor: Theme.of(context).cardTheme.color,
-            leading: const Icon(Icons.cloud_download_outlined),
-            title: const Text('클라우드에서 복원'),
-            subtitle: Text(_buildCloudRestoreSubtitle()),
-            trailing: _isCloudBusy
-                ? const SizedBox.shrink()
-                : const Icon(Icons.chevron_right),
-            onTap: _isCloudBusy ? null : () => _restoreFromCloud(context),
+          _buildSettingsTile(
+            context,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.cloud_download_outlined),
+              title: const Text('클라우드에서 복원'),
+              subtitle: Text(_buildCloudRestoreSubtitle()),
+              trailing: _isCloudBusy
+                  ? const SizedBox.shrink()
+                  : const Icon(Icons.chevron_right),
+              onTap: _isCloudBusy ? null : () => _restoreFromCloud(context),
+            ),
           ),
           if (_cloudSyncService.isAvailable && _cloudUserEmail != null) ...[
             const SizedBox(height: 10),
-            ListTile(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18)),
-              tileColor: Theme.of(context).cardTheme.color,
-              leading: const Icon(Icons.logout),
-              title: const Text('클라우드 계정 로그아웃'),
-              subtitle: Text(_cloudUserEmail!),
-              onTap: _isCloudBusy ? null : () => _signOutFromCloud(context),
+            _buildSettingsTile(
+              context,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.logout),
+                title: const Text('클라우드 계정 로그아웃'),
+                subtitle: Text(_cloudUserEmail!),
+                onTap: _isCloudBusy ? null : () => _signOutFromCloud(context),
+              ),
             ),
           ],
           const Divider(height: 32),
           _buildSectionHeader(context, '데이터 관리'),
-          ListTile(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            tileColor: Theme.of(context).cardTheme.color,
-            leading: const Icon(Icons.download),
-            title: const Text('데이터 백업'),
-            subtitle: const Text('운동 기록과 루틴을 파일로 저장해요.'),
-            onTap: () => _backupData(context),
+          _buildSettingsTile(
+            context,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.download),
+              title: const Text('데이터 백업'),
+              subtitle: const Text('운동 기록과 루틴을 파일로 저장해요.'),
+              onTap: () => _backupData(context),
+            ),
           ),
           const SizedBox(height: 10),
-          ListTile(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            tileColor: Theme.of(context).cardTheme.color,
-            leading: const Icon(Icons.upload),
-            title: const Text('데이터 복원'),
-            subtitle: const Text('백업 파일로 데이터를 복원해요. 기존 데이터는 새 데이터로 대체돼요.'),
-            onTap: () => _restoreData(context),
+          _buildSettingsTile(
+            context,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.upload),
+              title: const Text('데이터 복원'),
+              subtitle: const Text('백업 파일로 데이터를 복원해요. 기존 데이터는 새 데이터로 대체돼요.'),
+              onTap: () => _restoreData(context),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSettingsTile(BuildContext context, {required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: child,
     );
   }
 
