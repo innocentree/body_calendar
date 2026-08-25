@@ -1,20 +1,18 @@
+import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// region: Models
 class BodyRecord {
   final String name;
   final List<FlSpot> chartData;
 
   BodyRecord({required this.name, required this.chartData});
 }
-// endregion: Models
 
-// region: ProfileScreen
 class ProfileScreen extends StatefulWidget {
   final DateTime selectedDate;
 
@@ -60,43 +58,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool compDataForDate = false;
     bool measureDataForDate = false;
 
-    for (var key in keys) {
-      if (key.startsWith('body_change_record_')) {
-        final itemName = key.replaceFirst('body_change_record_', '');
-        final data = prefs.getStringList(key) ?? [];
-        if (data.isNotEmpty) {
-          bool hasDataForSelectedDate = false;
-          final chartData = data
-              .map((e) {
-                try {
-                  final parts = e.split(',');
-                  if (parts.length == 2) {
-                    final date = DateTime.parse(parts[0]);
-                    final value = double.parse(parts[1]);
-                    if (DateUtils.isSameDay(date, widget.selectedDate)) {
-                      hasDataForSelectedDate = true;
-                    }
-                    return FlSpot(
-                        date.millisecondsSinceEpoch.toDouble(), value);
-                  }
-                } catch (e) {/* Ignore */}
-                return null;
-              })
-              .whereType<FlSpot>()
-              .toList();
+    for (final key in keys) {
+      if (!key.startsWith('body_change_record_')) continue;
+      final itemName = key.replaceFirst('body_change_record_', '');
+      final data = prefs.getStringList(key) ?? [];
+      if (data.isEmpty) continue;
 
-          if (chartData.isNotEmpty) {
-            chartData.sort((a, b) => a.x.compareTo(b.x));
-            final record = BodyRecord(name: itemName, chartData: chartData);
-            if (_bodyCompositionItems.contains(itemName)) {
-              loadedCompositionRecords.add(record);
-              if (hasDataForSelectedDate) compDataForDate = true;
-            } else {
-              loadedMeasurementRecords.add(record);
-              if (hasDataForSelectedDate) measureDataForDate = true;
-            }
-          }
-        }
+      var hasDataForSelectedDate = false;
+      final chartData = data
+          .map((e) {
+            try {
+              final parts = e.split(',');
+              if (parts.length == 2) {
+                final date = DateTime.parse(parts[0]);
+                final value = double.parse(parts[1]);
+                if (DateUtils.isSameDay(date, widget.selectedDate)) {
+                  hasDataForSelectedDate = true;
+                }
+                return FlSpot(date.millisecondsSinceEpoch.toDouble(), value);
+              }
+            } catch (_) {}
+            return null;
+          })
+          .whereType<FlSpot>()
+          .toList();
+
+      if (chartData.isEmpty) continue;
+      chartData.sort((a, b) => a.x.compareTo(b.x));
+      final record = BodyRecord(name: itemName, chartData: chartData);
+      if (_bodyCompositionItems.contains(itemName)) {
+        loadedCompositionRecords.add(record);
+        if (hasDataForSelectedDate) compDataForDate = true;
+      } else {
+        loadedMeasurementRecords.add(record);
+        if (hasDataForSelectedDate) measureDataForDate = true;
       }
     }
 
@@ -122,10 +117,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final formattedDate = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    final totalItems =
+        _bodyCompositionRecords.length + _measurementRecords.length;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            '바디 로그 · ${DateFormat('yyyy-MM-dd').format(widget.selectedDate)}'),
+        title: Text('바디 로그 · $formattedDate'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -136,25 +135,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : !_hasBodyCompDataForDate && !_hasMeasurementDataForDate
-              ? const Center(
-                  child: Text('선택한 날짜에 저장된 데이터가 없어요.',
-                      textAlign: TextAlign.center),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
-                  child: Column(
-                    children: [
-                      if (_hasBodyCompDataForDate)
-                        _buildCategoryCard(
-                            '체중/체성분', _bodyCompositionRecords, 0),
-                      if (_hasMeasurementDataForDate)
-                        _buildCategoryCard('치수', _measurementRecords, 1),
-                      const SizedBox(height: 16),
-                      _buildSettingsSection(),
-                    ],
+          : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _HeroProfileCard(
+                    dateText: formattedDate,
+                    summary:
+                        !_hasBodyCompDataForDate && !_hasMeasurementDataForDate
+                            ? '아직 이 날짜에 기록된 바디 로그가 없어요.'
+                            : '체성분과 치수 변화를 같은 톤으로 빠르게 확인할 수 있어요.',
+                    totalItems: totalItems,
+                    hasBodyComp: _hasBodyCompDataForDate,
+                    hasMeasurements: _hasMeasurementDataForDate,
                   ),
-                ),
+                  const SizedBox(height: 18),
+                  if (!_hasBodyCompDataForDate && !_hasMeasurementDataForDate)
+                    _EmptyStateCard(
+                      title: '기록이 아직 없어요',
+                      message: '아래 + 버튼으로 오늘의 바디 로그를 바로 추가해보세요.',
+                      icon: Icons.monitor_weight_outlined,
+                    )
+                  else ...[
+                    if (_hasBodyCompDataForDate) ...[
+                      _SectionHeader(
+                        title: '체중/체성분',
+                        subtitle: '선택한 날짜와 누적 변화 흐름을 함께 봐요.',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildCategoryCard('체중/체성분', _bodyCompositionRecords, 0),
+                      const SizedBox(height: 18),
+                    ],
+                    if (_hasMeasurementDataForDate) ...[
+                      _SectionHeader(
+                        title: '치수',
+                        subtitle: '부위별 기록 추이를 한 화면에서 확인해요.',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildCategoryCard('치수', _measurementRecords, 1),
+                      const SizedBox(height: 18),
+                    ],
+                  ],
+                  _SectionHeader(
+                    title: '설정',
+                    subtitle: '바디 로그와 함께 쓰는 추천 옵션이에요.',
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSettingsSection(theme),
+                ],
+              ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
@@ -173,32 +204,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildCategoryCard(
       String title, List<BodyRecord> records, int tabIndex) {
-    final List<Color> colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.brown
-    ];
-    final List<LineChartBarData> lineBarsData = [];
+    final theme = Theme.of(context);
+    final colors = AppColors.chartColors;
+    final lineBarsData = <LineChartBarData>[];
     for (int i = 0; i < records.length; i++) {
+      final color = colors[i % colors.length];
       lineBarsData.add(
         LineChartBarData(
           spots: records[i].chartData,
-          isCurved: false, // Changed to straight lines
-          barWidth: 2,
-          color: colors[i % colors.length],
-          dotData: const FlDotData(show: false),
+          isCurved: true,
+          barWidth: 3,
+          color: color,
+          dotData: FlDotData(
+            show: true,
+            getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+              radius: 3.2,
+              color: color,
+              strokeWidth: 2,
+              strokeColor: theme.cardTheme.color ?? theme.cardColor,
+            ),
+          ),
+          belowBarData: BarAreaData(
+            show: true,
+            color: color.withValues(alpha: 0.08),
+          ),
         ),
       );
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor),
+      ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(24),
         onTap: () async {
-          final List<String> itemsToEdit = records.map((r) => r.name).toList();
+          final itemsToEdit = records.map((r) => r.name).toList();
           await Navigator.push(
             context,
             MaterialPageRoute(
@@ -216,20 +259,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${records.length}개 항목',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 20),
               SizedBox(
-                height: 200,
+                height: 220,
                 child: LineChart(
                   LineChartData(
                     lineBarsData: lineBarsData,
                     lineTouchData: LineTouchData(enabled: false),
+                    minY: 0,
                     titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(
-                          sideTitles:
-                              SideTitles(showTitles: true, reservedSize: 40)),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 40,
+                          getTitlesWidget: (value, meta) => SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            child: Text(
+                              value.toStringAsFixed(0),
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ),
+                        ),
+                      ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
@@ -238,20 +310,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 value.toInt());
                             return SideTitleWidget(
                               axisSide: meta.axisSide,
-                              child: Text(DateFormat('MM/dd').format(date),
-                                  style: const TextStyle(fontSize: 10)),
+                              child: Text(
+                                DateFormat('MM/dd').format(date),
+                                style: theme.textTheme.bodySmall,
+                              ),
                             );
                           },
                           interval: _getInterval(records),
                         ),
                       ),
                       topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
-                    borderData: FlBorderData(show: false),
-                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (_) => FlLine(
+                        color: theme.dividerColor.withValues(alpha: 0.35),
+                        strokeWidth: 1,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -266,16 +354,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   double _getInterval(List<BodyRecord> records) {
     double minX = double.maxFinite;
-    double maxX = double.minPositive;
-    for (var record in records) {
-      for (var spot in record.chartData) {
+    double maxX = double.negativeInfinity;
+    for (final record in records) {
+      for (final spot in record.chartData) {
         if (spot.x < minX) minX = spot.x;
         if (spot.x > maxX) maxX = spot.x;
       }
     }
     if (minX.isFinite && maxX.isFinite && minX != maxX) {
-      final double oneDay = const Duration(days: 1).inMilliseconds.toDouble();
-      double interval = (maxX - minX) / 4; // Show ~5 labels
+      final oneDay = const Duration(days: 1).inMilliseconds.toDouble();
+      double interval = (maxX - minX) / 4;
       if (interval < oneDay) {
         interval = oneDay;
       }
@@ -285,55 +373,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLegend(List<BodyRecord> records, List<Color> colors) {
+    final theme = Theme.of(context);
     return Wrap(
-      spacing: 16,
-      runSpacing: 8,
+      spacing: 10,
+      runSpacing: 10,
       children: records.asMap().entries.map((entry) {
-        int idx = entry.key;
-        BodyRecord record = entry.value;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              color: colors[idx % colors.length],
-            ),
-            const SizedBox(width: 6),
-            Text(record.name),
-          ],
+        final idx = entry.key;
+        final record = entry.value;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: colors[idx % colors.length],
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(record.name),
+            ],
+          ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildSettingsSection() {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('설정',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('지난 주 운동 추천'),
-              subtitle: const Text('새로운 날에 이전 주 동일 세션의 운동을 추천합니다.'),
-              value: _enableWorkoutRecommendation,
-              onChanged: _toggleRecommendation,
-              activeThumbColor: Theme.of(context).primaryColor,
-            ),
-          ],
+  Widget _buildSettingsSection(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        title: Text(
+          '지난 주 운동 추천',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
+        subtitle: Text(
+          '새로운 날에 이전 주 동일 세션의 운동을 추천합니다.',
+          style: theme.textTheme.bodySmall,
+        ),
+        value: _enableWorkoutRecommendation,
+        onChanged: _toggleRecommendation,
       ),
     );
   }
 }
-// endregion: ProfileScreen
 
-// region: SelectBodyPartScreen
 class SelectBodyPartScreen extends StatefulWidget {
   final DateTime selectedDate;
   const SelectBodyPartScreen({super.key, required this.selectedDate});
@@ -370,95 +468,93 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
         title: const Text('기록할 항목 선택'),
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                '체중/체성분',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            const _SectionHeader(
+              title: '체중/체성분',
+              subtitle: '오늘 기록할 체성분 항목을 골라주세요.',
             ),
-            ..._bodyComposition.keys.map((key) {
-              return CheckboxListTile(
-                title: Text(key),
-                value: _bodyComposition[key],
-                onChanged: (value) {
-                  setState(() {
-                    _bodyComposition[key] = value!;
-                  });
-                },
-              );
-            }),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                '치수',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            const SizedBox(height: 10),
+            _SelectionCard(
+              children: _bodyComposition.keys.map((key) {
+                return _AdaptiveCheckboxTile(
+                  title: key,
+                  value: _bodyComposition[key] ?? false,
+                  onChanged: (value) {
+                    setState(() {
+                      _bodyComposition[key] = value;
+                    });
+                  },
+                );
+              }).toList(),
             ),
-            ..._measurements.keys.map((key) {
-              return CheckboxListTile(
-                title: Text(key),
-                value: _measurements[key],
-                onChanged: (value) {
-                  setState(() {
-                    _measurements[key] = value!;
-                  });
-                },
-              );
-            }),
+            const SizedBox(height: 18),
+            const _SectionHeader(
+              title: '치수',
+              subtitle: '부위별 치수도 함께 기록할 수 있어요.',
+            ),
+            const SizedBox(height: 10),
+            _SelectionCard(
+              children: _measurements.keys.map((key) {
+                return _AdaptiveCheckboxTile(
+                  title: key,
+                  value: _measurements[key] ?? false,
+                  onChanged: (value) {
+                    setState(() {
+                      _measurements[key] = value;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: () async {
-            final List<String> selectedItems = [];
-            _bodyComposition.forEach((key, value) {
-              if (value) {
-                selectedItems.add(key);
-              }
-            });
-            _measurements.forEach((key, value) {
-              if (value) {
-                selectedItems.add(key);
-              }
-            });
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: ElevatedButton(
+            onPressed: () async {
+              final selectedItems = <String>[];
+              _bodyComposition.forEach((key, value) {
+                if (value) selectedItems.add(key);
+              });
+              _measurements.forEach((key, value) {
+                if (value) selectedItems.add(key);
+              });
 
-            if (selectedItems.isNotEmpty) {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    final int initialTabIndex = selectedItems
-                            .any((item) => _bodyCompositionItems.contains(item))
-                        ? 0
-                        : 1;
-                    return RecordBodyChangeScreen(
-                      selectedItems: selectedItems,
-                      initialTabIndex: initialTabIndex,
-                      selectedDate: widget.selectedDate,
-                    );
-                  },
-                ),
-              );
-              if (mounted) {
-                Navigator.pop(context);
+              if (selectedItems.isNotEmpty) {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      final initialTabIndex = selectedItems.any(
+                              (item) => _bodyCompositionItems.contains(item))
+                          ? 0
+                          : 1;
+                      return RecordBodyChangeScreen(
+                        selectedItems: selectedItems,
+                        initialTabIndex: initialTabIndex,
+                        selectedDate: widget.selectedDate,
+                      );
+                    },
+                  ),
+                );
+                if (mounted) {
+                  Navigator.pop(context);
+                }
               }
-            }
-          },
-          child: const Text('이 항목으로 시작'),
+            },
+            child: const Text('이 항목으로 시작'),
+          ),
         ),
       ),
     );
   }
 }
-// endregion: SelectBodyPartScreen
 
-// region: RecordBodyChangeScreen
 class RecordBodyChangeScreen extends StatefulWidget {
   final List<String> selectedItems;
   final int initialTabIndex;
@@ -484,17 +580,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   final Map<String, FocusNode> _focusNodes = {};
 
   final List<String> _bodyCompositionItems = ['체중', '골격근량', '체지방'];
-  final List<Color> _availableColors = [
-    Colors.blue,
-    Colors.red,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.brown,
-    Colors.pink,
-    Colors.grey,
-    Colors.cyan,
-  ];
+  final List<Color> _availableColors = AppColors.chartColors;
 
   @override
   void initState() {
@@ -504,8 +590,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
-    int colorIndex = 0;
-    for (var item in widget.selectedItems) {
+    var colorIndex = 0;
+    for (final item in widget.selectedItems) {
       _controllers[item] = TextEditingController();
       _chartData[item] = [];
       _itemColors[item] =
@@ -527,10 +613,10 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    for (var controller in _controllers.values) {
+    for (final controller in _controllers.values) {
       controller.dispose();
     }
-    for (var focusNode in _focusNodes.values) {
+    for (final focusNode in _focusNodes.values) {
       focusNode.dispose();
     }
     super.dispose();
@@ -539,7 +625,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   Future<void> _loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      for (var item in widget.selectedItems) {
+      for (final item in widget.selectedItems) {
         final key = 'body_change_record_$item';
         final data = prefs.getStringList(key) ?? [];
         if (data.isNotEmpty) {
@@ -553,7 +639,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                     return FlSpot(
                         date.millisecondsSinceEpoch.toDouble(), value);
                   }
-                } catch (e) {/* Ignore bad data */}
+                } catch (_) {}
                 return null;
               })
               .whereType<FlSpot>()
@@ -584,10 +670,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
             DateTime.fromMillisecondsSinceEpoch(spot.x.toInt()), date));
 
         if (index != -1) {
-          // Update existing entry for the same day
           updatedData[index] = FlSpot(updatedData[index].x, doubleValue);
         } else {
-          // Add new entry
           updatedData
               .add(FlSpot(date.millisecondsSinceEpoch.toDouble(), doubleValue));
         }
@@ -609,6 +693,9 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
             controller: editController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             autofocus: true,
+            decoration: const InputDecoration(
+              labelText: '값',
+            ),
           ),
           actions: [
             TextButton(
@@ -652,16 +739,40 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final List<String> bodyCompositionSelected = widget.selectedItems
+    final bodyCompositionSelected = widget.selectedItems
         .where((item) => _bodyCompositionItems.contains(item))
         .toList();
-    final List<String> measurementSelected = widget.selectedItems
+    final measurementSelected = widget.selectedItems
         .where((item) => !_bodyCompositionItems.contains(item))
         .toList();
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('바디 로그'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                tabs: const [
+                  Tab(text: '체중/체성분'),
+                  Tab(text: '치수'),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -674,104 +785,203 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   }
 
   Widget _buildTab(List<String> items) {
+    final theme = Theme.of(context);
     if (items.isEmpty) {
       return const Center(child: Text('선택한 항목이 없어요.'));
     }
 
-    final List<LineChartBarData> lineBarsData = items.map((item) {
+    final lineBarsData = items.map((item) {
+      final color = _itemColors[item] ?? theme.colorScheme.primary;
       return LineChartBarData(
         spots: _chartData[item] ?? [],
-        isCurved: false, // Changed to straight lines
-        barWidth: 2,
-        color: _itemColors[item],
-        dotData: const FlDotData(show: true),
+        isCurved: true,
+        barWidth: 3,
+        color: color,
+        dotData: FlDotData(
+          show: true,
+          getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+            radius: 3.4,
+            color: color,
+            strokeWidth: 2,
+            strokeColor: theme.cardTheme.color ?? theme.cardColor,
+          ),
+        ),
+        belowBarData: BarAreaData(
+          show: true,
+          color: color.withValues(alpha: 0.1),
+        ),
       );
     }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 300,
-            child: LineChart(
-              LineChartData(
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    tooltipBgColor: Colors.blueGrey.withValues(alpha: 0.8),
-                    getTooltipItems: (List<LineBarSpot> touchedSpots) {
-                      return touchedSpots.map((barSpot) {
-                        final flSpot = barSpot;
-                        final date = DateTime.fromMillisecondsSinceEpoch(
-                            flSpot.x.toInt());
-                        final dateText = DateFormat('yyyy-MM-dd').format(date);
-                        final valueText = flSpot.y.toString();
-                        return LineTooltipItem(
-                          '$dateText\n$valueText',
-                          const TextStyle(color: Colors.white),
-                        );
-                      }).toList();
-                    },
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '변화 추이',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  touchCallback:
-                      (FlTouchEvent event, LineTouchResponse? response) {
-                    if (event is FlTapUpEvent &&
-                        response != null &&
-                        response.lineBarSpots != null &&
-                        response.lineBarSpots!.isNotEmpty) {
-                      final spot = response.lineBarSpots!.first;
-                      final item = items[spot.barIndex];
-                      _showEditDialog(item, spot);
-                    }
-                  },
-                  handleBuiltInTouches: true,
                 ),
-                lineBarsData: lineBarsData,
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                      sideTitles:
-                          SideTitles(showTitles: true, reservedSize: 40)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final date =
-                            DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                        return SideTitleWidget(
-                          axisSide: meta.axisSide,
-                          child: Text(DateFormat('MM/dd').format(date),
-                              style: const TextStyle(fontSize: 10)),
-                        );
-                      },
-                      interval: _getInterval(items),
+                const SizedBox(height: 6),
+                Text(
+                  '그래프를 탭하면 기존 기록을 수정할 수 있어요.',
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  height: 300,
+                  child: LineChart(
+                    LineChartData(
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((barSpot) {
+                              final date = DateTime.fromMillisecondsSinceEpoch(
+                                  barSpot.x.toInt());
+                              final dateText =
+                                  DateFormat('yyyy-MM-dd').format(date);
+                              final valueText = barSpot.y.toString();
+                              return LineTooltipItem(
+                                '$dateText\n$valueText',
+                                theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ) ??
+                                    const TextStyle(color: Colors.white),
+                              );
+                            }).toList();
+                          },
+                        ),
+                        touchCallback:
+                            (FlTouchEvent event, LineTouchResponse? response) {
+                          if (event is FlTapUpEvent &&
+                              response != null &&
+                              response.lineBarSpots != null &&
+                              response.lineBarSpots!.isNotEmpty) {
+                            final spot = response.lineBarSpots!.first;
+                            final item = items[spot.barIndex];
+                            _showEditDialog(item, spot);
+                          }
+                        },
+                        handleBuiltInTouches: true,
+                      ),
+                      lineBarsData: lineBarsData,
+                      minY: 0,
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) => SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(
+                                value.toStringAsFixed(0),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final date = DateTime.fromMillisecondsSinceEpoch(
+                                  value.toInt());
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child: Text(
+                                  DateFormat('MM/dd').format(date),
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              );
+                            },
+                            interval: _getInterval(items),
+                          ),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(
+                          color: theme.dividerColor.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: theme.dividerColor.withValues(alpha: 0.35),
+                          strokeWidth: 1,
+                        ),
+                      ),
                     ),
                   ),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
                 ),
-              ),
+                const SizedBox(height: 16),
+                _buildLegend(items),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          _buildLegend(items),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
+          const _SectionHeader(
+            title: '오늘 기록',
+            subtitle: '입력 후 포커스가 빠지면 자동 저장돼요.',
+          ),
+          const SizedBox(height: 10),
           ...items.map((item) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: TextField(
-                controller: _controllers[item],
-                focusNode: _focusNodes[item],
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: '$item 값 입력',
-                  border: const OutlineInputBorder(),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.cardTheme.color,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: _itemColors[item],
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _controllers[item],
+                        focusNode: _focusNodes[item],
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: InputDecoration(
+                          labelText: '$item 값 입력',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -779,19 +989,17 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
 
   double _getInterval(List<String> items) {
     double minX = double.maxFinite;
-    double maxX = double.minPositive;
-    for (var item in items) {
+    double maxX = double.negativeInfinity;
+    for (final item in items) {
       final data = _chartData[item] ?? [];
-      if (data.isNotEmpty) {
-        for (var spot in data) {
-          if (spot.x < minX) minX = spot.x;
-          if (spot.x > maxX) maxX = spot.x;
-        }
+      for (final spot in data) {
+        if (spot.x < minX) minX = spot.x;
+        if (spot.x > maxX) maxX = spot.x;
       }
     }
     if (minX.isFinite && maxX.isFinite && minX != maxX) {
-      final double oneDay = const Duration(days: 1).inMilliseconds.toDouble();
-      double interval = (maxX - minX) / 4; // Show ~5 labels
+      final oneDay = const Duration(days: 1).inMilliseconds.toDouble();
+      double interval = (maxX - minX) / 4;
       if (interval < oneDay) {
         interval = oneDay;
       }
@@ -801,24 +1009,260 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   }
 
   Widget _buildLegend(List<String> items) {
+    final theme = Theme.of(context);
     return Wrap(
-      spacing: 16,
-      runSpacing: 8,
+      spacing: 10,
+      runSpacing: 10,
       children: items.map((item) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              color: _itemColors[item],
-            ),
-            const SizedBox(width: 6),
-            Text(item),
-          ],
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: _itemColors[item],
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(item),
+            ],
+          ),
         );
       }).toList(),
     );
   }
 }
-// endregion: RecordBodyChangeScreen
+
+class _HeroProfileCard extends StatelessWidget {
+  final String dateText;
+  final String summary;
+  final int totalItems;
+  final bool hasBodyComp;
+  final bool hasMeasurements;
+
+  const _HeroProfileCard({
+    required this.dateText,
+    required this.summary,
+    required this.totalItems,
+    required this.hasBodyComp,
+    required this.hasMeasurements,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.18),
+            theme.cardTheme.color ?? theme.cardColor,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '오늘의 바디 로그',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(dateText, style: theme.textTheme.bodySmall),
+          const SizedBox(height: 12),
+          Text(summary, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniInfoPill(
+                  label: '항목 수',
+                  value: '$totalItems개',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MiniInfoPill(
+                  label: '체성분',
+                  value: hasBodyComp ? '기록됨' : '없음',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MiniInfoPill(
+                  label: '치수',
+                  value: hasMeasurements ? '기록됨' : '없음',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniInfoPill extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MiniInfoPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _SectionHeader({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(subtitle, style: theme.textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  final String title;
+  final String message;
+  final IconData icon;
+
+  const _EmptyStateCard({
+    required this.title,
+    required this.message,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 32, color: AppColors.primary),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectionCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SelectionCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _AdaptiveCheckboxTile extends StatelessWidget {
+  final String title;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _AdaptiveCheckboxTile({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return CheckboxListTile(
+      title: Text(title),
+      value: value,
+      onChanged: (next) => onChanged(next ?? false),
+      checkboxShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6),
+      ),
+      activeColor: theme.colorScheme.primary,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      side: BorderSide(color: theme.dividerColor),
+      controlAffinity: ListTileControlAffinity.trailing,
+    );
+  }
+}

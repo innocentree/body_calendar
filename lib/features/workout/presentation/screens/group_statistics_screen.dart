@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -210,6 +211,7 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final roundDates = _filterDates(_dateToCompletedRounds.keys);
     final roundValues =
         roundDates.map((d) => _dateToCompletedRounds[d] ?? 0).toList();
@@ -237,118 +239,138 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: '완료 라운드'),
-            Tab(text: '총 볼륨'),
-            Tab(text: '1RM'),
-            Tab(text: '수행 시간'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                indicator: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+                tabs: const [
+                  Tab(text: '완료 라운드'),
+                  Tab(text: '총 볼륨'),
+                  Tab(text: '1RM'),
+                  Tab(text: '수행 시간'),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Column(
-                    children: [
-                      _PeriodFilterBar(
-                        period: _period,
-                        onChanged: (period) => setState(() => _period = period),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatSummaryCard(
-                              title: '최고 라운드',
-                              value: _formatRounds(bestRound),
-                              subtitle: '하루 최고 기록',
+          : SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Column(
+                      children: [
+                        _PeriodFilterBar(
+                          period: _period,
+                          onChanged: (period) =>
+                              setState(() => _period = period),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatSummaryCard(
+                                title: '최고 라운드',
+                                value: _formatRounds(bestRound),
+                                subtitle: '하루 최고 기록',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _StatSummaryCard(
-                              title: '최고 1RM',
-                              value:
-                                  best1RM == 0 ? '-' : _formatWeight(best1RM),
-                              subtitle: '그룹 내 최고 세트 기준',
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _StatSummaryCard(
+                                title: '최고 1RM',
+                                value:
+                                    best1RM == 0 ? '-' : _formatWeight(best1RM),
+                                subtitle: '그룹 내 최고 세트 기준',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _StatSummaryCard(
-                              title: '최장 수행',
-                              value: _formatDuration(longestDuration),
-                              subtitle: '완료 세트 합산',
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _StatSummaryCard(
+                                title: '최장 수행',
+                                value: _formatDuration(longestDuration),
+                                subtitle: '완료 세트 합산',
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      _CompareInfoCard(
-                        title: '그룹 vs 단일 볼륨 비교',
-                        leftLabel: '그룹 우세',
-                        leftValue: '$compareWins일',
-                        rightLabel: '단일 우세',
-                        rightValue: '$compareLosses일',
-                        hint: compareWins > compareLosses
-                            ? '같은 운동 조합 기준으로 그룹 수행 볼륨이 더 높은 날이 많아요.'
-                            : compareLosses > compareWins
-                                ? '단일 수행 볼륨이 더 높은 날이 많아요.'
-                                : '그룹/단일 볼륨 우세가 비슷해요.',
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _CompareInfoCard(
+                          title: '그룹 vs 단일 볼륨 비교',
+                          leftLabel: '그룹 우세',
+                          leftValue: '$compareWins일',
+                          rightLabel: '단일 우세',
+                          rightValue: '$compareLosses일',
+                          hint: compareWins > compareLosses
+                              ? '같은 운동 조합 기준으로 그룹 수행 볼륨이 더 높은 날이 많아요.'
+                              : compareLosses > compareWins
+                                  ? '단일 수행 볼륨이 더 높은 날이 많아요.'
+                                  : '그룹/단일 볼륨 우세가 비슷해요.',
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildChartTab<int>(
-                        dates: roundDates,
-                        values: roundValues,
-                        title: '날짜별 완료 라운드',
-                        emptyText: '이 그룹의 기록이 아직 없어요.',
-                        formatter: _formatRounds,
-                        yValue: (value) => value.toDouble(),
-                        color: Colors.deepPurple,
-                      ),
-                      _buildChartTab<double>(
-                        dates: volumeDates,
-                        values: volumeValues,
-                        title: '날짜별 총 볼륨',
-                        emptyText: '이 그룹의 기록이 아직 없어요.',
-                        formatter: _formatWeight,
-                        yValue: (value) => value,
-                        color: Colors.orange,
-                      ),
-                      _buildChartTab<double>(
-                        dates: oneRmDates,
-                        values: oneRmValues,
-                        title: '날짜별 최대 추정 1RM',
-                        emptyText: '이 그룹의 기록이 아직 없어요.',
-                        formatter: _formatWeight,
-                        yValue: (value) => value,
-                        color: Colors.teal,
-                      ),
-                      _buildChartTab<int>(
-                        dates: durationDates,
-                        values: durationValues,
-                        title: '날짜별 수행 시간',
-                        emptyText: '이 그룹의 기록이 아직 없어요.',
-                        formatter: _formatDuration,
-                        yValue: (value) => value.toDouble(),
-                        color: Colors.redAccent,
-                      ),
-                    ],
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildChartTab<int>(
+                          dates: roundDates,
+                          values: roundValues,
+                          title: '날짜별 완료 라운드',
+                          emptyText: '이 그룹의 기록이 아직 없어요.',
+                          formatter: _formatRounds,
+                          yValue: (value) => value.toDouble(),
+                          color: AppColors.chartColors[1],
+                        ),
+                        _buildChartTab<double>(
+                          dates: volumeDates,
+                          values: volumeValues,
+                          title: '날짜별 총 볼륨',
+                          emptyText: '이 그룹의 기록이 아직 없어요.',
+                          formatter: _formatWeight,
+                          yValue: (value) => value,
+                          color: AppColors.chartColors[4],
+                        ),
+                        _buildChartTab<double>(
+                          dates: oneRmDates,
+                          values: oneRmValues,
+                          title: '날짜별 최대 추정 1RM',
+                          emptyText: '이 그룹의 기록이 아직 없어요.',
+                          formatter: _formatWeight,
+                          yValue: (value) => value,
+                          color: AppColors.chartColors[3],
+                        ),
+                        _buildChartTab<int>(
+                          dates: durationDates,
+                          values: durationValues,
+                          title: '날짜별 수행 시간',
+                          emptyText: '이 그룹의 기록이 아직 없어요.',
+                          formatter: _formatDuration,
+                          yValue: (value) => value.toDouble(),
+                          color: AppColors.chartColors[0],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }
@@ -362,96 +384,205 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
     required double Function(T value) yValue,
     required Color color,
   }) {
+    final theme = Theme.of(context);
     if (dates.isEmpty) {
-      return Center(child: Text(emptyText));
+      return Center(
+        child: Text(
+          emptyText,
+          style: theme.textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      );
     }
 
+    final maxY = values
+        .map(yValue)
+        .fold<double>(0, (prev, value) => value > prev ? value : prev);
+
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 220,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      reservedSize: 32,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= dates.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Text(
-                          dates[index].substring(5),
-                          style: const TextStyle(fontSize: 10),
-                        );
-                      },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 220,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: maxY <= 0
+                            ? 1
+                            : (maxY / 4).clamp(1, double.infinity),
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: theme.dividerColor.withValues(alpha: 0.35),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 42,
+                            getTitlesWidget: (value, meta) => SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(
+                                value.toStringAsFixed(0),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: dates.length > 6 ? 2 : 1,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= dates.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child: Text(
+                                  dates[index].substring(5),
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(
+                          color: theme.dividerColor.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      minX: 0,
+                      maxX: (dates.length - 1).toDouble(),
+                      minY: 0,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: [
+                            for (int i = 0; i < values.length; i++)
+                              FlSpot(i.toDouble(), yValue(values[i])),
+                          ],
+                          isCurved: true,
+                          color: color,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, _, __, ___) =>
+                                FlDotCirclePainter(
+                              radius: 3.6,
+                              color: color,
+                              strokeWidth: 2,
+                              strokeColor:
+                                  theme.cardTheme.color ?? theme.cardColor,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: color.withValues(alpha: 0.12),
+                          ),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (spots) {
+                            return spots.map((spot) {
+                              final date = dates[spot.x.toInt()];
+                              final session = _dateToSessionIndex[date];
+                              return LineTooltipItem(
+                                '$date\n${formatter(values[spot.x.toInt()])}${session != null ? '\n(${session}회차)' : ''}',
+                                theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ) ??
+                                    const TextStyle(color: Colors.white),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
                     ),
                   ),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
                 ),
-                borderData: FlBorderData(show: true),
-                minX: 0,
-                maxX: (dates.length - 1).toDouble(),
-                minY: 0,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: [
-                      for (int i = 0; i < values.length; i++)
-                        FlSpot(i.toDouble(), yValue(values[i])),
-                    ],
-                    isCurved: false,
-                    color: color,
-                    barWidth: 3,
-                    dotData: FlDotData(show: true),
-                  ),
-                ],
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipItems: (spots) {
-                      return spots.map((spot) {
-                        final date = dates[spot.x.toInt()];
-                        final session = _dateToSessionIndex[date];
-                        return LineTooltipItem(
-                          '$date\n${formatter(values[spot.x.toInt()])}${session != null ? '\n(${session}회차)' : ''}',
-                          const TextStyle(color: Colors.white),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               itemCount: dates.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final date = dates[index];
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(date),
-                  subtitle: _dateToSessionIndex[date] != null
-                      ? Text('${_dateToSessionIndex[date]}회차 수행')
-                      : null,
-                  trailing: Text(formatter(values[index])),
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.dividerColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              date,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (_dateToSessionIndex[date] != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_dateToSessionIndex[date]}회차 수행',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        formatter(values[index]),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -141,6 +142,7 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dates = _filterDates(_dateToTotalWeight.keys);
     final weights = dates.map((d) => _dateToTotalWeight[d] ?? 0.0).toList();
     final maxDates = _filterDates(_dateToMaxWeight.keys);
@@ -154,108 +156,128 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.exerciseName} 통계'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: '전체 볼륨'),
-            Tab(text: '최고 무게'),
-            Tab(text: '1RM'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.dividerColor.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                tabs: const [
+                  Tab(text: '전체 볼륨'),
+                  Tab(text: '최고 무게'),
+                  Tab(text: '1RM'),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Column(
-                    children: [
-                      _PeriodFilterBar(
-                        period: _period,
-                        onChanged: (period) => setState(() => _period = period),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _StatSummaryCard(
-                              title: '기록 일수',
-                              value: '${dates.length}일',
-                              subtitle: '이 운동 수행일',
+          : SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Column(
+                      children: [
+                        _PeriodFilterBar(
+                          period: _period,
+                          onChanged: (period) =>
+                              setState(() => _period = period),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatSummaryCard(
+                                title: '기록 일수',
+                                value: '${dates.length}일',
+                                subtitle: '이 운동 수행일',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _StatSummaryCard(
-                              title: '그룹 수행',
-                              value: '$groupedCount회',
-                              subtitle: '슈퍼세트/컴파운드 포함',
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _StatSummaryCard(
+                                title: '그룹 수행',
+                                value: '$groupedCount회',
+                                subtitle: '슈퍼세트/컴파운드 포함',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _StatSummaryCard(
-                              title: '최고 1RM',
-                              value: oneRmWeights.isEmpty
-                                  ? '-'
-                                  : _formatWeight(
-                                      oneRmWeights
-                                          .reduce((a, b) => a > b ? a : b),
-                                    ),
-                              subtitle: '추정치',
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _StatSummaryCard(
+                                title: '최고 1RM',
+                                value: oneRmWeights.isEmpty
+                                    ? '-'
+                                    : _formatWeight(
+                                        oneRmWeights
+                                            .reduce((a, b) => a > b ? a : b),
+                                      ),
+                                subtitle: '추정치',
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      _CompareInfoCard(
-                        title: '그룹 vs 단일 비교',
-                        leftLabel: '그룹',
-                        leftValue: '$groupedCount회',
-                        rightLabel: '단일',
-                        rightValue: '$singleCount회',
-                        hint: groupedCount > singleCount
-                            ? '이 기간엔 그룹 운동으로 더 자주 수행했어요.'
-                            : singleCount > groupedCount
-                                ? '이 기간엔 단일 운동으로 더 자주 수행했어요.'
-                                : '그룹/단일 수행 비중이 비슷해요.',
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _CompareInfoCard(
+                          title: '그룹 vs 단일 비교',
+                          leftLabel: '그룹',
+                          leftValue: '$groupedCount회',
+                          rightLabel: '단일',
+                          rightValue: '$singleCount회',
+                          hint: groupedCount > singleCount
+                              ? '이 기간엔 그룹 운동으로 더 자주 수행했어요.'
+                              : singleCount > groupedCount
+                                  ? '이 기간엔 단일 운동으로 더 자주 수행했어요.'
+                                  : '그룹/단일 수행 비중이 비슷해요.',
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildChartTab(
-                        dates: dates,
-                        values: weights,
-                        title: '날짜별 총 볼륨',
-                        emptyText: '해당 운동의 아직 기록이 없어요.',
-                        formatter: _formatWeight,
-                        color: Colors.deepPurple,
-                      ),
-                      _buildChartTab(
-                        dates: maxDates,
-                        values: maxWeights,
-                        title: '날짜별 최고 세트 무게',
-                        emptyText: '해당 운동의 아직 기록이 없어요.',
-                        formatter: _formatWeight,
-                        color: Colors.teal,
-                      ),
-                      _buildChartTab(
-                        dates: oneRmDates,
-                        values: oneRmWeights,
-                        title: '날짜별 최대 추정 1RM',
-                        emptyText: '해당 운동의 아직 기록이 없어요.',
-                        formatter: _formatWeight,
-                        color: Colors.orange,
-                      ),
-                    ],
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildChartTab(
+                          dates: dates,
+                          values: weights,
+                          title: '날짜별 총 볼륨',
+                          emptyText: '해당 운동의 아직 기록이 없어요.',
+                          formatter: _formatWeight,
+                          color: AppColors.chartColors[1],
+                        ),
+                        _buildChartTab(
+                          dates: maxDates,
+                          values: maxWeights,
+                          title: '날짜별 최고 세트 무게',
+                          emptyText: '해당 운동의 아직 기록이 없어요.',
+                          formatter: _formatWeight,
+                          color: AppColors.chartColors[3],
+                        ),
+                        _buildChartTab(
+                          dates: oneRmDates,
+                          values: oneRmWeights,
+                          title: '날짜별 최대 추정 1RM',
+                          emptyText: '해당 운동의 아직 기록이 없어요.',
+                          formatter: _formatWeight,
+                          color: AppColors.chartColors[4],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }
@@ -268,92 +290,164 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
     required String Function(double value) formatter,
     required Color color,
   }) {
+    final theme = Theme.of(context);
     if (dates.isEmpty) {
-      return Center(child: Text(emptyText));
+      return Center(
+        child: Text(
+          emptyText,
+          style: theme.textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      );
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 220,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      reservedSize: 32,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= dates.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Text(
-                          dates[idx].substring(5),
-                          style: const TextStyle(fontSize: 10),
-                        );
-                      },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 220,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: values.length > 1
+                            ? (values.reduce((a, b) => a > b ? a : b) / 4)
+                                .clamp(1, double.infinity)
+                            : 1,
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: theme.dividerColor.withValues(alpha: 0.35),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 42,
+                            getTitlesWidget: (value, meta) => SideTitleWidget(
+                              axisSide: meta.axisSide,
+                              child: Text(
+                                value.toStringAsFixed(0),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: dates.length > 6 ? 2 : 1,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, meta) {
+                              final idx = value.toInt();
+                              if (idx < 0 || idx >= dates.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child: Text(
+                                  dates[idx].substring(5),
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(
+                          color: theme.dividerColor.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      minX: 0,
+                      maxX: (dates.length - 1).toDouble(),
+                      minY: 0,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: [
+                            for (int i = 0; i < values.length; i++)
+                              FlSpot(i.toDouble(), values[i]),
+                          ],
+                          isCurved: true,
+                          color: color,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, _, __, ___) =>
+                                FlDotCirclePainter(
+                              radius: 3.6,
+                              color: color,
+                              strokeWidth: 2,
+                              strokeColor:
+                                  theme.cardTheme.color ?? theme.cardColor,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: color.withValues(alpha: 0.12),
+                          ),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final date = dates[spot.x.toInt()];
+                              final order = _dateToOrder[date];
+                              final group = _dateToGroupLabel[date];
+                              final lines = [date, formatter(spot.y)];
+                              if (order != null) lines.add('(${order}회차)');
+                              if (group != null) lines.add(group);
+                              return LineTooltipItem(
+                                lines.join('\n'),
+                                theme.textTheme.bodySmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ) ??
+                                    const TextStyle(color: Colors.white),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
                     ),
                   ),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
                 ),
-                borderData: FlBorderData(show: true),
-                minX: 0,
-                maxX: (dates.length - 1).toDouble(),
-                minY: 0,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: [
-                      for (int i = 0; i < values.length; i++)
-                        FlSpot(i.toDouble(), values[i]),
-                    ],
-                    isCurved: false,
-                    color: color,
-                    barWidth: 3,
-                    dotData: FlDotData(show: true),
-                  ),
-                ],
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        final date = dates[spot.x.toInt()];
-                        final order = _dateToOrder[date];
-                        final group = _dateToGroupLabel[date];
-                        final lines = [date, formatter(spot.y)];
-                        if (order != null) lines.add('(${order}회차)');
-                        if (group != null) lines.add(group);
-                        return LineTooltipItem(
-                          lines.join('\n'),
-                          const TextStyle(color: Colors.white),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               itemCount: dates.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (context, idx) {
                 final date = dates[idx];
                 final group = _dateToGroupLabel[date];
@@ -361,12 +455,46 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
                 final subtitles = <String>[];
                 if (order != null) subtitles.add('${order}회차 수행');
                 if (group != null) subtitles.add(group);
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(date),
-                  subtitle:
-                      subtitles.isEmpty ? null : Text(subtitles.join(' · ')),
-                  trailing: Text(formatter(values[idx])),
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: theme.cardTheme.color,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: theme.dividerColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              date,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (subtitles.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                subtitles.join(' · '),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        formatter(values[idx]),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
