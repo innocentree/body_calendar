@@ -59,15 +59,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (!mounted) return;
 
     final error = _cloudSyncService.lastError;
-    if (error != null && error.isNotEmpty && error != _lastShownSyncError) {
+    if (error != null && error.isNotEmpty) {
       _lastShownSyncError = error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: AppColors.error.withValues(alpha: 0.96),
-        ),
-      );
-      return;
     }
 
     final uploadedAt = _cloudSyncService.lastUploadedAt;

@@ -95,9 +95,7 @@ class CloudSyncService extends ChangeNotifier {
         if (!isSignedIn) {
           return '로그인 후 자동 동기화 가능';
         }
-        return lastError?.isNotEmpty == true
-            ? '동기화 필요 · ${lastError!}'
-            : '동기화가 최신이 아니에요';
+        return '동기화가 최신이 아니에요';
       case CloudSyncVisualState.unavailable:
         return 'Supabase 설정이 없어 클라우드 동기화를 사용할 수 없어요.';
     }
@@ -173,7 +171,8 @@ class CloudSyncService extends ChangeNotifier {
         syncedAt: now,
       );
     } catch (error) {
-      final message = '클라우드 업로드 중 문제가 생겼어요: $error';
+      debugPrint('CloudSyncService.uploadSnapshot failed: $error');
+      final message = '클라우드 업로드 중 문제가 생겼어요.';
       await _prefs.setString(_lastErrorKey, message);
       return CloudSyncResult(
         success: false,
