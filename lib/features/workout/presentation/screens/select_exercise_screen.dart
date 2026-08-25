@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/models/exercise.dart';
 import '../../../../core/utils/hangul_utils.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class SelectExerciseScreen extends StatefulWidget {
   final String title;
@@ -278,6 +279,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             builder: (context, scrollController) {
               return Container(
                 padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).bottomSheetTheme.backgroundColor,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -296,10 +302,11 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const TabBar(
+                    TabBar(
                       isScrollable: true,
-                      labelColor: Colors.black,
-                      unselectedLabelColor: Colors.grey,
+                      labelColor: Theme.of(context).textTheme.bodyLarge?.color,
+                      unselectedLabelColor:
+                          Theme.of(context).textTheme.bodySmall?.color,
                       tabs: [
                         Tab(text: '전체'),
                         Tab(text: '덤벨'),
@@ -365,6 +372,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       itemBuilder: (context, index) {
         final variation = variations[index];
         return Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
           child: ListTile(
             title: Text(variation.name),
             subtitle: Column(
@@ -453,16 +461,20 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                   child: Container(
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
                         hintText: '운동 검색',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
-                        prefixIcon:
-                            const Icon(Icons.search, color: Colors.grey),
+                        hintStyle: TextStyle(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                        prefixIcon: Icon(Icons.search,
+                            color:
+                                Theme.of(context).textTheme.bodySmall?.color),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
@@ -479,7 +491,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                     Container(
                       height: 24,
                       width: 1,
-                      color: Colors.grey[300],
+                      color: Theme.of(context).dividerColor,
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                     Expanded(
@@ -497,7 +509,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 ),
                 Container(
                   height: 1,
-                  color: Colors.grey[300],
+                  color: Theme.of(context).dividerColor,
                 ),
               ],
             ),
@@ -574,8 +586,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
   Widget _buildTabButton(String text) {
     final isSelected = _selectedTab == text;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selectedColor = isDark ? Colors.white : Colors.black;
+    final selectedColor = Theme.of(context).colorScheme.primary;
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -595,7 +606,9 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         child: Text(
           text,
           style: TextStyle(
-            color: isSelected ? selectedColor : Colors.grey,
+            color: isSelected
+                ? selectedColor
+                : Theme.of(context).textTheme.bodySmall?.color,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -617,19 +630,19 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
-        return ElevatedButton(
+        return FilledButton.tonal(
           onPressed: () {
             setState(() {
               _selectedTab = category;
             });
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 2,
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(context).cardTheme.color,
+            foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(18),
             ),
+            side: BorderSide(color: Theme.of(context).dividerColor),
           ),
           child: Text(
             category,

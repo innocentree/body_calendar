@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../../workout/domain/models/exercise.dart';
 
@@ -12,15 +13,35 @@ class AddWorkoutScreen extends StatefulWidget {
 class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> _muscleGroups = [
-    '목', '승모근', '어깨', '가슴', '등', 
-    '삼두', '이두', '전완', '복부', '허리', 
-    '엉덩이', '하체', '종아리'
+    '목',
+    '승모근',
+    '어깨',
+    '가슴',
+    '등',
+    '삼두',
+    '이두',
+    '전완',
+    '복부',
+    '허리',
+    '엉덩이',
+    '하체',
+    '종아리'
   ];
-  
+
   final Map<String, int> _muscleCount = {
-    '목': 2, '승모근': 18, '어깨': 87, '가슴': 82, 
-    '등': 124, '삼두': 49, '이두': 53, '전완': 9, 
-    '복부': 56, '허리': 7, '엉덩이': 23, '하체': 98, '종아리': 14
+    '목': 2,
+    '승모근': 18,
+    '어깨': 87,
+    '가슴': 82,
+    '등': 124,
+    '삼두': 49,
+    '이두': 53,
+    '전완': 9,
+    '복부': 56,
+    '허리': 7,
+    '엉덩이': 23,
+    '하체': 98,
+    '종아리': 14
   };
 
   @override
@@ -32,29 +53,30 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.grey[800],
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
               hintText: '운동 검색',
-              hintStyle: const TextStyle(color: Colors.grey),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              hintStyle: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color),
+              prefixIcon: Icon(Icons.search,
+                  color: Theme.of(context).textTheme.bodySmall?.color),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
-            style: const TextStyle(color: Colors.white),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ),
       ),
@@ -69,28 +91,36 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                 child: Row(
                   children: const [
                     SizedBox(width: 10),
-                    Text('분류', style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold)),
+                    Text('분류',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold)),
                     SizedBox(width: 20),
-                    Text('전체', style: TextStyle(color: Colors.grey)),
+                    Text('전체',
+                        style: TextStyle(color: AppColors.textSecondaryDark)),
                     SizedBox(width: 20),
-                    Text('최근 30일', style: TextStyle(color: Colors.grey)),
+                    Text('최근 30일',
+                        style: TextStyle(color: AppColors.textSecondaryDark)),
                     SizedBox(width: 20),
-                    Text('즐겨찾기', style: TextStyle(color: Colors.grey)),
+                    Text('즐겨찾기',
+                        style: TextStyle(color: AppColors.textSecondaryDark)),
                     SizedBox(width: 20),
-                    Text('커스텀', style: TextStyle(color: Colors.grey)),
+                    Text('커스텀',
+                        style: TextStyle(color: AppColors.textSecondaryDark)),
                     SizedBox(width: 20),
-                    Text('유산소', style: TextStyle(color: Colors.grey)),
+                    Text('유산소',
+                        style: TextStyle(color: AppColors.textSecondaryDark)),
                     SizedBox(width: 10),
                   ],
                 ),
               ),
               decoration: const BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.purple, width: 2),
+                  bottom: BorderSide(color: AppColors.primary, width: 2),
                 ),
               ),
             ),
-            
+
             // 메인 콘텐츠
             Expanded(
               child: GridView.builder(
@@ -105,7 +135,7 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                 itemBuilder: (context, index) {
                   final muscle = _muscleGroups[index];
                   final count = _muscleCount[muscle] ?? 0;
-                  
+
                   return InkWell(
                     onTap: () {
                       try {
@@ -132,15 +162,18 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey[800],
-                              borderRadius: BorderRadius.circular(8),
+                              color: Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                  color: Theme.of(context).dividerColor),
                             ),
                             child: Center(
                               child: Text(
                                 muscle.substring(0, 1),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontSize: 24,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -149,11 +182,11 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                         const SizedBox(height: 4),
                         Text(
                           muscle,
-                          style: const TextStyle(color: Colors.white),
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         Text(
                           count.toString(),
-                          style: const TextStyle(color: Colors.grey),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -161,13 +194,13 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                 },
               ),
             ),
-            
+
             // 하단 이력
             Container(
               height: 100,
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Colors.grey[800]!),
+                  top: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
               child: Row(
@@ -180,18 +213,20 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                 ],
               ),
             ),
-            
+
             // 하단 버튼
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.grey),
-                  const Text('슈퍼세트', style: TextStyle(color: Colors.purple)),
+                  Icon(Icons.info_outline,
+                      color: Theme.of(context).textTheme.bodySmall?.color),
+                  const Text('슈퍼세트',
+                      style: TextStyle(color: AppColors.primary)),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[800],
+                      backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -199,7 +234,7 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: const Text('완료', style: TextStyle(color: Colors.white)),
+                    child: const Text('완료'),
                   ),
                 ],
               ),
@@ -209,7 +244,7 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
       ),
     );
   }
-  
+
   Widget _buildHistoryItem(String title) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -218,17 +253,19 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: Colors.grey[800],
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.customSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.separatorDark),
           ),
           child: const Icon(Icons.close, color: Colors.white),
         ),
         const SizedBox(height: 4),
         Text(
           title,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+          style:
+              const TextStyle(color: AppColors.textPrimaryDark, fontSize: 12),
         ),
       ],
     );
   }
-} 
+}

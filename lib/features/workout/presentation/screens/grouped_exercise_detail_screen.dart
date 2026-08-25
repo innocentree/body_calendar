@@ -14,9 +14,9 @@ import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _detailSurface = Color(0xFF211D19);
-const _detailSoftSurface = Color(0xFF2A2520);
-const _detailMutedText = Color(0xFFA8A099);
+const _detailSurface = AppColors.surfaceDark;
+const _detailSoftSurface = AppColors.customSurface;
+const _detailMutedText = AppColors.textSecondaryDark;
 
 class GroupedExerciseDetailScreen extends StatefulWidget {
   final List<WorkoutRecord> workouts;
@@ -343,15 +343,14 @@ class _GroupedExerciseDetailScreenState
     return showDialog<double>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: _detailSurface,
-        title: Text(title, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+        title: Text(title),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(color: Colors.white),
+          style: Theme.of(context).textTheme.bodyLarge,
           decoration: const InputDecoration(
             hintText: '값 입력',
-            hintStyle: TextStyle(color: Colors.white54),
           ),
           autofocus: true,
         ),
@@ -425,15 +424,14 @@ class _GroupedExerciseDetailScreenState
     final roundCount = _resolvedRoundCount();
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundDark,
         title: Text('$groupLabel$badge'),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isLoading ? null : _addRound,
         backgroundColor: accent,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('라운드 추가'),
       ),
@@ -445,7 +443,7 @@ class _GroupedExerciseDetailScreenState
                   margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _detailSurface,
+                    color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: accent.withValues(alpha: 0.45)),
                   ),
@@ -457,8 +455,11 @@ class _GroupedExerciseDetailScreenState
                           children: [
                             Text(
                               _workouts.map((w) => w.name).join(' · '),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.color,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -467,7 +468,11 @@ class _GroupedExerciseDetailScreenState
                             Text(
                               '두 운동을 모두 완료해야 휴식 타이머가 시작돼요.',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.color
+                                    ?.withValues(alpha: 0.7),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -564,12 +569,12 @@ class _GroupedExerciseDetailScreenState
                         margin: const EdgeInsets.only(bottom: 14),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: _detailSurface,
+                          color: Theme.of(context).cardTheme.color,
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
                             color: isCurrent
                                 ? accent.withValues(alpha: 0.75)
-                                : Colors.white.withValues(alpha: 0.08),
+                                : Theme.of(context).dividerColor,
                           ),
                         ),
                         child: Column(
@@ -620,10 +625,17 @@ class _GroupedExerciseDetailScreenState
                                       _toggleRoundCompletion(roundIndex),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: isDone
-                                        ? Colors.white.withValues(alpha: 0.08)
+                                        ? Theme.of(context)
+                                            .dividerColor
+                                            .withValues(alpha: 0.35)
                                         : accent.withValues(alpha: 0.16),
-                                    foregroundColor:
-                                        isDone ? Colors.white70 : accent,
+                                    foregroundColor: isDone
+                                        ? Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                            ?.withValues(alpha: 0.72)
+                                        : accent,
                                   ),
                                   icon: Icon(isDone
                                       ? Icons.undo_rounded
@@ -647,8 +659,9 @@ class _GroupedExerciseDetailScreenState
                                   _workouts.length,
                               minHeight: 8,
                               borderRadius: BorderRadius.circular(999),
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.08),
+                              backgroundColor: Theme.of(context)
+                                  .dividerColor
+                                  .withValues(alpha: 0.35),
                               valueColor: AlwaysStoppedAnimation<Color>(accent),
                             ),
                             const SizedBox(height: 12),
@@ -782,8 +795,9 @@ class _ExerciseRoundCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _detailSoftSurface,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -796,8 +810,8 @@ class _ExerciseRoundCard extends StatelessWidget {
                   children: [
                     Text(
                       workout.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.titleMedium?.color,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -873,8 +887,9 @@ class _AdjustChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -886,7 +901,8 @@ class _AdjustChip extends StatelessWidget {
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
             onPressed: onMinus,
-            icon: const Icon(Icons.remove_circle_outline, color: Colors.white),
+            icon: Icon(Icons.remove_circle_outline,
+                color: Theme.of(context).iconTheme.color),
           ),
           GestureDetector(
             onTap: onTapValue,
@@ -895,8 +911,8 @@ class _AdjustChip extends StatelessWidget {
               child: Text(
                 value,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -907,7 +923,8 @@ class _AdjustChip extends StatelessWidget {
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
             onPressed: onPlus,
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+            icon: Icon(Icons.add_circle_outline,
+                color: Theme.of(context).iconTheme.color),
           ),
         ],
       ),
@@ -957,8 +974,9 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _detailSurface,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -975,8 +993,8 @@ class _SummaryCard extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.titleLarge?.color,
               fontSize: 18,
               fontWeight: FontWeight.w800,
             ),

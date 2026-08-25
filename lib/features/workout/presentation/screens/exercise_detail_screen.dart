@@ -17,10 +17,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
 import '../../../../core/widgets/horizontal_dial_picker.dart';
 
-const _detailBorderColor = Color(0xFF3A342E);
-const _detailSurface = Color(0xFF211D19);
-const _detailSoftSurface = Color(0xFF2A2520);
-const _detailMutedText = Color(0xFFA8A099);
+const _detailBorderColor = AppColors.separatorDark;
+const _detailSurface = AppColors.surfaceDark;
+const _detailSoftSurface = AppColors.customSurface;
+const _detailMutedText = AppColors.textSecondaryDark;
 
 class ExerciseDetailScreen extends StatefulWidget {
   final String exerciseName;
@@ -474,10 +474,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         });
                       },
                       style: SegmentedButton.styleFrom(
-                        selectedBackgroundColor: AppColors.neonCyan,
-                        selectedForegroundColor: Colors.black,
+                        selectedBackgroundColor: AppColors.primary,
+                        selectedForegroundColor: Colors.white,
                         backgroundColor: AppColors.customSurface,
-                        foregroundColor: Colors.white70,
+                        foregroundColor: AppColors.textPrimaryDark,
                         visualDensity: VisualDensity.compact,
                         side: BorderSide(
                             color: Theme.of(context)
@@ -565,10 +565,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   });
                 },
                 style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: AppColors.neonCyan,
-                  selectedForegroundColor: Colors.black,
+                  selectedBackgroundColor: AppColors.primary,
+                  selectedForegroundColor: Colors.white,
                   backgroundColor: AppColors.customSurface,
-                  foregroundColor: Colors.white70,
+                  foregroundColor: AppColors.textPrimaryDark,
                   visualDensity: VisualDensity.compact,
                   side: BorderSide(
                       color: Theme.of(context)
@@ -2035,8 +2035,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         onPressed: _addSet,
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
-                          backgroundColor: AppColors.neonLime,
-                          foregroundColor: Colors.black,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
