@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
@@ -43,14 +44,12 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
       final value = data.startsWith('{')
           ? Map<String, dynamic>.from(
               Map<String, dynamic>.fromEntries(
-                (data
-                        .replaceAll('{', '')
-                        .replaceAll('}', '')
-                        .split(','))
+                (data.replaceAll('{', '').replaceAll('}', '').split(','))
                     .where((e) => e.contains(':'))
                     .map((e) {
                   final parts = e.split(':');
-                  return MapEntry(parts.first.trim(), int.tryParse(parts.last.trim()) ?? parts.last.trim());
+                  return MapEntry(parts.first.trim(),
+                      int.tryParse(parts.last.trim()) ?? parts.last.trim());
                 }),
               ),
             )
@@ -82,27 +81,50 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
               children: [
                 TweenAnimationBuilder<double>(
                   tween: Tween<double>(
-                    end: (_totalDuration > 0) ? _remainingTime / _totalDuration : 0.0,
+                    end: (_totalDuration > 0)
+                        ? _remainingTime / _totalDuration
+                        : 0.0,
                   ),
-                  duration: const Duration(milliseconds: 1000), // Smooth transition over 1 second
-                  curve: Curves.linear, // Or Curves.easeInOut for damping effect
+                  duration: const Duration(
+                      milliseconds: 1000), // Smooth transition over 1 second
+                  curve:
+                      Curves.linear, // Or Curves.easeInOut for damping effect
                   builder: (context, value, _) {
                     return CircularProgressIndicator(
                       value: value,
                       strokeWidth: 10,
-                      backgroundColor: Colors.grey.withValues(alpha: 0.5),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                      backgroundColor:
+                          AppColors.separatorDark.withValues(alpha: 0.55),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
                     );
                   },
                 ),
                 Center(
-                  child: Text(
-                    '$_remainingTime',
-                    style: const TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      decoration: TextDecoration.none,
+                  child: Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      color: AppColors.customSurface.withValues(alpha: 0.92),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.18),
+                          blurRadius: 18,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$_remainingTime',
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
                     ),
                   ),
                 ),

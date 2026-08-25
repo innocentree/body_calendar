@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
+import '../../../../core/theme/app_colors.dart';
 
 enum ExerciseStatisticType {
   volume,
@@ -167,9 +168,9 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E), // Match app theme approx
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white24),
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -177,11 +178,10 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
           children: [
             Text(
               _title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -193,7 +193,8 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                       ? const Center(
                           child: Text(
                             '아직 기록이 없어요.',
-                            style: TextStyle(color: Colors.grey),
+                            style:
+                                TextStyle(color: AppColors.textSecondaryDark),
                           ),
                         )
                       : LineChart(
@@ -223,9 +224,12 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                             const EdgeInsets.only(top: 8.0),
                                         child: Text(
                                           '${date.month}/${date.day}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 10,
-                                            color: Colors.grey,
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.color,
                                           ),
                                         ),
                                       );
@@ -251,19 +255,23 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                     FlSpot(i.toDouble(), values[i]),
                                 ],
                                 isCurved: true,
-                                color: Colors.deepPurpleAccent,
+                                color: Theme.of(context).colorScheme.primary,
                                 barWidth: 3,
                                 dotData: FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: Colors.deepPurpleAccent
-                                      .withValues(alpha: 0.2),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.18),
                                 ),
                               ),
                             ],
                             lineTouchData: LineTouchData(
                               touchTooltipData: LineTouchTooltipData(
-                                tooltipBgColor: Colors.black87,
+                                tooltipBgColor:
+                                    Theme.of(context).cardTheme.color ??
+                                        AppColors.customSurface,
                                 getTooltipItems: (touchedSpots) {
                                   return touchedSpots.map((spot) {
                                     return LineTooltipItem(
@@ -274,7 +282,13 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                                                   ExerciseStatisticType.maxReps
                                           ? '${spot.y.toInt()} $_valueUnit'
                                           : '${spot.y.toStringAsFixed(1)} $_valueUnit',
-                                      const TextStyle(color: Colors.white),
+                                      TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.color,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     );
                                   }).toList();
                                 },
@@ -284,9 +298,12 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
                         ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '최근 7회 기록',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                fontSize: 12,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

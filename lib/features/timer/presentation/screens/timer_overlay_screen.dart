@@ -17,7 +17,8 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
     super.initState();
     FlutterOverlayWindow.overlayListener.listen((event) {
       if (event is Map) {
-        if (event.containsKey('totalDuration') && event.containsKey('remainingTime')) {
+        if (event.containsKey('totalDuration') &&
+            event.containsKey('remainingTime')) {
           // Update via shareData (if used)
           setState(() {
             _remainingTime = event['remainingTime'] as int;
@@ -25,7 +26,7 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
         }
       }
     });
-    
+
     // Initial data might be needed if not passed via shareData immediately
   }
 
@@ -43,53 +44,53 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.8),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.neonLime, width: 2),
-          boxShadow: [
-             BoxShadow(
-               color: AppColors.neonLime.withValues(alpha: 0.3),
-               blurRadius: 8,
-               offset: const Offset(0, 4),
-             )
-          ]
-        ),
+            color: AppColors.customSurface.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.45), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.22),
+                blurRadius: 18,
+                offset: const Offset(0, 4),
+              )
+            ]),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min, // Wrap content
           children: [
-             // Since we might not get exercise name easily through simple shareData without modifying the sender,
-             // let's rely on what we can pass. 
-             // Actually, overlay_helper_impl.dart currently passes title/content in showOverlay. 
-             // But for real-time updates, we need shareData.
-             
-             // Let's assume the user just wants the timer countdown.
-             Row(
-               mainAxisAlignment: MainAxisAlignment.center,
-               children: [
-                 const Icon(Icons.timer, color: AppColors.neonLime, size: 20),
-                 const SizedBox(width: 8),
-                 Text(
-                   _formatDuration(_remainingTime),
-                   style: const TextStyle(
-                     color: Colors.white,
-                     fontSize: 24,
-                     fontWeight: FontWeight.bold,
-                     decoration: TextDecoration.none,
-                   ),
-                 ),
-               ],
-             ),
-             const SizedBox(height: 4),
-             Text(
-               '터치하여 앱으로 돌아가기',
-               style: TextStyle(
-                 color: Colors.white.withValues(alpha: 0.7),
-                 fontSize: 10,
-                 decoration: TextDecoration.none,
-               ),
-             )
+            // Since we might not get exercise name easily through simple shareData without modifying the sender,
+            // let's rely on what we can pass.
+            // Actually, overlay_helper_impl.dart currently passes title/content in showOverlay.
+            // But for real-time updates, we need shareData.
+
+            // Let's assume the user just wants the timer countdown.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.timer, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  _formatDuration(_remainingTime),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '터치하여 앱으로 돌아가기',
+              style: TextStyle(
+                color: AppColors.textSecondaryDark,
+                fontSize: 10,
+                decoration: TextDecoration.none,
+              ),
+            )
           ],
         ),
       ),
