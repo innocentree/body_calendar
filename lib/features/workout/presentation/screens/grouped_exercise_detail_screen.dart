@@ -934,31 +934,37 @@ class _ExerciseRoundCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      workout.name,
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.titleMedium?.color,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final textScale = MediaQuery.textScalerOf(context).scale(1);
+              final compactHeader = constraints.maxWidth < 340 || textScale > 1.05;
+              final titleSection = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    workout.name,
+                    maxLines: compactHeader ? 2 : 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.titleMedium?.color,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      workout.equipment.isNotEmpty
-                          ? workout.equipment
-                          : (workout.bodyPart ?? '세트 기록'),
-                      style: const TextStyle(color: _detailMutedText),
-                    ),
-                  ],
-                ),
-              ),
-              FilledButton.tonal(
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    workout.equipment.isNotEmpty
+                        ? workout.equipment
+                        : (workout.bodyPart ?? '세트 기록'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: _detailMutedText),
+                  ),
+                ],
+              );
+
+              final completeButton = FilledButton.tonal(
                 onPressed: onToggleComplete,
                 style: FilledButton.styleFrom(
                   backgroundColor: set.isCompleted
@@ -968,8 +974,31 @@ class _ExerciseRoundCard extends StatelessWidget {
                       set.isCompleted ? Colors.greenAccent : accent,
                 ),
                 child: Text(set.isCompleted ? '완료됨' : '완료'),
-              ),
-            ],
+              );
+
+              if (compactHeader) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titleSection,
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: completeButton,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: titleSection),
+                  const SizedBox(width: 12),
+                  completeButton,
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           Wrap(
