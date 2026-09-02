@@ -596,6 +596,48 @@ class _GroupedExerciseDetailScreenState
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: BlocBuilder<TimerBloc, TimerState>(
+                    builder: (context, timerState) {
+                      if (timerState is! TimerRunInProgress &&
+                          timerState is! TimerRunPause) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final timerBloc = context.read<TimerBloc>();
+                      final isPaused = timerState is TimerRunPause;
+                      final totalSeconds = timerState is TimerRunInProgress
+                          ? timerState.initialDuration
+                          : (timerState as TimerRunPause).initialDuration;
+                      final progress = totalSeconds <= 0
+                          ? 0.0
+                          : (timerState.duration / totalSeconds)
+                              .clamp(0.0, 1.0)
+                              .toDouble();
+
+                      return _RoundRestTimerCard(
+                        accent: accent,
+                        title: timerBloc.exerciseName ?? '$groupLabel$badge',
+                        remainingText: _formatDuration(
+                          Duration(seconds: timerState.duration),
+                        ),
+                        progress: progress,
+                        isPaused: isPaused,
+                        onPauseResume: () {
+                          context.read<TimerBloc>().add(
+                                isPaused
+                                    ? const TimerResumed()
+                                    : const TimerPaused(),
+                              );
+                        },
+                        onReset: () {
+                          context.read<TimerBloc>().add(const TimerReset());
+                        },
+                      );
+                    },
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: ListView.builder(
@@ -1098,6 +1140,124 @@ class _SummaryCard extends StatelessWidget {
               color: _detailMutedText,
               fontSize: 11,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoundRestTimerCard extends StatelessWidget {
+  final Color accent;
+  final String title;
+  final String remainingText;
+  final double progress;
+  final bool isPaused;
+  final VoidCallback onPauseResume;
+  final VoidCallback onReset;
+
+  const _RoundRestTimerCard({
+    required this.accent,
+    required this.title,
+    required this.remainingText,
+    required this.progress,
+    required this.isPaused,
+    required this.onPauseResume,
+    required this.onReset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Icon(Icons.timer_outlined, color: accent),
+              Text(
+                '라운드 간 휴식',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.titleMedium?.color,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (isPaused)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    '일시정지',
+                    style: TextStyle(
+                      color: Colors.orangeAccent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withValues(alpha: 0.75),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            remainingText,
+            style: TextStyle(
+              color: accent,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(999),
+            backgroundColor:
+                Theme.of(context).dividerColor.withValues(alpha: 0.3),
+            valueColor: AlwaysStoppedAnimation<Color>(accent),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: onPauseResume,
+                icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                label: Text(isPaused ? '재개' : '일시정지'),
+              ),
+              TextButton.icon(
+                onPressed: onReset,
+                icon: const Icon(Icons.close_rounded),
+                label: const Text('닫기'),
+              ),
+            ],
           ),
         ],
       ),
