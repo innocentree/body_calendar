@@ -689,9 +689,15 @@ class _GroupedExerciseDetailScreenState
                                 );
 
                                 final deleteButton = roundCount > 1
-                                    ? IconButton(
+                                    ? FilledButton.tonalIcon(
                                         onPressed: () => _removeRound(roundIndex),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.red
+                                              .withValues(alpha: 0.12),
+                                          foregroundColor: Colors.redAccent,
+                                        ),
                                         icon: const Icon(Icons.delete_outline),
+                                        label: const Text('라운드 삭제'),
                                       )
                                     : null;
 
@@ -702,15 +708,17 @@ class _GroupedExerciseDetailScreenState
                                       Row(
                                         children: [
                                           roundBadge,
-                                          const Spacer(),
-                                          if (deleteButton != null) deleteButton,
                                         ],
                                       ),
                                       const SizedBox(height: 8),
                                       Wrap(
                                         spacing: 8,
                                         runSpacing: 8,
-                                        children: [restButton, completeButton],
+                                        children: [
+                                          restButton,
+                                          completeButton,
+                                          if (deleteButton != null) deleteButton,
+                                        ],
                                       ),
                                     ],
                                   );
@@ -723,7 +731,10 @@ class _GroupedExerciseDetailScreenState
                                     restButton,
                                     const SizedBox(width: 8),
                                     completeButton,
-                                    if (deleteButton != null) deleteButton,
+                                    if (deleteButton != null) ...[
+                                      const SizedBox(width: 8),
+                                      deleteButton,
+                                    ],
                                   ],
                                 );
                               },
