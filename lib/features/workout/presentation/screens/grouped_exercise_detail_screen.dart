@@ -422,19 +422,33 @@ class _GroupedExerciseDetailScreenState
         ? ''
         : ' ${_workouts.first.groupLabel}';
     final roundCount = _resolvedRoundCount();
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final useCompactLayout = screenWidth < 420 || textScale > 1.05;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('$groupLabel$badge'),
+        title: Text(
+          '$groupLabel$badge',
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isLoading ? null : _addRound,
-        backgroundColor: accent,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('라운드 추가'),
-      ),
+      floatingActionButton: useCompactLayout
+          ? FloatingActionButton(
+              onPressed: _isLoading ? null : _addRound,
+              backgroundColor: accent,
+              foregroundColor: Colors.white,
+              tooltip: '라운드 추가',
+              child: const Icon(Icons.add),
+            )
+          : FloatingActionButton.extended(
+              onPressed: _isLoading ? null : _addRound,
+              backgroundColor: accent,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('라운드 추가'),
+            ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -447,55 +461,11 @@ class _GroupedExerciseDetailScreenState
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: accent.withValues(alpha: 0.45)),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _workouts.map((w) => w.name).join(' · '),
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.color,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '두 운동을 모두 완료해야 휴식 타이머가 시작돼요.',
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.7),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _InfoPill(
-                                  label:
-                                      '운동 ${widget.recordDay > 0 ? '${widget.recordDay}번째 기록' : '기록'}',
-                                  color: accent,
-                                ),
-                                _InfoPill(
-                                  label:
-                                      '완료 라운드 $_completedRoundCount/$roundCount',
-                                  color: Colors.greenAccent,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compactHeader =
+                          constraints.maxWidth < 430 || textScale > 1.05;
+                      final currentRoundCard = Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
@@ -503,6 +473,7 @@ class _GroupedExerciseDetailScreenState
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               '${_currentRoundIndex + 1}',
@@ -521,8 +492,77 @@ class _GroupedExerciseDetailScreenState
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      );
+
+                      final summaryText = Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _workouts.map((w) => w.name).join(' · '),
+                            maxLines: compactHeader ? 3 : 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color:
+                                  Theme.of(context).textTheme.titleLarge?.color,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '두 운동을 모두 완료해야 휴식 타이머가 시작돼요.',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _InfoPill(
+                                label:
+                                    '운동 ${widget.recordDay > 0 ? '${widget.recordDay}번째 기록' : '기록'}',
+                                color: accent,
+                              ),
+                              _InfoPill(
+                                label:
+                                    '완료 라운드 $_completedRoundCount/$roundCount',
+                                color: Colors.greenAccent,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+
+                      if (compactHeader) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            summaryText,
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: currentRoundCard,
+                            ),
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: summaryText),
+                          const SizedBox(width: 12),
+                          currentRoundCard,
+                        ],
+                      );
+                    },
                   ),
                 ),
                 Padding(
@@ -580,9 +620,11 @@ class _GroupedExerciseDetailScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Container(
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final compactActions = constraints.maxWidth < 460 ||
+                                    textScale > 1.05;
+                                final roundBadge = Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
@@ -598,9 +640,9 @@ class _GroupedExerciseDetailScreenState
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                ),
-                                const Spacer(),
-                                TextButton.icon(
+                                );
+
+                                final restButton = TextButton.icon(
                                   onPressed: () async {
                                     final value = await _showNumberInputDialog(
                                       '휴식 시간(초)',
@@ -619,8 +661,9 @@ class _GroupedExerciseDetailScreenState
                                   icon: const Icon(Icons.timer_outlined,
                                       size: 18),
                                   label: Text(_formatDuration(rest)),
-                                ),
-                                FilledButton.tonalIcon(
+                                );
+
+                                final completeButton = FilledButton.tonalIcon(
                                   onPressed: () =>
                                       _toggleRoundCompletion(roundIndex),
                                   style: FilledButton.styleFrom(
@@ -640,14 +683,50 @@ class _GroupedExerciseDetailScreenState
                                   icon: Icon(isDone
                                       ? Icons.undo_rounded
                                       : Icons.done_all_rounded),
-                                  label: Text(isDone ? '라운드 되돌리기' : '라운드 완료'),
-                                ),
-                                if (roundCount > 1)
-                                  IconButton(
-                                    onPressed: () => _removeRound(roundIndex),
-                                    icon: const Icon(Icons.delete_outline),
+                                  label: Text(
+                                    isDone ? '라운드 되돌리기' : '라운드 완료',
                                   ),
-                              ],
+                                );
+
+                                final deleteButton = roundCount > 1
+                                    ? IconButton(
+                                        onPressed: () => _removeRound(roundIndex),
+                                        icon: const Icon(Icons.delete_outline),
+                                      )
+                                    : null;
+
+                                if (compactActions) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          roundBadge,
+                                          const Spacer(),
+                                          if (deleteButton != null) deleteButton,
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: [restButton, completeButton],
+                                      ),
+                                    ],
+                                  );
+                                }
+
+                                return Row(
+                                  children: [
+                                    roundBadge,
+                                    const Spacer(),
+                                    restButton,
+                                    const SizedBox(width: 8),
+                                    completeButton,
+                                    if (deleteButton != null) deleteButton,
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 8),
                             LinearProgressIndicator(
