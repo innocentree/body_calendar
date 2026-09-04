@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
+import '../../domain/models/exercise_set.dart';
 import '../../domain/models/workout_record.dart';
 import '../../domain/models/workout_routine.dart';
 import '../../domain/repositories/workout_routine_repository.dart';
@@ -1104,7 +1105,109 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         ),
       ]);
     });
+    await _seedExerciseSetsForToday(first);
+    await _seedExerciseSetsForToday(second);
     await _saveWorkouts();
+  }
+
+  Future<void> _seedExerciseSetsForToday(Exercise exercise) async {
+    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    final key = 'exercise_sets_${exercise.name}_$dateStr';
+    if ((_prefs.getStringList(key) ?? const <String>[]).isNotEmpty) return;
+
+    final previousSets = await _loadLatestSingleExerciseSets(exercise.name);
+    final seededSets = previousSets.isNotEmpty
+        ? previousSets
+            .map(
+              (set) => ExerciseSet(
+                weight: set.weight,
+                reps: set.reps,
+                restTime: set.restTime,
+                bodyWeight: set.bodyWeight,
+                assistedWeight: set.assistedWeight,
+                isLbs: set.isLbs,
+                isCompleted: false,
+              ),
+            )
+            .toList()
+        : List.generate(
+            exercise.sets.clamp(1, 20),
+            (_) => ExerciseSet(
+              weight: exercise.weight,
+              reps: 12,
+              restTime: const Duration(minutes: 1),
+              bodyWeight: exercise.isAssisted ? 70.0 : null,
+              assistedWeight: exercise.isAssisted ? 0.0 : null,
+            ),
+          );
+
+    await _prefs.setStringList(
+      key,
+      seededSets.map((set) => jsonEncode(set.toJson())).toList(),
+    );
+    await _updateRecordedDatesForExercise(exercise.name, seededSets.isNotEmpty);
+  }
+
+  Future<List<ExerciseSet>> _loadLatestSingleExerciseSets(
+    String exerciseName,
+  ) async {
+    final keys = _prefs
+        .getKeys()
+        .where((k) => k.startsWith('workouts_'))
+        .toList()
+      ..sort();
+    final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+
+    for (final key in keys.reversed) {
+      final dateStr = key.replaceFirst('workouts_', '');
+      if (dateStr == todayStr) continue;
+
+      final workoutsJson = _prefs.getStringList(key) ?? const <String>[];
+      final hasSingleWorkout = workoutsJson.any((raw) {
+        try {
+          final workoutJson = Map<String, dynamic>.from(jsonDecode(raw));
+          final sameName = workoutJson['name']?.toString() == exerciseName;
+          final groupId = workoutJson['groupId']?.toString();
+          return sameName && (groupId == null || groupId.isEmpty);
+        } catch (_) {
+          return false;
+        }
+      });
+      if (!hasSingleWorkout) continue;
+
+      final setsKey = 'exercise_sets_${exerciseName}_$dateStr';
+      final setsJson = _prefs.getStringList(setsKey) ?? const <String>[];
+      final sets = setsJson
+          .map((raw) {
+            try {
+              return ExerciseSet.fromJson(jsonDecode(raw));
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<ExerciseSet>()
+          .toList();
+      if (sets.isNotEmpty) return sets;
+    }
+
+    return const <ExerciseSet>[];
+  }
+
+  Future<void> _updateRecordedDatesForExercise(
+    String exerciseName,
+    bool hasSets,
+  ) async {
+    final key = 'recorded_dates_$exerciseName';
+    final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    final recordedDates =
+        (_prefs.getStringList(key) ?? const <String>[]).toSet();
+    if (hasSets) {
+      recordedDates.add(todayStr);
+    } else {
+      recordedDates.remove(todayStr);
+    }
+    final sorted = recordedDates.where((e) => e.isNotEmpty).toList()..sort();
+    await _prefs.setStringList(key, sorted);
   }
 
   void _deleteWorkout(WorkoutRecord workout) async {

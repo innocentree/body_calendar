@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
 import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_set.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:body_calendar/features/workout/presentation/screens/group_statistics_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -61,6 +63,7 @@ class _GroupedExerciseDetailScreenState
     for (final workout in _workouts) {
       _exerciseByName[workout.name] =
           await _exerciseRepository.getExerciseByName(workout.name);
+      await _seedSetsFromSingleHistoryIfNeeded(workout);
       _setsByExerciseName[workout.name] = _loadSets(workout.name);
     }
 
@@ -79,6 +82,94 @@ class _GroupedExerciseDetailScreenState
     return setsJson
         .map((json) => ExerciseSet.fromJson(jsonDecode(json)))
         .toList();
+  }
+
+  Future<void> _seedSetsFromSingleHistoryIfNeeded(WorkoutRecord workout) async {
+    final key = _storageKey(workout.name);
+    final existingToday = _prefs.getStringList(key);
+    if (existingToday != null && existingToday.isNotEmpty) return;
+
+    final copied = await _loadLatestSingleSets(workout.name);
+    final seededSets = copied.isNotEmpty
+        ? copied
+            .map(
+              (set) => ExerciseSet(
+                weight: set.weight,
+                reps: set.reps,
+                restTime: set.restTime,
+                bodyWeight: set.bodyWeight,
+                assistedWeight: set.assistedWeight,
+                isLbs: set.isLbs,
+                isCompleted: false,
+              ),
+            )
+            .toList()
+        : List.generate(
+            workout.sets.clamp(1, 20),
+            (_) => ExerciseSet(
+              weight: workout.weight,
+              reps: 12,
+              restTime: const Duration(minutes: 1),
+              bodyWeight: _exerciseByName[workout.name]?.isAssisted == true
+                  ? 70.0
+                  : null,
+              assistedWeight: _exerciseByName[workout.name]?.isAssisted == true
+                  ? 0.0
+                  : null,
+            ),
+          );
+
+    await _prefs.setStringList(
+      key,
+      seededSets.map((set) => jsonEncode(set.toJson())).toList(),
+    );
+    await _updateRecordedDates(workout.name, seededSets);
+  }
+
+  Future<List<ExerciseSet>> _loadLatestSingleSets(String exerciseName) async {
+    final keys = _prefs
+        .getKeys()
+        .where((k) => k.startsWith('workouts_'))
+        .toList()
+      ..sort();
+    final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+
+    for (final key in keys.reversed) {
+      final dateStr = key.replaceFirst('workouts_', '');
+      if (dateStr == todayStr) continue;
+
+      final workoutsJson = _prefs.getStringList(key) ?? const <String>[];
+      final hasSingleWorkout = workoutsJson.any((raw) {
+        try {
+          final workoutJson = Map<String, dynamic>.from(jsonDecode(raw));
+          final sameName = workoutJson['name']?.toString() == exerciseName;
+          final groupId = workoutJson['groupId']?.toString();
+          return sameName && (groupId == null || groupId.isEmpty);
+        } catch (_) {
+          return false;
+        }
+      });
+      if (!hasSingleWorkout) continue;
+
+      final setsJson =
+          _prefs.getStringList('exercise_sets_${exerciseName}_$dateStr') ??
+              const <String>[];
+      final sets = setsJson
+          .map((raw) {
+            try {
+              return ExerciseSet.fromJson(jsonDecode(raw));
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<ExerciseSet>()
+          .toList();
+      if (sets.isNotEmpty) {
+        return sets;
+      }
+    }
+
+    return const <ExerciseSet>[];
   }
 
   Future<void> _checkAndSetFirstRecordDate() async {
@@ -329,50 +420,6 @@ class _GroupedExerciseDetailScreenState
     }
   }
 
-  Future<double?> _showNumberInputDialog(
-    String title,
-    double initialValue, {
-    bool isInt = false,
-  }) async {
-    final controller = TextEditingController(
-      text: isInt
-          ? initialValue.toInt().toString()
-          : initialValue.toStringAsFixed(1),
-    );
-
-    return showDialog<double>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: Theme.of(context).textTheme.bodyLarge,
-          decoration: const InputDecoration(
-            hintText: '값 입력',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              final raw = controller.text.trim();
-              final parsed =
-                  isInt ? int.tryParse(raw)?.toDouble() : double.tryParse(raw);
-              Navigator.pop(context, parsed);
-            },
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _groupTypeLabel(String? groupType) {
     switch (groupType) {
       case 'superset':
@@ -407,6 +454,138 @@ class _GroupedExerciseDetailScreenState
         : '${set.weight.toStringAsFixed(1)}kg';
   }
 
+  double _toDisplayWeight(double kg, {required bool isLbs}) =>
+      isLbs ? kg * 2.20462 : kg;
+
+  double _toStorageWeight(double value, {required bool isLbs}) =>
+      isLbs ? value / 2.20462 : value;
+
+  Future<void> _showSetDialDialog({
+    required String title,
+    required double initialValue,
+    required double minValue,
+    required double maxValue,
+    required double step,
+    required String unit,
+    required Future<void> Function(double value, bool isLbs) onApply,
+    Future<void> Function(double value, bool isLbs)? onApplyAll,
+    Future<void> Function(double value, bool isLbs)? onApplyRemaining,
+    bool showUnitToggle = false,
+    bool initialIsLbs = false,
+  }) async {
+    double tempValue = initialValue;
+    bool tempIsLbs = initialIsLbs;
+
+    Future<void> apply(
+      Future<void> Function(double value, bool isLbs) action,
+    ) async {
+      final value = showUnitToggle
+          ? _toStorageWeight(tempValue, isLbs: tempIsLbs)
+          : tempValue;
+      await action(value, tempIsLbs);
+      if (mounted) Navigator.of(context).pop();
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) => AlertDialog(
+            backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(title)),
+                if (showUnitToggle)
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(
+                          value: false,
+                          label: Text('kg', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(
+                          value: true,
+                          label: Text('lb', style: TextStyle(fontSize: 12))),
+                    ],
+                    selected: {tempIsLbs},
+                    onSelectionChanged: (value) {
+                      setStateDialog(() {
+                        final nextIsLbs = value.first;
+                        if (nextIsLbs == tempIsLbs) return;
+                        tempValue = nextIsLbs
+                            ? tempValue * 2.20462
+                            : tempValue / 2.20462;
+                        tempIsLbs = nextIsLbs;
+                      });
+                    },
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
+            content: SizedBox(
+              width: 350,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HorizontalDialPicker(
+                    minValue: minValue,
+                    maxValue: maxValue,
+                    initialValue: tempValue,
+                    step: step,
+                    unit: showUnitToggle ? (tempIsLbs ? 'lb' : 'kg') : unit,
+                    onChanged: (value) {
+                      tempValue = value;
+                    },
+                    width: 350,
+                  ),
+                  if (onApplyAll != null || onApplyRemaining != null) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (onApplyAll != null)
+                          TextButton(
+                            onPressed: () => apply(onApplyAll),
+                            child: const Text('전체 라운드 적용'),
+                          ),
+                        if (onApplyRemaining != null)
+                          TextButton(
+                            onPressed: () => apply(onApplyRemaining),
+                            child: const Text('이후 라운드 적용'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () => apply(onApply),
+                child: const Text('적용'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _groupSignature() {
+    final type = _workouts.first.groupType ?? 'group';
+    final names = _workouts.map((w) => w.name).join('::');
+    return '$type::$names';
+  }
+
   String _formatVolume(double kg) {
     if (kg >= 1000) {
       return '${(kg / 1000).toStringAsFixed(1)}톤';
@@ -433,6 +612,24 @@ class _GroupedExerciseDetailScreenState
           '$groupLabel$badge',
           overflow: TextOverflow.ellipsis,
         ),
+        actions: [
+          IconButton(
+            tooltip: '통계',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GroupStatisticsScreen(
+                    groupSignature: _groupSignature(),
+                    title: '$groupLabel$badge 통계',
+                    exerciseNames: _workouts.map((w) => w.name).toList(),
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.bar_chart_rounded),
+          ),
+        ],
       ),
       floatingActionButton: useCompactLayout
           ? FloatingActionButton(
@@ -688,20 +885,60 @@ class _GroupedExerciseDetailScreenState
 
                                   final restButton = TextButton.icon(
                                     onPressed: () async {
-                                      final value =
-                                          await _showNumberInputDialog(
-                                        '휴식 시간(초)',
-                                        rest.inSeconds.toDouble(),
-                                        isInt: true,
-                                      );
-                                      if (value != null) {
-                                        await _setRoundRestTime(
+                                      await _showSetDialDialog(
+                                        title: '휴식 시간',
+                                        initialValue: rest.inSeconds.toDouble(),
+                                        minValue: 0,
+                                        maxValue: 3600,
+                                        step: 1,
+                                        unit: '초',
+                                        onApply: (value, _) =>
+                                            _setRoundRestTime(
                                           roundIndex,
                                           Duration(
-                                              seconds:
-                                                  value.toInt().clamp(0, 3600)),
-                                        );
-                                      }
+                                            seconds:
+                                                value.toInt().clamp(0, 3600),
+                                          ),
+                                        ),
+                                        onApplyAll: (value, _) async {
+                                          final duration = Duration(
+                                            seconds:
+                                                value.toInt().clamp(0, 3600),
+                                          );
+                                          for (final workout in _workouts) {
+                                            final sets = _setsByExerciseName[
+                                                workout.name]!;
+                                            for (var i = 0;
+                                                i < sets.length;
+                                                i++) {
+                                              sets[i] = sets[i].copyWith(
+                                                restTime: duration,
+                                              );
+                                            }
+                                          }
+                                          await _persistAllSets();
+                                        },
+                                        onApplyRemaining: (value, _) async {
+                                          final duration = Duration(
+                                            seconds:
+                                                value.toInt().clamp(0, 3600),
+                                          );
+                                          for (final workout in _workouts) {
+                                            final sets = _setsByExerciseName[
+                                                workout.name]!;
+                                            for (var i = roundIndex;
+                                                i < sets.length;
+                                                i++) {
+                                              if (!sets[i].isCompleted) {
+                                                sets[i] = sets[i].copyWith(
+                                                  restTime: duration,
+                                                );
+                                              }
+                                            }
+                                          }
+                                          await _persistAllSets();
+                                        },
+                                      );
                                     },
                                     icon: const Icon(Icons.timer_outlined,
                                         size: 18),
@@ -833,19 +1070,58 @@ class _GroupedExerciseDetailScreenState
                                           : null,
                                   onTapWeight: (exercise?.needsWeight ?? true)
                                       ? () async {
-                                          final value =
-                                              await _showNumberInputDialog(
-                                            '${workout.name} 무게',
-                                            set.weight,
-                                          );
-                                          if (value != null) {
-                                            await _updateSet(
+                                          await _showSetDialDialog(
+                                            title: '${workout.name} 무게',
+                                            initialValue: _toDisplayWeight(
+                                              set.weight,
+                                              isLbs: set.isLbs,
+                                            ),
+                                            minValue: 0,
+                                            maxValue: 1000,
+                                            step: 0.5,
+                                            unit: set.isLbs ? 'lb' : 'kg',
+                                            showUnitToggle: true,
+                                            initialIsLbs: set.isLbs,
+                                            onApply: (value, isLbs) =>
+                                                _updateSet(
                                               workout,
                                               roundIndex,
                                               (current) => current.copyWith(
-                                                  weight: value),
-                                            );
-                                          }
+                                                weight: value.clamp(0, 1000),
+                                                isLbs: isLbs,
+                                              ),
+                                            ),
+                                            onApplyAll: (value, isLbs) async {
+                                              final sets = _setsByExerciseName[
+                                                  workout.name]!;
+                                              for (var i = 0;
+                                                  i < sets.length;
+                                                  i++) {
+                                                sets[i] = sets[i].copyWith(
+                                                  weight: value.clamp(0, 1000),
+                                                  isLbs: isLbs,
+                                                );
+                                              }
+                                              await _persistAllSets();
+                                            },
+                                            onApplyRemaining:
+                                                (value, isLbs) async {
+                                              final sets = _setsByExerciseName[
+                                                  workout.name]!;
+                                              for (var i = roundIndex;
+                                                  i < sets.length;
+                                                  i++) {
+                                                if (!sets[i].isCompleted) {
+                                                  sets[i] = sets[i].copyWith(
+                                                    weight:
+                                                        value.clamp(0, 1000),
+                                                    isLbs: isLbs,
+                                                  );
+                                                }
+                                              }
+                                              await _persistAllSets();
+                                            },
+                                          );
                                         }
                                       : null,
                                   onDecreaseReps: () => _updateSet(
@@ -863,19 +1139,45 @@ class _GroupedExerciseDetailScreenState
                                         reps: current.reps + _repStep),
                                   ),
                                   onTapReps: () async {
-                                    final value = await _showNumberInputDialog(
-                                      '${workout.name} 횟수',
-                                      set.reps.toDouble(),
-                                      isInt: true,
-                                    );
-                                    if (value != null) {
-                                      await _updateSet(
+                                    await _showSetDialDialog(
+                                      title: '${workout.name} 횟수',
+                                      initialValue: set.reps.toDouble(),
+                                      minValue: 1,
+                                      maxValue: 100,
+                                      step: 1,
+                                      unit: '회',
+                                      onApply: (value, _) => _updateSet(
                                         workout,
                                         roundIndex,
                                         (current) => current.copyWith(
-                                            reps: value.toInt().clamp(1, 999)),
-                                      );
-                                    }
+                                          reps: value.toInt().clamp(1, 100),
+                                        ),
+                                      ),
+                                      onApplyAll: (value, _) async {
+                                        final sets =
+                                            _setsByExerciseName[workout.name]!;
+                                        for (var i = 0; i < sets.length; i++) {
+                                          sets[i] = sets[i].copyWith(
+                                            reps: value.toInt().clamp(1, 100),
+                                          );
+                                        }
+                                        await _persistAllSets();
+                                      },
+                                      onApplyRemaining: (value, _) async {
+                                        final sets =
+                                            _setsByExerciseName[workout.name]!;
+                                        for (var i = roundIndex;
+                                            i < sets.length;
+                                            i++) {
+                                          if (!sets[i].isCompleted) {
+                                            sets[i] = sets[i].copyWith(
+                                              reps: value.toInt().clamp(1, 100),
+                                            );
+                                          }
+                                        }
+                                        await _persistAllSets();
+                                      },
+                                    );
                                   },
                                 );
                               }),
