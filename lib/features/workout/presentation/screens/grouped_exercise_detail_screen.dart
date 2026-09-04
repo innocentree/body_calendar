@@ -708,30 +708,21 @@ class _GroupedExerciseDetailScreenState
                                     label: Text(_formatDuration(rest)),
                                   );
 
-                                  final completeButton = FilledButton.tonalIcon(
-                                    onPressed: () =>
-                                        _toggleRoundCompletion(roundIndex),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: isDone
-                                          ? Theme.of(context)
-                                              .dividerColor
-                                              .withValues(alpha: 0.35)
-                                          : accent.withValues(alpha: 0.16),
-                                      foregroundColor: isDone
-                                          ? Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.color
-                                              ?.withValues(alpha: 0.72)
-                                          : accent,
-                                    ),
-                                    icon: Icon(isDone
-                                        ? Icons.undo_rounded
-                                        : Icons.done_all_rounded),
-                                    label: Text(
-                                      isDone ? '라운드 되돌리기' : '라운드 완료',
-                                    ),
-                                  );
+                                  final completeButton = isDone
+                                      ? null
+                                      : FilledButton.tonalIcon(
+                                          onPressed: () =>
+                                              _toggleRoundCompletion(
+                                                  roundIndex),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                accent.withValues(alpha: 0.16),
+                                            foregroundColor: accent,
+                                          ),
+                                          icon: const Icon(
+                                              Icons.done_all_rounded),
+                                          label: const Text('라운드 완료'),
+                                        );
 
                                   final deleteButton = roundCount > 1
                                       ? FilledButton.tonalIcon(
@@ -764,7 +755,8 @@ class _GroupedExerciseDetailScreenState
                                           runSpacing: 8,
                                           children: [
                                             restButton,
-                                            completeButton,
+                                            if (completeButton != null)
+                                              completeButton,
                                             if (deleteButton != null)
                                               deleteButton,
                                           ],
@@ -778,8 +770,10 @@ class _GroupedExerciseDetailScreenState
                                       roundBadge,
                                       const Spacer(),
                                       restButton,
-                                      const SizedBox(width: 8),
-                                      completeButton,
+                                      if (completeButton != null) ...[
+                                        const SizedBox(width: 8),
+                                        completeButton,
+                                      ],
                                       if (deleteButton != null) ...[
                                         const SizedBox(width: 8),
                                         deleteButton,
@@ -883,8 +877,6 @@ class _GroupedExerciseDetailScreenState
                                       );
                                     }
                                   },
-                                  onToggleComplete: () =>
-                                      _toggleComplete(workout, roundIndex),
                                 );
                               }),
                             ],
@@ -912,7 +904,6 @@ class _ExerciseRoundCard extends StatelessWidget {
   final VoidCallback onDecreaseReps;
   final VoidCallback onIncreaseReps;
   final VoidCallback onTapReps;
-  final VoidCallback onToggleComplete;
 
   const _ExerciseRoundCard({
     required this.accent,
@@ -926,7 +917,6 @@ class _ExerciseRoundCard extends StatelessWidget {
     required this.onDecreaseReps,
     required this.onIncreaseReps,
     required this.onTapReps,
-    required this.onToggleComplete,
   });
 
   @override
@@ -974,40 +964,7 @@ class _ExerciseRoundCard extends StatelessWidget {
                 ],
               );
 
-              final completeButton = FilledButton.tonal(
-                onPressed: onToggleComplete,
-                style: FilledButton.styleFrom(
-                  backgroundColor: set.isCompleted
-                      ? Colors.green.withValues(alpha: 0.18)
-                      : accent.withValues(alpha: 0.16),
-                  foregroundColor:
-                      set.isCompleted ? Colors.greenAccent : accent,
-                ),
-                child: Text(set.isCompleted ? '완료됨' : '완료'),
-              );
-
-              if (compactHeader) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    titleSection,
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: completeButton,
-                    ),
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: titleSection),
-                  const SizedBox(width: 12),
-                  completeButton,
-                ],
-              );
+              return titleSection;
             },
           ),
           const SizedBox(height: 12),
