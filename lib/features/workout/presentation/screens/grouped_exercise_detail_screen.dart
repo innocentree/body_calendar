@@ -565,324 +565,333 @@ class _GroupedExerciseDetailScreenState
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _SummaryCard(
-                          title: '완료 세트',
-                          value: '$_completedSetCount개',
-                          subtitle: '${_workouts.length}개 운동',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _SummaryCard(
-                          title: '볼륨',
-                          value: _formatVolume(_totalCompletedVolume),
-                          subtitle: '완료 세트 기준',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _SummaryCard(
-                          title: '진행 시간',
-                          value: _formatDuration(
-                              Duration(seconds: _completedWorkSeconds)),
-                          subtitle: '대략치',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: BlocBuilder<TimerBloc, TimerState>(
-                    builder: (context, timerState) {
-                      if (timerState is! TimerRunInProgress &&
-                          timerState is! TimerRunPause) {
-                        return const SizedBox.shrink();
-                      }
-
-                      final timerBloc = context.read<TimerBloc>();
-                      final isPaused = timerState is TimerRunPause;
-                      final totalSeconds = timerState is TimerRunInProgress
-                          ? timerState.initialDuration
-                          : (timerState as TimerRunPause).initialDuration;
-                      final progress = totalSeconds <= 0
-                          ? 0.0
-                          : (timerState.duration / totalSeconds)
-                              .clamp(0.0, 1.0)
-                              .toDouble();
-
-                      return _RoundRestTimerCard(
-                        accent: accent,
-                        title: timerBloc.exerciseName ?? '$groupLabel$badge',
-                        remainingText: _formatDuration(
-                          Duration(seconds: timerState.duration),
-                        ),
-                        progress: progress,
-                        isPaused: isPaused,
-                        onPauseResume: () {
-                          context.read<TimerBloc>().add(
-                                isPaused
-                                    ? const TimerResumed()
-                                    : const TimerPaused(),
-                              );
-                        },
-                        onReset: () {
-                          context.read<TimerBloc>().add(const TimerReset());
-                        },
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
                 Expanded(
-                  child: ListView.builder(
+                  child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    itemCount: roundCount,
-                    itemBuilder: (context, roundIndex) {
-                      final isCurrent = roundIndex == _currentRoundIndex;
-                      final isDone = _isRoundFullyCompleted(roundIndex);
-                      final rest = _roundRestTime(roundIndex);
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 14),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: isCurrent
-                                ? accent.withValues(alpha: 0.75)
-                                : Theme.of(context).dividerColor,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SummaryCard(
+                              title: '완료 세트',
+                              value: '$_completedSetCount개',
+                              subtitle: '${_workouts.length}개 운동',
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final compactActions = constraints.maxWidth < 460 ||
-                                    textScale > 1.05;
-                                final roundBadge = Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: (isDone ? Colors.green : accent)
-                                        .withValues(alpha: 0.14),
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    '${roundIndex + 1}라운드',
-                                    style: TextStyle(
-                                      color:
-                                          isDone ? Colors.greenAccent : accent,
-                                      fontWeight: FontWeight.w700,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _SummaryCard(
+                              title: '볼륨',
+                              value: _formatVolume(_totalCompletedVolume),
+                              subtitle: '완료 세트 기준',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _SummaryCard(
+                              title: '진행 시간',
+                              value: _formatDuration(
+                                  Duration(seconds: _completedWorkSeconds)),
+                              subtitle: '대략치',
+                            ),
+                          ),
+                        ],
+                      ),
+                      BlocBuilder<TimerBloc, TimerState>(
+                        builder: (context, timerState) {
+                          if (timerState is! TimerRunInProgress &&
+                              timerState is! TimerRunPause) {
+                            return const SizedBox(height: 12);
+                          }
+
+                          final timerBloc = context.read<TimerBloc>();
+                          final isPaused = timerState is TimerRunPause;
+                          final totalSeconds = timerState is TimerRunInProgress
+                              ? timerState.initialDuration
+                              : (timerState as TimerRunPause).initialDuration;
+                          final progress = totalSeconds <= 0
+                              ? 0.0
+                              : (timerState.duration / totalSeconds)
+                                  .clamp(0.0, 1.0)
+                                  .toDouble();
+
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: _RoundRestTimerCard(
+                              accent: accent,
+                              title:
+                                  timerBloc.exerciseName ?? '$groupLabel$badge',
+                              remainingText: _formatDuration(
+                                Duration(seconds: timerState.duration),
+                              ),
+                              progress: progress,
+                              isPaused: isPaused,
+                              onPauseResume: () {
+                                context.read<TimerBloc>().add(
+                                      isPaused
+                                          ? const TimerResumed()
+                                          : const TimerPaused(),
+                                    );
+                              },
+                              onReset: () {
+                                context
+                                    .read<TimerBloc>()
+                                    .add(const TimerReset());
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      ...List.generate(roundCount, (roundIndex) {
+                        final isCurrent = roundIndex == _currentRoundIndex;
+                        final isDone = _isRoundFullyCompleted(roundIndex);
+                        final rest = _roundRestTime(roundIndex);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: isCurrent
+                                  ? accent.withValues(alpha: 0.75)
+                                  : Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final compactActions =
+                                      constraints.maxWidth < 460 ||
+                                          textScale > 1.05;
+                                  final roundBadge = Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: (isDone ? Colors.green : accent)
+                                          .withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      '${roundIndex + 1}라운드',
+                                      style: TextStyle(
+                                        color: isDone
+                                            ? Colors.greenAccent
+                                            : accent,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  );
+
+                                  final restButton = TextButton.icon(
+                                    onPressed: () async {
+                                      final value =
+                                          await _showNumberInputDialog(
+                                        '휴식 시간(초)',
+                                        rest.inSeconds.toDouble(),
+                                        isInt: true,
+                                      );
+                                      if (value != null) {
+                                        await _setRoundRestTime(
+                                          roundIndex,
+                                          Duration(
+                                              seconds:
+                                                  value.toInt().clamp(0, 3600)),
+                                        );
+                                      }
+                                    },
+                                    icon: const Icon(Icons.timer_outlined,
+                                        size: 18),
+                                    label: Text(_formatDuration(rest)),
+                                  );
+
+                                  final completeButton = FilledButton.tonalIcon(
+                                    onPressed: () =>
+                                        _toggleRoundCompletion(roundIndex),
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: isDone
+                                          ? Theme.of(context)
+                                              .dividerColor
+                                              .withValues(alpha: 0.35)
+                                          : accent.withValues(alpha: 0.16),
+                                      foregroundColor: isDone
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.color
+                                              ?.withValues(alpha: 0.72)
+                                          : accent,
+                                    ),
+                                    icon: Icon(isDone
+                                        ? Icons.undo_rounded
+                                        : Icons.done_all_rounded),
+                                    label: Text(
+                                      isDone ? '라운드 되돌리기' : '라운드 완료',
+                                    ),
+                                  );
+
+                                  final deleteButton = roundCount > 1
+                                      ? FilledButton.tonalIcon(
+                                          onPressed: () =>
+                                              _removeRound(roundIndex),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.red
+                                                .withValues(alpha: 0.12),
+                                            foregroundColor: Colors.redAccent,
+                                          ),
+                                          icon:
+                                              const Icon(Icons.delete_outline),
+                                          label: const Text('라운드 삭제'),
+                                        )
+                                      : null;
+
+                                  if (compactActions) {
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            roundBadge,
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: [
+                                            restButton,
+                                            completeButton,
+                                            if (deleteButton != null)
+                                              deleteButton,
+                                          ],
+                                        ),
+                                      ],
+                                    );
+                                  }
+
+                                  return Row(
+                                    children: [
+                                      roundBadge,
+                                      const Spacer(),
+                                      restButton,
+                                      const SizedBox(width: 8),
+                                      completeButton,
+                                      if (deleteButton != null) ...[
+                                        const SizedBox(width: 8),
+                                        deleteButton,
+                                      ],
+                                    ],
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              LinearProgressIndicator(
+                                value: (_workouts
+                                        .where((workout) => _setsByExerciseName[
+                                                workout.name]![roundIndex]
+                                            .isCompleted)
+                                        .length) /
+                                    _workouts.length,
+                                minHeight: 8,
+                                borderRadius: BorderRadius.circular(999),
+                                backgroundColor: Theme.of(context)
+                                    .dividerColor
+                                    .withValues(alpha: 0.35),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(accent),
+                              ),
+                              const SizedBox(height: 12),
+                              ..._workouts.map((workout) {
+                                final exercise = _exerciseByName[workout.name];
+                                final set = _setsByExerciseName[workout.name]![
+                                    roundIndex];
+                                return _ExerciseRoundCard(
+                                  accent: accent,
+                                  workout: workout,
+                                  exercise: exercise,
+                                  set: set,
+                                  weightText: _weightText(set),
+                                  onDecreaseWeight: (exercise?.needsWeight ??
+                                          true)
+                                      ? () => _updateSet(
+                                            workout,
+                                            roundIndex,
+                                            (current) => current.copyWith(
+                                              weight:
+                                                  (current.weight - _weightStep)
+                                                      .clamp(0, 9999),
+                                            ),
+                                          )
+                                      : null,
+                                  onIncreaseWeight:
+                                      (exercise?.needsWeight ?? true)
+                                          ? () => _updateSet(
+                                                workout,
+                                                roundIndex,
+                                                (current) => current.copyWith(
+                                                    weight: current.weight +
+                                                        _weightStep),
+                                              )
+                                          : null,
+                                  onTapWeight: (exercise?.needsWeight ?? true)
+                                      ? () async {
+                                          final value =
+                                              await _showNumberInputDialog(
+                                            '${workout.name} 무게',
+                                            set.weight,
+                                          );
+                                          if (value != null) {
+                                            await _updateSet(
+                                              workout,
+                                              roundIndex,
+                                              (current) => current.copyWith(
+                                                  weight: value),
+                                            );
+                                          }
+                                        }
+                                      : null,
+                                  onDecreaseReps: () => _updateSet(
+                                    workout,
+                                    roundIndex,
+                                    (current) => current.copyWith(
+                                      reps: (current.reps - _repStep)
+                                          .clamp(1, 999),
                                     ),
                                   ),
-                                );
-
-                                final restButton = TextButton.icon(
-                                  onPressed: () async {
+                                  onIncreaseReps: () => _updateSet(
+                                    workout,
+                                    roundIndex,
+                                    (current) => current.copyWith(
+                                        reps: current.reps + _repStep),
+                                  ),
+                                  onTapReps: () async {
                                     final value = await _showNumberInputDialog(
-                                      '휴식 시간(초)',
-                                      rest.inSeconds.toDouble(),
+                                      '${workout.name} 횟수',
+                                      set.reps.toDouble(),
                                       isInt: true,
                                     );
                                     if (value != null) {
-                                      await _setRoundRestTime(
+                                      await _updateSet(
+                                        workout,
                                         roundIndex,
-                                        Duration(
-                                            seconds:
-                                                value.toInt().clamp(0, 3600)),
+                                        (current) => current.copyWith(
+                                            reps: value.toInt().clamp(1, 999)),
                                       );
                                     }
                                   },
-                                  icon: const Icon(Icons.timer_outlined,
-                                      size: 18),
-                                  label: Text(_formatDuration(rest)),
+                                  onToggleComplete: () =>
+                                      _toggleComplete(workout, roundIndex),
                                 );
-
-                                final completeButton = FilledButton.tonalIcon(
-                                  onPressed: () =>
-                                      _toggleRoundCompletion(roundIndex),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: isDone
-                                        ? Theme.of(context)
-                                            .dividerColor
-                                            .withValues(alpha: 0.35)
-                                        : accent.withValues(alpha: 0.16),
-                                    foregroundColor: isDone
-                                        ? Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.color
-                                            ?.withValues(alpha: 0.72)
-                                        : accent,
-                                  ),
-                                  icon: Icon(isDone
-                                      ? Icons.undo_rounded
-                                      : Icons.done_all_rounded),
-                                  label: Text(
-                                    isDone ? '라운드 되돌리기' : '라운드 완료',
-                                  ),
-                                );
-
-                                final deleteButton = roundCount > 1
-                                    ? FilledButton.tonalIcon(
-                                        onPressed: () => _removeRound(roundIndex),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: Colors.red
-                                              .withValues(alpha: 0.12),
-                                          foregroundColor: Colors.redAccent,
-                                        ),
-                                        icon: const Icon(Icons.delete_outline),
-                                        label: const Text('라운드 삭제'),
-                                      )
-                                    : null;
-
-                                if (compactActions) {
-                                  return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          roundBadge,
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          restButton,
-                                          completeButton,
-                                          if (deleteButton != null) deleteButton,
-                                        ],
-                                      ),
-                                    ],
-                                  );
-                                }
-
-                                return Row(
-                                  children: [
-                                    roundBadge,
-                                    const Spacer(),
-                                    restButton,
-                                    const SizedBox(width: 8),
-                                    completeButton,
-                                    if (deleteButton != null) ...[
-                                      const SizedBox(width: 8),
-                                      deleteButton,
-                                    ],
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: (_workouts
-                                      .where((workout) => _setsByExerciseName[
-                                              workout.name]![roundIndex]
-                                          .isCompleted)
-                                      .length) /
-                                  _workouts.length,
-                              minHeight: 8,
-                              borderRadius: BorderRadius.circular(999),
-                              backgroundColor: Theme.of(context)
-                                  .dividerColor
-                                  .withValues(alpha: 0.35),
-                              valueColor: AlwaysStoppedAnimation<Color>(accent),
-                            ),
-                            const SizedBox(height: 12),
-                            ..._workouts.map((workout) {
-                              final exercise = _exerciseByName[workout.name];
-                              final set = _setsByExerciseName[workout.name]![
-                                  roundIndex];
-                              return _ExerciseRoundCard(
-                                accent: accent,
-                                workout: workout,
-                                exercise: exercise,
-                                set: set,
-                                weightText: _weightText(set),
-                                onDecreaseWeight: (exercise?.needsWeight ??
-                                        true)
-                                    ? () => _updateSet(
-                                          workout,
-                                          roundIndex,
-                                          (current) => current.copyWith(
-                                            weight:
-                                                (current.weight - _weightStep)
-                                                    .clamp(0, 9999),
-                                          ),
-                                        )
-                                    : null,
-                                onIncreaseWeight: (exercise?.needsWeight ??
-                                        true)
-                                    ? () => _updateSet(
-                                          workout,
-                                          roundIndex,
-                                          (current) => current.copyWith(
-                                              weight:
-                                                  current.weight + _weightStep),
-                                        )
-                                    : null,
-                                onTapWeight: (exercise?.needsWeight ?? true)
-                                    ? () async {
-                                        final value =
-                                            await _showNumberInputDialog(
-                                          '${workout.name} 무게',
-                                          set.weight,
-                                        );
-                                        if (value != null) {
-                                          await _updateSet(
-                                            workout,
-                                            roundIndex,
-                                            (current) =>
-                                                current.copyWith(weight: value),
-                                          );
-                                        }
-                                      }
-                                    : null,
-                                onDecreaseReps: () => _updateSet(
-                                  workout,
-                                  roundIndex,
-                                  (current) => current.copyWith(
-                                    reps:
-                                        (current.reps - _repStep).clamp(1, 999),
-                                  ),
-                                ),
-                                onIncreaseReps: () => _updateSet(
-                                  workout,
-                                  roundIndex,
-                                  (current) => current.copyWith(
-                                      reps: current.reps + _repStep),
-                                ),
-                                onTapReps: () async {
-                                  final value = await _showNumberInputDialog(
-                                    '${workout.name} 횟수',
-                                    set.reps.toDouble(),
-                                    isInt: true,
-                                  );
-                                  if (value != null) {
-                                    await _updateSet(
-                                      workout,
-                                      roundIndex,
-                                      (current) => current.copyWith(
-                                          reps: value.toInt().clamp(1, 999)),
-                                    );
-                                  }
-                                },
-                                onToggleComplete: () =>
-                                    _toggleComplete(workout, roundIndex),
-                              );
-                            }),
-                          ],
-                        ),
-                      );
-                    },
+                              }),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
               ],
@@ -937,7 +946,8 @@ class _ExerciseRoundCard extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final textScale = MediaQuery.textScalerOf(context).scale(1);
-              final compactHeader = constraints.maxWidth < 340 || textScale > 1.05;
+              final compactHeader =
+                  constraints.maxWidth < 340 || textScale > 1.05;
               final titleSection = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1278,7 +1288,8 @@ class _RoundRestTimerCard extends StatelessWidget {
             children: [
               FilledButton.tonalIcon(
                 onPressed: onPauseResume,
-                icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                icon: Icon(
+                    isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
                 label: Text(isPaused ? '재개' : '일시정지'),
               ),
               TextButton.icon(
