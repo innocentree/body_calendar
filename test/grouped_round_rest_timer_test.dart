@@ -168,6 +168,17 @@ void main() {
     expect(find.byKey(const ValueKey('round-rest-timer-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('round-rest-timer-0')), findsNothing);
     expect(tester.getTopLeft(secondRoundAction).dy, originalTop);
+    final deleteButton = find.byKey(const ValueKey('delete-round-1'));
+    expect(
+      tester.getTopRight(secondRoundAction).dx,
+      closeTo(tester.getTopRight(deleteButton).dx, 0.01),
+    );
+    final gauge = find.byKey(const ValueKey('round-timer-gauge'));
+    final initialGaugeWidth = tester.getSize(gauge).width;
+    expect(initialGaugeWidth, tester.getSize(secondRoundAction).width);
+    await tester.pump(const Duration(seconds: 1));
+    final decreasedGaugeWidth = tester.getSize(gauge).width;
+    expect(decreasedGaugeWidth, lessThan(initialGaugeWidth));
     for (final workout in workouts) {
       final saved = prefs
           .getStringList('exercise_sets_${workout.name}_2026-09-17')!
@@ -179,6 +190,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('round-timer-pause-resume')));
     await tester.pump();
     expect(timerBloc.state, isA<TimerRunPause>());
+    final pausedGaugeWidth = tester.getSize(gauge).width;
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.getSize(gauge).width, pausedGaugeWidth);
 
     await tester.tap(find.byKey(const ValueKey('round-timer-pause-resume')));
     await tester.pump();
@@ -227,6 +241,62 @@ void main() {
     );
     expect(find.byKey(const ValueKey('round-rest-timer-1')), findsNothing);
     expect(find.byKey(const ValueKey('round-completed-1')), findsOneWidget);
+    timerBloc.add(const TimerReset());
+    await tester.pump();
+  });
+
+  testWidgets('very narrow timer actions stack without overflow',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final timerBloc = TimerBloc(ticker: const Ticker())
+      ..add(TimerStarted(
+        duration: 10800,
+        exerciseName: '그룹',
+        selectedDate: selectedDate,
+        ownerId: GroupedExerciseDetailScreen.timerOwnerId(
+          groupId: 'group-a',
+          selectedDate: selectedDate,
+          roundIndex: 1,
+        ),
+      ));
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 700),
+            ),
+            child: GroupedExerciseDetailScreen(
+              workouts: workouts,
+              selectedDate: selectedDate,
+              recordDay: 1,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final action = find.byKey(const ValueKey('round-action-1'));
+    await tester.scrollUntilVisible(
+      action,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(action).width, greaterThan(200));
+    expect(
+      tester.getTopRight(action).dx,
+      closeTo(
+        tester.getTopRight(find.byKey(const ValueKey('delete-round-1'))).dx,
+        0.01,
+      ),
+    );
     timerBloc.add(const TimerReset());
     await tester.pump();
   });

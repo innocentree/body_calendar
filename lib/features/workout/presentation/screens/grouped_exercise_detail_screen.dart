@@ -956,7 +956,6 @@ class _GroupedExerciseDetailScreenState
                                           SizedBox(
                                             key: ValueKey(
                                                 'round-action-$roundIndex'),
-                                            width: 196,
                                             height: 48,
                                             child: child,
                                           );
@@ -969,6 +968,10 @@ class _GroupedExerciseDetailScreenState
                                       if (isDone && isActive) {
                                         final isPaused =
                                             timerState is TimerRunPause;
+                                        final initialDuration = isPaused
+                                            ? timerState.initialDuration
+                                            : (timerState as TimerRunInProgress)
+                                                .initialDuration;
                                         return actionSlot(
                                           _InlineRoundRestTimer(
                                             key: ValueKey(
@@ -978,6 +981,10 @@ class _GroupedExerciseDetailScreenState
                                               Duration(
                                                   seconds: timerState.duration),
                                             ),
+                                            progress: initialDuration == 0
+                                                ? 0
+                                                : timerState.duration /
+                                                    initialDuration,
                                             isPaused: isPaused,
                                             onPauseResume: () {
                                               timerBloc.add(
@@ -1024,6 +1031,8 @@ class _GroupedExerciseDetailScreenState
 
                                   final deleteButton = roundCount > 1
                                       ? FilledButton.tonalIcon(
+                                          key: ValueKey(
+                                              'delete-round-$roundIndex'),
                                           onPressed: () =>
                                               _removeRound(roundIndex),
                                           style: FilledButton.styleFrom(
@@ -1048,16 +1057,39 @@ class _GroupedExerciseDetailScreenState
                                           ],
                                         ),
                                         const SizedBox(height: 8),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: [
-                                            restButton,
-                                            completeAction,
-                                            if (deleteButton != null)
-                                              deleteButton,
-                                          ],
+                                        LayoutBuilder(
+                                          builder: (context, actions) {
+                                            if (actions.maxWidth < 290) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: restButton,
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  completeAction,
+                                                ],
+                                              );
+                                            }
+                                            return Row(
+                                              children: [
+                                                restButton,
+                                                const SizedBox(width: 8),
+                                                Expanded(child: completeAction),
+                                              ],
+                                            );
+                                          },
                                         ),
+                                        if (deleteButton != null) ...[
+                                          const SizedBox(height: 8),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: deleteButton,
+                                          ),
+                                        ],
                                       ],
                                     );
                                   }
@@ -1068,7 +1100,8 @@ class _GroupedExerciseDetailScreenState
                                       const Spacer(),
                                       restButton,
                                       const SizedBox(width: 8),
-                                      completeAction,
+                                      SizedBox(
+                                          width: 196, child: completeAction),
                                       if (deleteButton != null) ...[
                                         const SizedBox(width: 8),
                                         deleteButton,
@@ -1506,6 +1539,7 @@ class _SummaryCard extends StatelessWidget {
 class _InlineRoundRestTimer extends StatelessWidget {
   final Color accent;
   final String remainingText;
+  final double progress;
   final bool isPaused;
   final VoidCallback onPauseResume;
   final VoidCallback onReset;
@@ -1514,6 +1548,7 @@ class _InlineRoundRestTimer extends StatelessWidget {
     super.key,
     required this.accent,
     required this.remainingText,
+    required this.progress,
     required this.isPaused,
     required this.onPauseResume,
     required this.onReset,
@@ -1521,59 +1556,83 @@ class _InlineRoundRestTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(left: 10, right: 2),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isPaused ? Icons.timer_off_outlined : Icons.timer_outlined,
-            color: accent,
-            size: 18,
-          ),
-          const SizedBox(width: 4),
-          SizedBox(
-            width: 58,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                remainingText,
-                maxLines: 1,
-                style: TextStyle(
-                  color: accent,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+    final radius = BorderRadius.circular(20);
+    return ClipRRect(
+      borderRadius: radius,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.08),
+          borderRadius: radius,
+          border: Border.all(color: accent.withValues(alpha: 0.35)),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                key: const ValueKey('round-timer-gauge'),
+                widthFactor: progress.clamp(0.0, 1.0),
+                heightFactor: 1,
+                child: ColoredBox(
+                  color: accent.withValues(alpha: 0.18),
                 ),
               ),
             ),
-          ),
-          const Spacer(),
-          IconButton(
-            key: const ValueKey('round-timer-pause-resume'),
-            tooltip: isPaused ? '재개' : '일시정지',
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 36, height: 44),
-            padding: EdgeInsets.zero,
-            onPressed: onPauseResume,
-            icon: Icon(
-              isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-              color: accent,
+            Padding(
+              padding: const EdgeInsets.only(left: 10, right: 2),
+              child: Row(
+                children: [
+                  Icon(
+                    isPaused ? Icons.timer_off_outlined : Icons.timer_outlined,
+                    color: accent,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  SizedBox(
+                    width: 58,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        remainingText,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    key: const ValueKey('round-timer-pause-resume'),
+                    tooltip: isPaused ? '재개' : '일시정지',
+                    visualDensity: VisualDensity.compact,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 36, height: 44),
+                    padding: EdgeInsets.zero,
+                    onPressed: onPauseResume,
+                    icon: Icon(
+                      isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                      color: accent,
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey('round-timer-reset'),
+                    tooltip: '휴식 종료',
+                    visualDensity: VisualDensity.compact,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 36, height: 44),
+                    padding: EdgeInsets.zero,
+                    onPressed: onReset,
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                  ),
+                ],
+              ),
             ),
-          ),
-          IconButton(
-            key: const ValueKey('round-timer-reset'),
-            tooltip: '휴식 종료',
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 36, height: 44),
-            padding: EdgeInsets.zero,
-            onPressed: onReset,
-            icon: const Icon(Icons.close_rounded, size: 20),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
