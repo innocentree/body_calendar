@@ -11,15 +11,17 @@ class TimerStarted extends TimerEvent {
   final int duration;
   final String exerciseName;
   final DateTime selectedDate;
+  final String? ownerId;
 
   const TimerStarted({
     required this.duration,
     required this.exerciseName,
     required this.selectedDate,
+    this.ownerId,
   });
 
   @override
-  List<Object?> get props => [duration, exerciseName, selectedDate];
+  List<Object?> get props => [duration, exerciseName, selectedDate, ownerId];
 }
 
 class TimerPaused extends TimerEvent {
@@ -33,7 +35,6 @@ class TimerResumed extends TimerEvent {
 class TimerReset extends TimerEvent {
   const TimerReset();
 }
-
 
 class TimerDurationUpdated extends TimerEvent {
   final int duration;

@@ -32,6 +32,15 @@ class GroupedExerciseDetailScreen extends StatefulWidget {
     required this.recordDay,
   });
 
+  static String timerOwnerId({
+    required String groupId,
+    required DateTime selectedDate,
+    required int roundIndex,
+  }) {
+    final date = DateFormat('yyyy-MM-dd').format(selectedDate);
+    return 'group:$groupId:$date:round:$roundIndex';
+  }
+
   @override
   State<GroupedExerciseDetailScreen> createState() =>
       _GroupedExerciseDetailScreenState();
@@ -326,7 +335,7 @@ class _GroupedExerciseDetailScreenState
   }
 
   Duration _roundRestTime(int roundIndex) {
-    var seconds = 60;
+    var seconds = 0;
     for (final workout in _workouts) {
       final set = (_setsByExerciseName[workout.name] ??
           const <ExerciseSet>[])[roundIndex];
@@ -352,6 +361,9 @@ class _GroupedExerciseDetailScreenState
 
   Future<void> _removeRound(int roundIndex) async {
     if (_resolvedRoundCount() <= 1) return;
+    if (_ownsRoundTimer(roundIndex) || _ownsLaterRoundTimer(roundIndex)) {
+      context.read<TimerBloc>().add(const TimerReset());
+    }
     for (final workout in _workouts) {
       final sets = _setsByExerciseName[workout.name]!;
       if (roundIndex < sets.length) {
@@ -382,6 +394,11 @@ class _GroupedExerciseDetailScreenState
       endTime: willComplete ? DateTime.now() : null,
     );
     await _persistAllSets(triggerSync: true);
+    if (!mounted) return;
+
+    if (!willComplete && _ownsRoundTimer(roundIndex)) {
+      context.read<TimerBloc>().add(const TimerReset());
+    }
 
     if (willComplete &&
         !wasRoundComplete &&
@@ -391,6 +408,7 @@ class _GroupedExerciseDetailScreenState
             duration: duration,
             exerciseName: _workouts.map((w) => w.name).join(' · '),
             selectedDate: widget.selectedDate,
+            ownerId: _roundTimerOwnerId(roundIndex),
           ));
     }
   }
@@ -409,6 +427,11 @@ class _GroupedExerciseDetailScreenState
     }
 
     await _persistAllSets(triggerSync: true);
+    if (!mounted) return;
+
+    if (!shouldComplete && _ownsRoundTimer(roundIndex)) {
+      context.read<TimerBloc>().add(const TimerReset());
+    }
 
     if (shouldComplete && !wasRoundComplete) {
       final duration = _roundRestTime(roundIndex).inSeconds;
@@ -416,8 +439,32 @@ class _GroupedExerciseDetailScreenState
             duration: duration,
             exerciseName: _workouts.map((w) => w.name).join(' · '),
             selectedDate: widget.selectedDate,
+            ownerId: _roundTimerOwnerId(roundIndex),
           ));
     }
+  }
+
+  String get _groupTimerId =>
+      _workouts.first.groupId ??
+      _workouts.map((workout) => workout.id).join('-');
+
+  String _roundTimerOwnerId(int roundIndex) =>
+      GroupedExerciseDetailScreen.timerOwnerId(
+        groupId: _groupTimerId,
+        selectedDate: widget.selectedDate,
+        roundIndex: roundIndex,
+      );
+
+  bool _ownsRoundTimer(int roundIndex) =>
+      context.read<TimerBloc>().ownerId == _roundTimerOwnerId(roundIndex);
+
+  bool _ownsLaterRoundTimer(int removedRoundIndex) {
+    final ownerId = context.read<TimerBloc>().ownerId;
+    if (ownerId == null) return false;
+    for (var i = removedRoundIndex + 1; i < _resolvedRoundCount(); i++) {
+      if (ownerId == _roundTimerOwnerId(i)) return true;
+    }
+    return false;
   }
 
   String _groupTypeLabel(String? groupType) {
@@ -794,51 +841,6 @@ class _GroupedExerciseDetailScreenState
                           ),
                         ],
                       ),
-                      BlocBuilder<TimerBloc, TimerState>(
-                        builder: (context, timerState) {
-                          if (timerState is! TimerRunInProgress &&
-                              timerState is! TimerRunPause) {
-                            return const SizedBox(height: 12);
-                          }
-
-                          final timerBloc = context.read<TimerBloc>();
-                          final isPaused = timerState is TimerRunPause;
-                          final totalSeconds = timerState is TimerRunInProgress
-                              ? timerState.initialDuration
-                              : (timerState as TimerRunPause).initialDuration;
-                          final progress = totalSeconds <= 0
-                              ? 0.0
-                              : (timerState.duration / totalSeconds)
-                                  .clamp(0.0, 1.0)
-                                  .toDouble();
-
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: _RoundRestTimerCard(
-                              accent: accent,
-                              title:
-                                  timerBloc.exerciseName ?? '$groupLabel$badge',
-                              remainingText: _formatDuration(
-                                Duration(seconds: timerState.duration),
-                              ),
-                              progress: progress,
-                              isPaused: isPaused,
-                              onPauseResume: () {
-                                context.read<TimerBloc>().add(
-                                      isPaused
-                                          ? const TimerResumed()
-                                          : const TimerPaused(),
-                                    );
-                              },
-                              onReset: () {
-                                context
-                                    .read<TimerBloc>()
-                                    .add(const TimerReset());
-                              },
-                            ),
-                          );
-                        },
-                      ),
                       const SizedBox(height: 12),
                       ...List.generate(roundCount, (roundIndex) {
                         final isCurrent = roundIndex == _currentRoundIndex;
@@ -862,7 +864,7 @@ class _GroupedExerciseDetailScreenState
                               LayoutBuilder(
                                 builder: (context, constraints) {
                                   final compactActions =
-                                      constraints.maxWidth < 460 ||
+                                      constraints.maxWidth < 700 ||
                                           textScale > 1.05;
                                   final roundBadge = Container(
                                     padding: const EdgeInsets.symmetric(
@@ -945,9 +947,65 @@ class _GroupedExerciseDetailScreenState
                                     label: Text(_formatDuration(rest)),
                                   );
 
-                                  final completeButton = isDone
-                                      ? null
-                                      : FilledButton.tonalIcon(
+                                  final completeAction =
+                                      BlocBuilder<TimerBloc, TimerState>(
+                                    builder: (context, timerState) {
+                                      final timerBloc =
+                                          context.read<TimerBloc>();
+                                      Widget actionSlot(Widget child) =>
+                                          SizedBox(
+                                            key: ValueKey(
+                                                'round-action-$roundIndex'),
+                                            width: 196,
+                                            height: 48,
+                                            child: child,
+                                          );
+                                      final ownsTimer = timerBloc.ownerId ==
+                                          _roundTimerOwnerId(roundIndex);
+                                      final isActive = ownsTimer &&
+                                          (timerState is TimerRunInProgress ||
+                                              timerState is TimerRunPause);
+
+                                      if (isDone && isActive) {
+                                        final isPaused =
+                                            timerState is TimerRunPause;
+                                        return actionSlot(
+                                          _InlineRoundRestTimer(
+                                            key: ValueKey(
+                                                'round-rest-timer-$roundIndex'),
+                                            accent: accent,
+                                            remainingText: _formatDuration(
+                                              Duration(
+                                                  seconds: timerState.duration),
+                                            ),
+                                            isPaused: isPaused,
+                                            onPauseResume: () {
+                                              timerBloc.add(
+                                                isPaused
+                                                    ? const TimerResumed()
+                                                    : const TimerPaused(),
+                                              );
+                                            },
+                                            onReset: () => timerBloc
+                                                .add(const TimerReset()),
+                                          ),
+                                        );
+                                      }
+
+                                      if (isDone) {
+                                        return actionSlot(
+                                          _RoundCompletedIndicator(
+                                            key: ValueKey(
+                                                'round-completed-$roundIndex'),
+                                            accent: accent,
+                                          ),
+                                        );
+                                      }
+
+                                      return actionSlot(
+                                        FilledButton.tonalIcon(
+                                          key: ValueKey(
+                                              'complete-round-$roundIndex'),
                                           onPressed: () =>
                                               _toggleRoundCompletion(
                                                   roundIndex),
@@ -959,7 +1017,10 @@ class _GroupedExerciseDetailScreenState
                                           icon: const Icon(
                                               Icons.done_all_rounded),
                                           label: const Text('라운드 완료'),
-                                        );
+                                        ),
+                                      );
+                                    },
+                                  );
 
                                   final deleteButton = roundCount > 1
                                       ? FilledButton.tonalIcon(
@@ -992,8 +1053,7 @@ class _GroupedExerciseDetailScreenState
                                           runSpacing: 8,
                                           children: [
                                             restButton,
-                                            if (completeButton != null)
-                                              completeButton,
+                                            completeAction,
                                             if (deleteButton != null)
                                               deleteButton,
                                           ],
@@ -1007,10 +1067,8 @@ class _GroupedExerciseDetailScreenState
                                       roundBadge,
                                       const Spacer(),
                                       restButton,
-                                      if (completeButton != null) ...[
-                                        const SizedBox(width: 8),
-                                        completeButton,
-                                      ],
+                                      const SizedBox(width: 8),
+                                      completeAction,
                                       if (deleteButton != null) ...[
                                         const SizedBox(width: 8),
                                         deleteButton,
@@ -1445,20 +1503,17 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _RoundRestTimerCard extends StatelessWidget {
+class _InlineRoundRestTimer extends StatelessWidget {
   final Color accent;
-  final String title;
   final String remainingText;
-  final double progress;
   final bool isPaused;
   final VoidCallback onPauseResume;
   final VoidCallback onReset;
 
-  const _RoundRestTimerCard({
+  const _InlineRoundRestTimer({
+    super.key,
     required this.accent,
-    required this.title,
     required this.remainingText,
-    required this.progress,
     required this.isPaused,
     required this.onPauseResume,
     required this.onReset,
@@ -1467,96 +1522,87 @@ class _RoundRestTimerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.only(left: 10, right: 2),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: accent.withValues(alpha: 0.35)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Icon(Icons.timer_outlined, color: accent),
-              Text(
-                '라운드 간 휴식',
+          Icon(
+            isPaused ? Icons.timer_off_outlined : Icons.timer_outlined,
+            color: accent,
+            size: 18,
+          ),
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 58,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                remainingText,
+                maxLines: 1,
                 style: TextStyle(
-                  color: Theme.of(context).textTheme.titleMedium?.color,
+                  color: accent,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              if (isPaused)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    '일시정지',
-                    style: TextStyle(
-                      color: Colors.orangeAccent,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.color
-                  ?.withValues(alpha: 0.75),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            remainingText,
-            style: TextStyle(
+          const Spacer(),
+          IconButton(
+            key: const ValueKey('round-timer-pause-resume'),
+            tooltip: isPaused ? '재개' : '일시정지',
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 36, height: 44),
+            padding: EdgeInsets.zero,
+            onPressed: onPauseResume,
+            icon: Icon(
+              isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
               color: accent,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 10),
-          LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(999),
-            backgroundColor:
-                Theme.of(context).dividerColor.withValues(alpha: 0.3),
-            valueColor: AlwaysStoppedAnimation<Color>(accent),
+          IconButton(
+            key: const ValueKey('round-timer-reset'),
+            tooltip: '휴식 종료',
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 36, height: 44),
+            padding: EdgeInsets.zero,
+            onPressed: onReset,
+            icon: const Icon(Icons.close_rounded, size: 20),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton.tonalIcon(
-                onPressed: onPauseResume,
-                icon: Icon(
-                    isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
-                label: Text(isPaused ? '재개' : '일시정지'),
-              ),
-              TextButton.icon(
-                onPressed: onReset,
-                icon: const Icon(Icons.close_rounded),
-                label: const Text('닫기'),
-              ),
-            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RoundCompletedIndicator extends StatelessWidget {
+  final Color accent;
+
+  const _RoundCompletedIndicator({super.key, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_rounded, color: Colors.greenAccent, size: 20),
+          SizedBox(width: 8),
+          Text(
+            '라운드 완료',
+            style: TextStyle(
+              color: Colors.greenAccent,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

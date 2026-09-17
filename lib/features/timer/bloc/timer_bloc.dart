@@ -13,6 +13,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
 
   String? exerciseName;
   DateTime? selectedDate;
+  String? ownerId;
   DateTime? _expiresAt; // Internal tracking of expiration time
 
   TimerBloc({required Ticker ticker})
@@ -33,11 +34,18 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   }
 
   void _onStarted(TimerStarted event, Emitter<TimerState> emit) {
-    _expiresAt = DateTime.now().add(Duration(seconds: event.duration));
-    emit(TimerRunInProgress(event.duration, event.duration, expiresAt: _expiresAt));
-    _restartTicker(event.duration);
+    _tickerSubscription?.cancel();
+    final duration = event.duration < 0 ? 0 : event.duration;
+    _expiresAt = DateTime.now().add(Duration(seconds: duration));
     exerciseName = event.exerciseName;
     selectedDate = event.selectedDate;
+    ownerId = event.ownerId;
+    if (duration == 0) {
+      emit(const TimerRunComplete());
+      return;
+    }
+    emit(TimerRunInProgress(duration, duration, expiresAt: _expiresAt));
+    _restartTicker(duration);
   }
 
   void _onPaused(TimerPaused event, Emitter<TimerState> emit) {
@@ -46,7 +54,8 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
       // When paused, we lose the "flow". If needed to resume correctly, we might need to adjust logic.
       // But user requirement is mainly about background resilience.
       // For simple pause:
-      emit(TimerRunPause(state.duration, (state as TimerRunInProgress).initialDuration));
+      emit(TimerRunPause(
+          state.duration, (state as TimerRunInProgress).initialDuration));
     }
   }
 
@@ -56,7 +65,9 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
       _expiresAt = DateTime.now().add(Duration(seconds: remaining));
       _restartTicker(remaining);
 
-      emit(TimerRunInProgress(state.duration, (state as TimerRunPause).initialDuration, expiresAt: _expiresAt));
+      emit(TimerRunInProgress(
+          state.duration, (state as TimerRunPause).initialDuration,
+          expiresAt: _expiresAt));
     }
   }
 
@@ -66,13 +77,16 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     emit(const TimerInitial(0));
     exerciseName = null;
     selectedDate = null;
+    ownerId = null;
   }
 
-  void _onDurationUpdated(TimerDurationUpdated event, Emitter<TimerState> emit) {
+  void _onDurationUpdated(
+      TimerDurationUpdated event, Emitter<TimerState> emit) {
     if (state is TimerRunInProgress) {
       final oldState = state as TimerRunInProgress;
       final delta = event.duration - oldState.initialDuration;
-      final adjustedRemaining = (oldState.duration + delta).clamp(0, event.duration);
+      final adjustedRemaining =
+          (oldState.duration + delta).clamp(0, event.duration);
 
       _expiresAt = DateTime.now().add(Duration(seconds: adjustedRemaining));
       _restartTicker(adjustedRemaining);
@@ -86,7 +100,8 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     } else if (state is TimerRunPause) {
       final oldState = state as TimerRunPause;
       final delta = event.duration - oldState.initialDuration;
-      final adjustedRemaining = (oldState.duration + delta).clamp(0, event.duration);
+      final adjustedRemaining =
+          (oldState.duration + delta).clamp(0, event.duration);
       emit(TimerRunPause(adjustedRemaining, event.duration));
     }
   }
@@ -98,7 +113,8 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
       final now = DateTime.now();
       if (_expiresAt != null) {
         final remaining = _expiresAt!.difference(now).inSeconds;
-        add(_TimerTicked(duration: remaining < 0 ? 0 : remaining, expiresAt: _expiresAt));
+        add(_TimerTicked(
+            duration: remaining < 0 ? 0 : remaining, expiresAt: _expiresAt));
       }
     });
   }
