@@ -113,7 +113,7 @@ void main() {
   tearDown(() => GetIt.I.reset());
 
   testWidgets(
-      'only the owning completed round shows the inline timer without shifting later content',
+      'the single header action completes the current round and keeps its timer visible',
       (tester) async {
     final prefs = await SharedPreferences.getInstance();
     for (final workout in workouts) {
@@ -153,16 +153,20 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final secondRoundAction = find.byKey(const ValueKey('round-action-1'));
-    await tester.scrollUntilVisible(
-      secondRoundAction,
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pump();
-    final originalTop = tester.getTopLeft(secondRoundAction).dy;
+    final headerAction = find.byKey(const ValueKey('header-round-action'));
+    expect(headerAction, findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('complete-current-round-1')), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('complete-current-round-0')), findsNothing);
+    expect(
+        find.byKey(const ValueKey('complete-current-round-2')), findsNothing);
+    expect(find.byKey(const ValueKey('round-action-0')), findsNothing);
+    expect(find.byKey(const ValueKey('round-action-1')), findsNothing);
+    expect(find.byKey(const ValueKey('round-action-2')), findsNothing);
+    final originalRect = tester.getRect(headerAction);
 
-    await tester.tap(find.byKey(const ValueKey('complete-round-1')));
+    await tester.tap(find.byKey(const ValueKey('complete-current-round-1')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump();
@@ -185,17 +189,13 @@ void main() {
         recordDay: 1,
       ),
     );
-    expect(find.byKey(const ValueKey('round-rest-timer-1')), findsOneWidget);
-    expect(find.byKey(const ValueKey('round-rest-timer-0')), findsNothing);
-    expect(tester.getTopLeft(secondRoundAction).dy, originalTop);
-    final deleteButton = find.byKey(const ValueKey('delete-round-1'));
-    expect(
-      tester.getTopRight(secondRoundAction).dx,
-      closeTo(tester.getTopRight(deleteButton).dx, 0.01),
-    );
+    expect(find.byKey(const ValueKey('header-round-rest-timer-1')),
+        findsOneWidget);
+    expect(find.text('3/3'), findsOneWidget);
+    expect(tester.getRect(headerAction), originalRect);
     final gauge = find.byKey(const ValueKey('round-timer-gauge'));
     final initialGaugeWidth = tester.getSize(gauge).width;
-    expect(initialGaugeWidth, tester.getSize(secondRoundAction).width);
+    expect(initialGaugeWidth, tester.getSize(headerAction).width);
     await tester.pump(const Duration(seconds: 1));
     final decreasedGaugeWidth = tester.getSize(gauge).width;
     expect(decreasedGaugeWidth, lessThan(initialGaugeWidth));
@@ -221,8 +221,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('round-timer-reset')));
     await tester.pump();
     expect(timerBloc.state, isA<TimerInitial>());
-    expect(find.byKey(const ValueKey('round-completed-1')), findsOneWidget);
-    expect(tester.getTopLeft(secondRoundAction).dy, originalTop);
+    expect(
+        find.byKey(const ValueKey('complete-current-round-2')), findsOneWidget);
+    expect(tester.getRect(headerAction), originalRect);
   });
 
   testWidgets('a timer owned by another date does not appear in this group',
@@ -254,13 +255,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('round-completed-1')),
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    expect(find.byKey(const ValueKey('round-rest-timer-1')), findsNothing);
-    expect(find.byKey(const ValueKey('round-completed-1')), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('header-round-rest-timer-1')), findsNothing);
+    expect(
+        find.byKey(const ValueKey('complete-current-round-2')), findsOneWidget);
     timerBloc.add(const TimerReset());
     await tester.pump();
   });
@@ -300,30 +298,30 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final action = find.byKey(const ValueKey('round-action-1'));
-    await tester.scrollUntilVisible(
-      action,
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pump();
+    final action = find.byKey(const ValueKey('header-round-action'));
+    final status = find.byKey(const ValueKey('header-round-status'));
 
     expect(tester.takeException(), isNull);
-    expect(tester.getSize(action).width, greaterThan(200));
+    expect(tester.getSize(action).width, greaterThan(120));
     expect(
-      tester.getTopRight(action).dx,
+      tester.getTopRight(status).dx,
       closeTo(
-        tester.getTopRight(find.byKey(const ValueKey('delete-round-1'))).dx,
+        tester
+            .getTopRight(
+              find.byKey(const ValueKey('header-action-status-row')),
+            )
+            .dx,
         0.01,
       ),
     );
+    expect(tester.getTopLeft(action).dy, tester.getTopLeft(status).dy);
     timerBloc.add(const TimerReset());
     await tester.pump();
   });
 
   for (final width in [400.0, 320.0]) {
     testWidgets(
-        'exercise cards and round action fill the round content at ${width.toInt()}px',
+        'exercise cards fill the round content without per-round actions at ${width.toInt()}px',
         (tester) async {
       await tester.binding.setSurfaceSize(Size(width, 700));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -358,7 +356,6 @@ void main() {
       await tester.pump();
 
       final round = find.byKey(const ValueKey('round-container-0'));
-      final action = find.byKey(const ValueKey('round-action-0'));
       final secondCard = find.byKey(
         const ValueKey('exercise-round-card-0-2'),
       );
@@ -369,7 +366,7 @@ void main() {
       expect(cardRect.left, closeTo(roundRect.left + 16, 1.01));
       expect(cardRect.right, closeTo(roundRect.right - 16, 1.01));
       expect(tester.getRect(secondCard).right, closeTo(cardRect.right, 0.01));
-      expect(tester.getRect(action).right, closeTo(cardRect.right, 1.01));
+      expect(find.byKey(const ValueKey('round-action-0')), findsNothing);
       expect(cardRect.width, greaterThan(width - 100));
     });
   }

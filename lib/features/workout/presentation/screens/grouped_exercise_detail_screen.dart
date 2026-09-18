@@ -383,37 +383,6 @@ class _GroupedExerciseDetailScreenState
     await _persistAllSets();
   }
 
-  Future<void> _toggleComplete(WorkoutRecord workout, int roundIndex) async {
-    final sets = _setsByExerciseName[workout.name]!;
-    final current = sets[roundIndex];
-    final willComplete = !current.isCompleted;
-    final wasRoundComplete = _isRoundFullyCompleted(roundIndex);
-
-    sets[roundIndex] = current.copyWith(
-      isCompleted: willComplete,
-      endTime: willComplete ? DateTime.now() : null,
-    );
-    await _persistAllSets(triggerSync: true);
-    if (!mounted) return;
-
-    if (!willComplete && _ownsRoundTimer(roundIndex)) {
-      context.read<TimerBloc>().add(const TimerReset());
-    }
-
-    if (willComplete &&
-        !wasRoundComplete &&
-        _isRoundFullyCompleted(roundIndex)) {
-      final duration = _roundRestTime(roundIndex).inSeconds;
-      context.read<TimerBloc>().add(TimerStarted(
-            duration: duration,
-            exerciseName: _workouts.map((w) => w.name).join(' · '),
-            selectedDate: widget.selectedDate,
-            ownerId: _roundTimerOwnerId(roundIndex),
-            groupNavigationContext: _timerNavigationContext,
-          ));
-    }
-  }
-
   Future<void> _toggleRoundCompletion(int roundIndex) async {
     final shouldComplete = !_isRoundFullyCompleted(roundIndex);
     final wasRoundComplete = _isRoundFullyCompleted(roundIndex);
@@ -718,9 +687,10 @@ class _GroupedExerciseDetailScreenState
                     builder: (context, constraints) {
                       final compactHeader =
                           constraints.maxWidth < 430 || textScale > 1.05;
-                      final currentRoundCard = Container(
+                      final roundStatusCard = Container(
+                        key: const ValueKey('header-round-status'),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
+                            horizontal: 8, vertical: 5),
                         decoration: BoxDecoration(
                           color: accent.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(16),
@@ -728,19 +698,27 @@ class _GroupedExerciseDetailScreenState
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              '${_currentRoundIndex + 1}',
-                              style: TextStyle(
-                                color: accent,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${_currentRoundIndex + 1}/$roundCount',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: accent,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
-                            Text(
-                              '현재 라운드',
-                              style: TextStyle(
-                                color: accent.withValues(alpha: 0.9),
-                                fontSize: 12,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '현재/전체 라운드',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: accent.withValues(alpha: 0.9),
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
                           ],
@@ -764,7 +742,7 @@ class _GroupedExerciseDetailScreenState
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            '두 운동을 모두 완료해야 휴식 타이머가 시작돼요.',
+                            '상단의 완료 버튼으로 현재 라운드를 한 번에 기록해요.',
                             style: TextStyle(
                               color: Theme.of(context)
                                   .textTheme
@@ -793,15 +771,94 @@ class _GroupedExerciseDetailScreenState
                         ],
                       );
 
+                      final roundAction = BlocBuilder<TimerBloc, TimerState>(
+                        builder: (context, timerState) {
+                          final timerBloc = context.read<TimerBloc>();
+                          int? timerRoundIndex;
+                          for (var i = 0; i < roundCount; i++) {
+                            if (timerBloc.ownerId == _roundTimerOwnerId(i)) {
+                              timerRoundIndex = i;
+                              break;
+                            }
+                          }
+                          final timerIsActive = timerRoundIndex != null &&
+                              (timerState is TimerRunInProgress ||
+                                  timerState is TimerRunPause);
+
+                          Widget child;
+                          if (timerIsActive) {
+                            final isPaused = timerState is TimerRunPause;
+                            final initialDuration = isPaused
+                                ? timerState.initialDuration
+                                : (timerState as TimerRunInProgress)
+                                    .initialDuration;
+                            child = _InlineRoundRestTimer(
+                              key: ValueKey(
+                                  'header-round-rest-timer-$timerRoundIndex'),
+                              accent: accent,
+                              remainingText: _formatDuration(
+                                Duration(seconds: timerState.duration),
+                              ),
+                              progress: initialDuration == 0
+                                  ? 0
+                                  : timerState.duration / initialDuration,
+                              isPaused: isPaused,
+                              onPauseResume: () => timerBloc.add(
+                                isPaused
+                                    ? const TimerResumed()
+                                    : const TimerPaused(),
+                              ),
+                              onReset: () => timerBloc.add(const TimerReset()),
+                            );
+                          } else if (_completedRoundCount == roundCount) {
+                            child = _RoundCompletedIndicator(
+                              key: const ValueKey('header-round-completed'),
+                              accent: accent,
+                            );
+                          } else {
+                            final currentRoundIndex = _currentRoundIndex;
+                            child = FilledButton.tonalIcon(
+                              key: ValueKey(
+                                  'complete-current-round-$currentRoundIndex'),
+                              onPressed: () => _toggleRoundCompletion(
+                                currentRoundIndex,
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: accent.withValues(alpha: 0.16),
+                                foregroundColor: accent,
+                              ),
+                              icon: const Icon(Icons.done_all_rounded),
+                              label: Text('${currentRoundIndex + 1}라운드 완료'),
+                            );
+                          }
+
+                          return SizedBox(
+                            key: const ValueKey('header-round-action'),
+                            height: 48,
+                            child: child,
+                          );
+                        },
+                      );
+
+                      final actionAndStatus = Row(
+                        key: const ValueKey('header-action-status-row'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: roundAction),
+                          const SizedBox(width: 10),
+                          SizedBox(width: 92, child: roundStatusCard),
+                        ],
+                      );
+
                       if (compactHeader) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             summaryText,
                             const SizedBox(height: 12),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: currentRoundCard,
+                            SizedBox(
+                              height: 58,
+                              child: actionAndStatus,
                             ),
                           ],
                         );
@@ -810,9 +867,15 @@ class _GroupedExerciseDetailScreenState
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: summaryText),
-                          const SizedBox(width: 12),
-                          currentRoundCard,
+                          Expanded(flex: 3, child: summaryText),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: 58,
+                              child: actionAndStatus,
+                            ),
+                          ),
                         ],
                       );
                     },
@@ -873,9 +936,6 @@ class _GroupedExerciseDetailScreenState
                             children: [
                               LayoutBuilder(
                                 builder: (context, constraints) {
-                                  final compactActions =
-                                      constraints.maxWidth < 700 ||
-                                          textScale > 1.05;
                                   final roundBadge = Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10, vertical: 6),
@@ -957,184 +1017,30 @@ class _GroupedExerciseDetailScreenState
                                     label: Text(_formatDuration(rest)),
                                   );
 
-                                  final completeAction =
-                                      BlocBuilder<TimerBloc, TimerState>(
-                                    builder: (context, timerState) {
-                                      final timerBloc =
-                                          context.read<TimerBloc>();
-                                      Widget actionSlot(Widget child) =>
-                                          SizedBox(
-                                            key: ValueKey(
-                                                'round-action-$roundIndex'),
-                                            height: 48,
-                                            child: child,
-                                          );
-                                      final ownsTimer = timerBloc.ownerId ==
-                                          _roundTimerOwnerId(roundIndex);
-                                      final isActive = ownsTimer &&
-                                          (timerState is TimerRunInProgress ||
-                                              timerState is TimerRunPause);
-
-                                      if (isDone && isActive) {
-                                        final isPaused =
-                                            timerState is TimerRunPause;
-                                        final initialDuration = isPaused
-                                            ? timerState.initialDuration
-                                            : (timerState as TimerRunInProgress)
-                                                .initialDuration;
-                                        return actionSlot(
-                                          _InlineRoundRestTimer(
-                                            key: ValueKey(
-                                                'round-rest-timer-$roundIndex'),
-                                            accent: accent,
-                                            remainingText: _formatDuration(
-                                              Duration(
-                                                  seconds: timerState.duration),
-                                            ),
-                                            progress: initialDuration == 0
-                                                ? 0
-                                                : timerState.duration /
-                                                    initialDuration,
-                                            isPaused: isPaused,
-                                            onPauseResume: () {
-                                              timerBloc.add(
-                                                isPaused
-                                                    ? const TimerResumed()
-                                                    : const TimerPaused(),
-                                              );
-                                            },
-                                            onReset: () => timerBloc
-                                                .add(const TimerReset()),
-                                          ),
-                                        );
-                                      }
-
-                                      if (isDone) {
-                                        return actionSlot(
-                                          _RoundCompletedIndicator(
-                                            key: ValueKey(
-                                                'round-completed-$roundIndex'),
-                                            accent: accent,
-                                          ),
-                                        );
-                                      }
-
-                                      return actionSlot(
-                                        FilledButton.tonalIcon(
-                                          key: ValueKey(
-                                              'complete-round-$roundIndex'),
-                                          onPressed: () =>
-                                              _toggleRoundCompletion(
-                                                  roundIndex),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                accent.withValues(alpha: 0.16),
-                                            foregroundColor: accent,
-                                          ),
-                                          icon: const Icon(
-                                              Icons.done_all_rounded),
-                                          label: const Text('라운드 완료'),
-                                        ),
-                                      );
-                                    },
-                                  );
-
                                   final deleteButton = roundCount > 1
-                                      ? FilledButton.tonalIcon(
+                                      ? IconButton(
                                           key: ValueKey(
                                               'delete-round-$roundIndex'),
                                           onPressed: () =>
                                               _removeRound(roundIndex),
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Colors.red
-                                                .withValues(alpha: 0.12),
-                                            foregroundColor: Colors.redAccent,
-                                          ),
+                                          tooltip: '라운드 삭제',
+                                          color: Colors.redAccent,
                                           icon:
                                               const Icon(Icons.delete_outline),
-                                          label: const Text('라운드 삭제'),
                                         )
                                       : null;
-
-                                  if (compactActions) {
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            roundBadge,
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        LayoutBuilder(
-                                          builder: (context, actions) {
-                                            if (actions.maxWidth < 290) {
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.stretch,
-                                                children: [
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: restButton,
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                  completeAction,
-                                                ],
-                                              );
-                                            }
-                                            return Row(
-                                              children: [
-                                                restButton,
-                                                const SizedBox(width: 8),
-                                                Expanded(child: completeAction),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                        if (deleteButton != null) ...[
-                                          const SizedBox(height: 8),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: deleteButton,
-                                          ),
-                                        ],
-                                      ],
-                                    );
-                                  }
 
                                   return Row(
                                     children: [
                                       roundBadge,
                                       const Spacer(),
                                       restButton,
-                                      const SizedBox(width: 8),
-                                      SizedBox(
-                                          width: 196, child: completeAction),
                                       if (deleteButton != null) ...[
-                                        const SizedBox(width: 8),
                                         deleteButton,
                                       ],
                                     ],
                                   );
                                 },
-                              ),
-                              const SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                value: (_workouts
-                                        .where((workout) => _setsByExerciseName[
-                                                workout.name]![roundIndex]
-                                            .isCompleted)
-                                        .length) /
-                                    _workouts.length,
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(999),
-                                backgroundColor: Theme.of(context)
-                                    .dividerColor
-                                    .withValues(alpha: 0.35),
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(accent),
                               ),
                               const SizedBox(height: 12),
                               ..._workouts.map((workout) {
@@ -1626,57 +1532,66 @@ class _InlineRoundRestTimer extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 10, right: 2),
-              child: Row(
-                children: [
-                  Icon(
-                    isPaused ? Icons.timer_off_outlined : Icons.timer_outlined,
-                    color: accent,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  SizedBox(
-                    width: 58,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        remainingText,
-                        maxLines: 1,
-                        style: TextStyle(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final showTimerIcon = constraints.maxWidth >= 150;
+                return Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 2),
+                  child: Row(
+                    children: [
+                      if (showTimerIcon) ...[
+                        Icon(
+                          isPaused
+                              ? Icons.timer_off_outlined
+                              : Icons.timer_outlined,
                           color: accent,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            remainingText,
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      IconButton(
+                        key: const ValueKey('round-timer-pause-resume'),
+                        tooltip: isPaused ? '재개' : '일시정지',
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 32, height: 44),
+                        padding: EdgeInsets.zero,
+                        onPressed: onPauseResume,
+                        icon: Icon(
+                          isPaused
+                              ? Icons.play_arrow_rounded
+                              : Icons.pause_rounded,
+                          color: accent,
+                        ),
+                      ),
+                      IconButton(
+                        key: const ValueKey('round-timer-reset'),
+                        tooltip: '휴식 종료',
+                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 32, height: 44),
+                        padding: EdgeInsets.zero,
+                        onPressed: onReset,
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  IconButton(
-                    key: const ValueKey('round-timer-pause-resume'),
-                    tooltip: isPaused ? '재개' : '일시정지',
-                    visualDensity: VisualDensity.compact,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 36, height: 44),
-                    padding: EdgeInsets.zero,
-                    onPressed: onPauseResume,
-                    icon: Icon(
-                      isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                      color: accent,
-                    ),
-                  ),
-                  IconButton(
-                    key: const ValueKey('round-timer-reset'),
-                    tooltip: '휴식 종료',
-                    visualDensity: VisualDensity.compact,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 36, height: 44),
-                    padding: EdgeInsets.zero,
-                    onPressed: onReset,
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),
