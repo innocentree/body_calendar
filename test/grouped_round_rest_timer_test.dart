@@ -2,12 +2,14 @@ import 'dart:convert';
 
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
+import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_set.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
+import 'package:body_calendar/features/workout/presentation/screens/exercise_detail_screen.dart';
 import 'package:body_calendar/features/workout/presentation/screens/grouped_exercise_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,6 +40,16 @@ class _FakeExerciseRepository implements ExerciseRepository {
 
   @override
   Future<List<Exercise>> getCustomExercises() => throw UnimplementedError();
+}
+
+class _RouteObserver extends NavigatorObserver {
+  final pushedNames = <String?>[];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushedNames.add(route.settings.name);
+    super.didPush(route, previousRoute);
+  }
 }
 
 void main() {
@@ -163,6 +175,14 @@ void main() {
         groupId: 'group-a',
         selectedDate: selectedDate,
         roundIndex: 1,
+      ),
+    );
+    expect(
+      timerBloc.groupNavigationContext,
+      const GroupTimerNavigationContext(
+        groupId: 'group-a',
+        sessionIndex: 1,
+        recordDay: 1,
       ),
     );
     expect(find.byKey(const ValueKey('round-rest-timer-1')), findsOneWidget);
@@ -301,6 +321,192 @@ void main() {
     await tester.pump();
   });
 
+  for (final width in [400.0, 320.0]) {
+    testWidgets(
+        'exercise cards and round action fill the round content at ${width.toInt()}px',
+        (tester) async {
+      await tester.binding.setSurfaceSize(Size(width, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final timerBloc = TimerBloc(ticker: const Ticker());
+      addTearDown(timerBloc.close);
+
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: timerBloc,
+          child: MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(size: Size(width, 700)),
+              child: GroupedExerciseDetailScreen(
+                workouts: workouts,
+                selectedDate: selectedDate,
+                recordDay: 1,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final card = find.byKey(
+        const ValueKey('exercise-round-card-0-1'),
+      );
+      await tester.scrollUntilVisible(
+        card,
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pump();
+
+      final round = find.byKey(const ValueKey('round-container-0'));
+      final action = find.byKey(const ValueKey('round-action-0'));
+      final secondCard = find.byKey(
+        const ValueKey('exercise-round-card-0-2'),
+      );
+      final roundRect = tester.getRect(round);
+      final cardRect = tester.getRect(card);
+
+      expect(tester.takeException(), isNull);
+      expect(cardRect.left, closeTo(roundRect.left + 16, 1.01));
+      expect(cardRect.right, closeTo(roundRect.right - 16, 1.01));
+      expect(tester.getRect(secondCard).right, closeTo(cardRect.right, 0.01));
+      expect(tester.getRect(action).right, closeTo(cardRect.right, 1.01));
+      expect(cardRect.width, greaterThan(width - 100));
+    });
+  }
+
+  testWidgets('rest FAB opens the stored owning group in group order',
+      (tester) async {
+    final prefs = await SharedPreferences.getInstance();
+    final unrelatedWorkouts = [
+      WorkoutRecord(
+        id: 3,
+        name: '스쿼트',
+        sets: 3,
+        weight: 40,
+        timestamp: selectedDate,
+        sessionIndex: 1,
+        groupId: 'other-group',
+        groupOrder: 0,
+      ),
+      WorkoutRecord(
+        id: 4,
+        name: '데드리프트',
+        sets: 3,
+        weight: 60,
+        timestamp: selectedDate,
+        sessionIndex: 2,
+        groupId: 'group-a',
+        groupOrder: 0,
+      ),
+    ];
+    await prefs.setStringList(
+      'workouts_2026-09-17',
+      [...workouts.reversed, ...unrelatedWorkouts]
+          .map((workout) => jsonEncode(workout.toJson()))
+          .toList(),
+    );
+    final timerBloc = TimerBloc(ticker: const Ticker())
+      ..add(TimerStarted(
+        duration: 30,
+        exerciseName: '벤치 프레스 · 덤벨 플라이',
+        selectedDate: selectedDate,
+        ownerId: 'group:group-a:2026-09-17:round:1',
+        groupNavigationContext: GroupTimerNavigationContext(
+          groupId: 'group-a',
+          sessionIndex: 1,
+          recordDay: 4,
+        ),
+      ));
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: const MaterialApp(
+          home: Scaffold(body: Stack(children: [RestFabOverlay()])),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('rest-fab-overlay')));
+    await tester.pumpAndSettle();
+
+    final screen = tester.widget<GroupedExerciseDetailScreen>(
+      find.byType(GroupedExerciseDetailScreen),
+    );
+    expect(screen.workouts.map((workout) => workout.id), [1, 2]);
+    expect(screen.selectedDate, selectedDate);
+    expect(screen.recordDay, 4);
+    expect(find.byType(ExerciseDetailScreen), findsNothing);
+    timerBloc.add(const TimerReset());
+    await tester.pump();
+  });
+
+  testWidgets('rest FAB keeps solo timers on the exercise detail route',
+      (tester) async {
+    final routeObserver = _RouteObserver();
+    final timerBloc = TimerBloc(ticker: const Ticker())
+      ..add(TimerStarted(
+        duration: 30,
+        exerciseName: '벤치 프레스',
+        selectedDate: selectedDate,
+      ));
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: MaterialApp(
+          navigatorObservers: [routeObserver],
+          home: const Scaffold(body: Stack(children: [RestFabOverlay()])),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(const ValueKey('rest-fab-overlay')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('rest-fab-overlay')));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(routeObserver.pushedNames.last, '/exercise_detail');
+    expect(find.byType(GroupedExerciseDetailScreen), findsNothing);
+    timerBloc.add(const TimerReset());
+    await tester.pump();
+  });
+
+  testWidgets('rest FAB stays put when its group was deleted', (tester) async {
+    final timerBloc = TimerBloc(ticker: const Ticker())
+      ..add(TimerStarted(
+        duration: 30,
+        exerciseName: '삭제된 그룹',
+        selectedDate: selectedDate,
+        groupNavigationContext: GroupTimerNavigationContext(
+          groupId: 'deleted-group',
+          sessionIndex: 1,
+          recordDay: 1,
+        ),
+      ));
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: const MaterialApp(
+          home: Scaffold(body: Stack(children: [RestFabOverlay()])),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('rest-fab-overlay')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GroupedExerciseDetailScreen), findsNothing);
+    expect(find.byType(ExerciseDetailScreen), findsNothing);
+    expect(find.text('이 그룹 운동을 찾을 수 없어요.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('rest-fab-overlay')), findsOneWidget);
+    timerBloc.add(const TimerReset());
+    await tester.pump();
+  });
+
   test('zero-duration timers complete immediately and keep ownership',
       () async {
     final bloc = TimerBloc(ticker: const Ticker());
@@ -315,5 +521,45 @@ void main() {
 
     expect(bloc.state, isA<TimerRunComplete>());
     expect(bloc.ownerId, 'owner');
+  });
+
+  test('solo starts and resets clear group navigation metadata', () async {
+    final bloc = TimerBloc(ticker: const Ticker());
+    addTearDown(bloc.close);
+    bloc.add(TimerStarted(
+      duration: 0,
+      exerciseName: '그룹',
+      selectedDate: selectedDate,
+      groupNavigationContext: const GroupTimerNavigationContext(
+        groupId: 'group-a',
+        sessionIndex: 1,
+        recordDay: 1,
+      ),
+    ));
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.groupNavigationContext, isNotNull);
+
+    bloc.add(TimerStarted(
+      duration: 0,
+      exerciseName: '단독',
+      selectedDate: selectedDate,
+    ));
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.groupNavigationContext, isNull);
+
+    bloc.add(TimerStarted(
+      duration: 0,
+      exerciseName: '그룹',
+      selectedDate: selectedDate,
+      groupNavigationContext: const GroupTimerNavigationContext(
+        groupId: 'group-a',
+        sessionIndex: 1,
+        recordDay: 1,
+      ),
+    ));
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const TimerReset());
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.groupNavigationContext, isNull);
   });
 }

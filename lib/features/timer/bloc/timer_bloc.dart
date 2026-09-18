@@ -14,6 +14,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   String? exerciseName;
   DateTime? selectedDate;
   String? ownerId;
+  GroupTimerNavigationContext? groupNavigationContext;
   DateTime? _expiresAt; // Internal tracking of expiration time
 
   TimerBloc({required Ticker ticker})
@@ -40,6 +41,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     exerciseName = event.exerciseName;
     selectedDate = event.selectedDate;
     ownerId = event.ownerId;
+    groupNavigationContext = event.groupNavigationContext;
     if (duration == 0) {
       emit(const TimerRunComplete());
       return;
@@ -78,6 +80,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     exerciseName = null;
     selectedDate = null;
     ownerId = null;
+    groupNavigationContext = null;
   }
 
   void _onDurationUpdated(

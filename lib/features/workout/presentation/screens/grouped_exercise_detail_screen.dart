@@ -409,6 +409,7 @@ class _GroupedExerciseDetailScreenState
             exerciseName: _workouts.map((w) => w.name).join(' · '),
             selectedDate: widget.selectedDate,
             ownerId: _roundTimerOwnerId(roundIndex),
+            groupNavigationContext: _timerNavigationContext,
           ));
     }
   }
@@ -440,6 +441,7 @@ class _GroupedExerciseDetailScreenState
             exerciseName: _workouts.map((w) => w.name).join(' · '),
             selectedDate: widget.selectedDate,
             ownerId: _roundTimerOwnerId(roundIndex),
+            groupNavigationContext: _timerNavigationContext,
           ));
     }
   }
@@ -447,6 +449,13 @@ class _GroupedExerciseDetailScreenState
   String get _groupTimerId =>
       _workouts.first.groupId ??
       _workouts.map((workout) => workout.id).join('-');
+
+  GroupTimerNavigationContext get _timerNavigationContext =>
+      GroupTimerNavigationContext(
+        groupId: _groupTimerId,
+        sessionIndex: _workouts.first.sessionIndex,
+        recordDay: widget.recordDay,
+      );
 
   String _roundTimerOwnerId(int roundIndex) =>
       GroupedExerciseDetailScreen.timerOwnerId(
@@ -847,6 +856,7 @@ class _GroupedExerciseDetailScreenState
                         final isDone = _isRoundFullyCompleted(roundIndex);
                         final rest = _roundRestTime(roundIndex);
                         return Container(
+                          key: ValueKey('round-container-$roundIndex'),
                           margin: const EdgeInsets.only(bottom: 14),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -1132,6 +1142,9 @@ class _GroupedExerciseDetailScreenState
                                 final set = _setsByExerciseName[workout.name]![
                                     roundIndex];
                                 return _ExerciseRoundCard(
+                                  key: ValueKey(
+                                    'exercise-round-card-$roundIndex-${workout.id}',
+                                  ),
                                   accent: accent,
                                   workout: workout,
                                   exercise: exercise,
@@ -1299,6 +1312,7 @@ class _ExerciseRoundCard extends StatelessWidget {
   final VoidCallback onTapReps;
 
   const _ExerciseRoundCard({
+    super.key,
     required this.accent,
     required this.workout,
     required this.exercise,
@@ -1315,74 +1329,93 @@ class _ExerciseRoundCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final needsWeight = exercise?.needsWeight ?? true;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final textScale = MediaQuery.textScalerOf(context).scale(1);
-              final compactHeader =
-                  constraints.maxWidth < 340 || textScale > 1.05;
-              final titleSection = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    workout.name,
-                    maxLines: compactHeader ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.titleMedium?.color,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: 1.25,
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final textScale = MediaQuery.textScalerOf(context).scale(1);
+                final compactHeader =
+                    constraints.maxWidth < 340 || textScale > 1.05;
+                final titleSection = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      workout.name,
+                      maxLines: compactHeader ? 2 : 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.titleMedium?.color,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    workout.equipment.isNotEmpty
-                        ? workout.equipment
-                        : (workout.bodyPart ?? '세트 기록'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: _detailMutedText),
-                  ),
-                ],
-              );
+                    const SizedBox(height: 4),
+                    Text(
+                      workout.equipment.isNotEmpty
+                          ? workout.equipment
+                          : (workout.bodyPart ?? '세트 기록'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: _detailMutedText),
+                    ),
+                  ],
+                );
 
-              return titleSection;
-            },
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              if (needsWeight)
-                _AdjustChip(
+                return titleSection;
+              },
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final weightControl = _AdjustChip(
                   label: '무게',
                   value: weightText,
                   onTapValue: onTapWeight,
                   onMinus: onDecreaseWeight,
                   onPlus: onIncreaseWeight,
-                ),
-              _AdjustChip(
-                label: '횟수',
-                value: '${set.reps}회',
-                onTapValue: onTapReps,
-                onMinus: onDecreaseReps,
-                onPlus: onIncreaseReps,
-              ),
-            ],
-          ),
-        ],
+                );
+                final repsControl = _AdjustChip(
+                  label: '횟수',
+                  value: '${set.reps}회',
+                  onTapValue: onTapReps,
+                  onMinus: onDecreaseReps,
+                  onPlus: onIncreaseReps,
+                );
+
+                if (!needsWeight) return repsControl;
+                if (constraints.maxWidth < 460) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      weightControl,
+                      const SizedBox(height: 10),
+                      repsControl,
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: weightControl),
+                    const SizedBox(width: 12),
+                    Expanded(child: repsControl),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1406,6 +1439,7 @@ class _AdjustChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
@@ -1413,22 +1447,32 @@ class _AdjustChip extends StatelessWidget {
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(color: _detailMutedText)),
-          const SizedBox(width: 10),
+          SizedBox(
+            width: 44,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: _detailMutedText,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             onPressed: onMinus,
             icon: Icon(Icons.remove_circle_outline,
                 color: Theme.of(context).iconTheme.color),
           ),
-          GestureDetector(
-            onTap: onTapValue,
-            child: SizedBox(
-              width: 78,
+          Expanded(
+            child: GestureDetector(
+              onTap: onTapValue,
               child: Text(
                 value,
                 textAlign: TextAlign.center,
@@ -1443,6 +1487,9 @@ class _AdjustChip extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             onPressed: onPlus,
             icon: Icon(Icons.add_circle_outline,
                 color: Theme.of(context).iconTheme.color),

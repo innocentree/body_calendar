@@ -1,5 +1,20 @@
 part of 'timer_bloc.dart';
 
+class GroupTimerNavigationContext extends Equatable {
+  final String groupId;
+  final int sessionIndex;
+  final int recordDay;
+
+  const GroupTimerNavigationContext({
+    required this.groupId,
+    required this.sessionIndex,
+    required this.recordDay,
+  });
+
+  @override
+  List<Object?> get props => [groupId, sessionIndex, recordDay];
+}
+
 abstract class TimerEvent extends Equatable {
   const TimerEvent();
 
@@ -12,16 +27,24 @@ class TimerStarted extends TimerEvent {
   final String exerciseName;
   final DateTime selectedDate;
   final String? ownerId;
+  final GroupTimerNavigationContext? groupNavigationContext;
 
   const TimerStarted({
     required this.duration,
     required this.exerciseName,
     required this.selectedDate,
     this.ownerId,
+    this.groupNavigationContext,
   });
 
   @override
-  List<Object?> get props => [duration, exerciseName, selectedDate, ownerId];
+  List<Object?> get props => [
+        duration,
+        exerciseName,
+        selectedDate,
+        ownerId,
+        groupNavigationContext,
+      ];
 }
 
 class TimerPaused extends TimerEvent {
