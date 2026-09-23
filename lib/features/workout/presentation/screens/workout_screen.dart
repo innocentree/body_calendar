@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +22,15 @@ Color _workoutSurface(BuildContext context) =>
     Theme.of(context).colorScheme.surface;
 Color _workoutSoftSurface(BuildContext context) =>
     Theme.of(context).colorScheme.surfaceContainerHighest;
+List<BoxShadow> _workoutCardShadow(BuildContext context) => [
+      BoxShadow(
+        color: Colors.black.withValues(
+          alpha: Theme.of(context).brightness == Brightness.dark ? 0.22 : 0.07,
+        ),
+        blurRadius: 18,
+        offset: const Offset(0, 7),
+      ),
+    ];
 
 class WorkoutListEntry {
   final WorkoutRecord? workout;
@@ -172,7 +182,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
   Color _groupAccentColor(String? groupType) {
     switch (groupType) {
       case 'superset':
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF32ADE6);
       case 'compound':
         return const Color(0xFFF97316);
       default:
@@ -535,13 +545,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                     Padding(
                       padding: EdgeInsets.fromLTRB(
                           16, _recordDay > 0 ? 8 : 16, 16, 12),
-                      child: Container(
-                        width: double.infinity,
+                      child: IosHeroSurface(
                         padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: _workoutSurface(context),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
                         child: sessionWorkouts.isEmpty
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -767,15 +772,18 @@ class _WorkoutScreenState extends State<WorkoutScreen>
           bottomNavigationBar: NavigationBar(
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.fitness_center),
+                icon: Icon(CupertinoIcons.flame),
+                selectedIcon: Icon(CupertinoIcons.flame_fill),
                 label: '운동',
               ),
               NavigationDestination(
-                icon: Icon(Icons.person),
+                icon: Icon(CupertinoIcons.person_crop_circle),
+                selectedIcon: Icon(CupertinoIcons.person_crop_circle_fill),
                 label: '프로필',
               ),
               NavigationDestination(
-                icon: Icon(Icons.calendar_today),
+                icon: Icon(CupertinoIcons.calendar),
+                selectedIcon: Icon(CupertinoIcons.calendar_today),
                 label: '캘린더',
               ),
             ],
@@ -943,7 +951,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                   icon: Icons.link_rounded,
                   title: '슈퍼세트',
                   subtitle: '다른 운동 1개와 묶어서 추가',
-                  accentColor: const Color(0xFF8B5CF6),
+                  accentColor: const Color(0xFF32ADE6),
                 ),
                 const SizedBox(height: 10),
                 _buildAddModeTile(
@@ -977,7 +985,13 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         decoration: BoxDecoration(
           color: _workoutSoftSurface(context),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withValues(alpha: 0.24)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.10),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -1220,6 +1234,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       decoration: BoxDecoration(
         color: _workoutSurface(context),
         borderRadius: BorderRadius.circular(22),
+        boxShadow: _workoutCardShadow(context),
       ),
       child: Material(
         color: Colors.transparent,
@@ -1366,6 +1381,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       decoration: BoxDecoration(
         color: _workoutSurface(context),
         borderRadius: BorderRadius.circular(22),
+        boxShadow: _workoutCardShadow(context),
         border: Border.all(color: accent.withValues(alpha: 0.55)),
       ),
       child: Material(

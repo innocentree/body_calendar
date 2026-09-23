@@ -10,6 +10,7 @@ import 'dart:convert';
 import '../../../workout/presentation/screens/statistics_screen.dart';
 import 'dart:async';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -606,13 +607,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                  child: Container(
-                    width: double.infinity,
+                  child: IosHeroSurface(
                     padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-                    decoration: BoxDecoration(
-                      color: context.appGroupedSurface,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -643,8 +639,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.customBackground
-                                        .withValues(alpha: 0.55)
+                                    ? context.appGroupedSurface
+                                        .withValues(alpha: 0.72)
                                     : Colors.white.withValues(alpha: 0.72),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -668,6 +664,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     decoration: BoxDecoration(
                       color: context.appGroupedSurface,
                       borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? 0.24
+                                    : 0.07,
+                          ),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: TableCalendar(
                       locale: 'ko_KR',
@@ -751,8 +759,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.customBackground
-                                        .withValues(alpha: 0.45)
+                                    ? context.appElevatedSurface
                                     : Colors.white.withValues(alpha: 0.72),
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -767,8 +774,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           decoration: BoxDecoration(
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.customBackground
-                                        .withValues(alpha: 0.45)
+                                    ? context.appElevatedSurface
                                     : Colors.white.withValues(alpha: 0.72),
                             borderRadius: BorderRadius.circular(12),
                           ),

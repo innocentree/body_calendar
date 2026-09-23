@@ -45,7 +45,7 @@ void main() {
                         const IosSectionHeader(title: '최근 운동'),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: IosGroupedSurface(
+                          child: IosHeroSurface(
                             child: Text('벤치 프레스'),
                           ),
                         ),
@@ -75,10 +75,27 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(IosGroupedSurface), findsOneWidget);
+      expect(find.byType(IosHeroSurface), findsOneWidget);
       expect(find.byType(IosSegmentedTabBar), findsOneWidget);
+
+      final hero = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(IosHeroSurface),
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final decoration = hero.decoration! as BoxDecoration;
+      expect(decoration.gradient, isA<LinearGradient>());
     });
   }
+
+  test('dark palette has visible tonal separation', () {
+    expect(AppColors.backgroundDark, isNot(AppColors.groupedSurfaceDark));
+    expect(AppColors.groupedSurfaceDark, isNot(AppColors.elevatedSurfaceDark));
+    expect(AppColors.primaryDark, const Color(0xFF4DA3FF));
+  });
 
   test('button themes retain intrinsic row sizing', () {
     final lightMinimum = AppTheme

@@ -16,6 +16,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
 import '../../../../core/widgets/horizontal_dial_picker.dart';
+import '../../../../core/widgets/ios_widgets.dart';
 
 Color _detailBorderColor(BuildContext context) =>
     Theme.of(context).colorScheme.outlineVariant;
@@ -1000,121 +1001,126 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
               ),
               // === 오늘/이전/역대 기록 요약 ===
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        if (_exercise?.needsWeight == true) ...[
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: true,
-                                builder: (context) => ExerciseStatisticsPopup(
-                                  exerciseName: widget.exerciseName,
-                                  type: ExerciseStatisticType.maxWeight,
-                                ),
-                              );
-                            },
-                            child: _StatBox(
-                              title: '최대 무게',
-                              value: _toDisplayWeight(todayMaxWeight),
-                              prev: _toDisplayWeight(prevMaxWeight),
-                              best: _toDisplayWeight(bestMaxWeight),
-                              unit: _unitStr(),
-                              formatter: (v) => v.toStringAsFixed(1),
-                              isHighlighted: _highlightMaxWeight,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: IosHeroSurface(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          if (_exercise?.needsWeight == true) ...[
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (context) => ExerciseStatisticsPopup(
+                                    exerciseName: widget.exerciseName,
+                                    type: ExerciseStatisticType.maxWeight,
+                                  ),
+                                );
+                              },
+                              child: _StatBox(
+                                title: '최대 무게',
+                                value: _toDisplayWeight(todayMaxWeight),
+                                prev: _toDisplayWeight(prevMaxWeight),
+                                best: _toDisplayWeight(bestMaxWeight),
+                                unit: _unitStr(),
+                                formatter: (v) => v.toStringAsFixed(1),
+                                isHighlighted: _highlightMaxWeight,
+                              ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: true,
-                                builder: (context) => ExerciseStatisticsPopup(
-                                  exerciseName: widget.exerciseName,
-                                  type: ExerciseStatisticType.oneRM,
-                                ),
-                              );
-                            },
-                            child: _StatBox(
-                              title: '최대 1RM',
-                              value: _toDisplayWeight(todayMax1RM),
-                              prev: _toDisplayWeight(prevMax1RM),
-                              best: _toDisplayWeight(bestMax1RM),
-                              unit: _unitStr(),
-                              formatter: (v) => v.toStringAsFixed(1),
-                              isHighlighted: _highlight1RM,
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (context) => ExerciseStatisticsPopup(
+                                    exerciseName: widget.exerciseName,
+                                    type: ExerciseStatisticType.oneRM,
+                                  ),
+                                );
+                              },
+                              child: _StatBox(
+                                title: '최대 1RM',
+                                value: _toDisplayWeight(todayMax1RM),
+                                prev: _toDisplayWeight(prevMax1RM),
+                                best: _toDisplayWeight(bestMax1RM),
+                                unit: _unitStr(),
+                                formatter: (v) => v.toStringAsFixed(1),
+                                isHighlighted: _highlight1RM,
+                              ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: true,
-                                builder: (context) => ExerciseStatisticsPopup(
-                                  exerciseName: widget.exerciseName,
-                                  type: ExerciseStatisticType.volume,
-                                ),
-                              );
-                            },
-                            child: _StatBox(
-                              title: '볼륨',
-                              value: _toDisplayWeight(todayTotalVolume),
-                              prev: _toDisplayWeight(prevTotalVolume),
-                              best: _toDisplayWeight(bestTotalVolume),
-                              unit: _unitStr(),
-                              formatter: (v) => v.toStringAsFixed(0),
-                              isHighlighted: _highlightVolume,
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (context) => ExerciseStatisticsPopup(
+                                    exerciseName: widget.exerciseName,
+                                    type: ExerciseStatisticType.volume,
+                                  ),
+                                );
+                              },
+                              child: _StatBox(
+                                title: '볼륨',
+                                value: _toDisplayWeight(todayTotalVolume),
+                                prev: _toDisplayWeight(prevTotalVolume),
+                                best: _toDisplayWeight(bestTotalVolume),
+                                unit: _unitStr(),
+                                formatter: (v) => v.toStringAsFixed(0),
+                                isHighlighted: _highlightVolume,
+                              ),
                             ),
-                          ),
-                        ] else ...[
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: true,
-                                builder: (context) => ExerciseStatisticsPopup(
-                                  exerciseName: widget.exerciseName,
-                                  type: ExerciseStatisticType.maxReps,
-                                ),
-                              );
-                            },
-                            child: _StatBox(
-                              title: '최대 횟수',
-                              value: todayMaxReps.toDouble(),
-                              prev: prevMaxReps.toDouble(),
-                              best: bestMaxReps.toDouble(),
-                              unit: '회',
-                              formatter: (v) => v.toInt().toString(),
+                          ] else ...[
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (context) => ExerciseStatisticsPopup(
+                                    exerciseName: widget.exerciseName,
+                                    type: ExerciseStatisticType.maxReps,
+                                  ),
+                                );
+                              },
+                              child: _StatBox(
+                                title: '최대 횟수',
+                                value: todayMaxReps.toDouble(),
+                                prev: prevMaxReps.toDouble(),
+                                best: bestMaxReps.toDouble(),
+                                unit: '회',
+                                formatter: (v) => v.toInt().toString(),
+                              ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierDismissible: true,
-                                builder: (context) => ExerciseStatisticsPopup(
-                                  exerciseName: widget.exerciseName,
-                                  type: ExerciseStatisticType.totalReps,
-                                ),
-                              );
-                            },
-                            child: _StatBox(
-                              title: '총 횟수',
-                              value: todayTotalReps.toDouble(),
-                              prev: prevTotalReps.toDouble(),
-                              best: bestTotalReps.toDouble(),
-                              unit: '회',
-                              formatter: (v) => v.toInt().toString(),
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (context) => ExerciseStatisticsPopup(
+                                    exerciseName: widget.exerciseName,
+                                    type: ExerciseStatisticType.totalReps,
+                                  ),
+                                );
+                              },
+                              child: _StatBox(
+                                title: '총 횟수',
+                                value: todayTotalReps.toDouble(),
+                                prev: prevTotalReps.toDouble(),
+                                best: bestTotalReps.toDouble(),
+                                unit: '회',
+                                formatter: (v) => v.toInt().toString(),
+                              ),
                             ),
-                          ),
-                        ]
-                      ],
-                    ),
-                  ],
+                          ]
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               // === 세트 목록 ===
@@ -1130,6 +1136,18 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? 0.20
+                                  : 0.06,
+                            ),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                         border: index == _currentSetIndex
                             ? Border.all(
                                 color: Theme.of(context)

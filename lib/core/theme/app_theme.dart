@@ -80,9 +80,9 @@ class AppTheme {
         ThemeData.light().textTheme, AppColors.textPrimaryLight),
     cardTheme: CardThemeData(
       color: AppColors.surfaceLight,
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 1,
+      shadowColor: const Color(0xFF173B67).withValues(alpha: 0.10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -167,14 +167,22 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.white.withValues(alpha: 0.9),
-      indicatorColor: AppColors.primaryLight.withValues(alpha: 0.12),
-      labelTextStyle: WidgetStateProperty.all(
-        GoogleFonts.notoSansKr(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimaryLight),
-      ),
+      backgroundColor: Colors.white,
+      indicatorColor: AppColors.primaryLight.withValues(alpha: 0.14),
+      iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.primaryLight
+                : AppColors.textSecondaryLight,
+          )),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) =>
+          GoogleFonts.notoSansKr(
+              fontSize: 12,
+              fontWeight: states.contains(WidgetState.selected)
+                  ? FontWeight.w700
+                  : FontWeight.w500,
+              color: states.contains(WidgetState.selected)
+                  ? AppColors.primaryLight
+                  : AppColors.textSecondaryLight)),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
@@ -242,8 +250,9 @@ class AppTheme {
         _buildTextTheme(ThemeData.dark().textTheme, AppColors.textPrimaryDark),
     cardTheme: CardThemeData(
       color: AppColors.cardDark,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -299,11 +308,11 @@ class AppTheme {
       elevation: 0,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.customBackground,
+      backgroundColor: AppColors.groupedSurfaceDark,
       indicatorColor: AppColors.primaryDark.withValues(alpha: 0.18),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: AppColors.textPrimaryDark);
+          return const IconThemeData(color: AppColors.primaryDark);
         }
         return const IconThemeData(color: AppColors.textSecondaryDark);
       }),
@@ -311,8 +320,8 @@ class AppTheme {
         if (states.contains(WidgetState.selected)) {
           return GoogleFonts.notoSansKr(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimaryDark);
+              fontWeight: FontWeight.w700,
+              color: AppColors.primaryDark);
         }
         return GoogleFonts.notoSansKr(
             fontSize: 12,

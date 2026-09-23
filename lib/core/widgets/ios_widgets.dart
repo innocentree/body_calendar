@@ -11,6 +11,7 @@ class IosGroupedSurface extends StatelessWidget {
     this.borderRadius = 14,
     this.color,
     this.showBorder = false,
+    this.showShadow = true,
     this.clipBehavior = Clip.none,
   });
 
@@ -20,6 +21,7 @@ class IosGroupedSurface extends StatelessWidget {
   final double borderRadius;
   final Color? color;
   final bool showBorder;
+  final bool showShadow;
   final Clip clipBehavior;
 
   @override
@@ -32,6 +34,63 @@ class IosGroupedSurface extends StatelessWidget {
         color: color ?? context.appGroupedSurface,
         borderRadius: BorderRadius.circular(borderRadius),
         border: showBorder ? Border.all(color: context.appSeparator) : null,
+        boxShadow: showShadow
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: Theme.of(context).brightness == Brightness.dark
+                        ? 0.22
+                        : 0.07,
+                  ),
+                  blurRadius: 18,
+                  offset: const Offset(0, 7),
+                ),
+              ]
+            : null,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// A visually prominent iOS-style summary surface used at the top of screens.
+class IosHeroSurface extends StatelessWidget {
+  const IosHeroSurface({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(20),
+    this.margin = EdgeInsets.zero,
+    this.borderRadius = 22,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry margin;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: margin,
+      padding: padding,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [Color(0xFF173A63), Color(0xFF162432)]
+              : const [Color(0xFFDCEEFF), Color(0xFFF8FBFF)],
+        ),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: context.appPrimary.withValues(alpha: 0.22)),
+        boxShadow: [
+          BoxShadow(
+            color: context.appPrimary.withValues(alpha: isDark ? 0.12 : 0.14),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: child,
     );
@@ -195,17 +254,17 @@ class IosSegmentedTabBar extends StatelessWidget {
           dividerColor: Colors.transparent,
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
-            color: context.appElevatedSurface,
+            color: context.appPrimary,
             borderRadius: BorderRadius.circular(7),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
+                color: context.appPrimary.withValues(alpha: 0.24),
+                blurRadius: 7,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          labelColor: context.appPrimaryText,
+          labelColor: Colors.white,
           unselectedLabelColor: context.appSecondaryText,
           labelStyle:
               const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),

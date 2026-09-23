@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
@@ -454,7 +455,7 @@ class _GroupedExerciseDetailScreenState
   Color _groupAccentColor(String? groupType) {
     switch (groupType) {
       case 'superset':
-        return const Color(0xFF8B5CF6);
+        return const Color(0xFF32ADE6);
       case 'compound':
         return const Color(0xFFF97316);
       default:
@@ -670,14 +671,9 @@ class _GroupedExerciseDetailScreenState
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                Container(
+                IosHeroSurface(
                   margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardTheme.color,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: accent.withValues(alpha: 0.45)),
-                  ),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final compactHeader =

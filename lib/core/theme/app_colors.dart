@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // iOS / SwiftUI-inspired system palette.
   static const Color primaryLight = Color(0xFF007AFF);
-  static const Color primaryDark = Color(0xFF0A84FF);
+  static const Color primaryDark = Color(0xFF4DA3FF);
 
   // Legacy alias kept for callers that do not have a BuildContext.
   static const Color primary = primaryLight;
@@ -15,26 +15,26 @@ class AppColors {
   static const Color neonCyan = secondary;
 
   // Backgrounds
-  static const Color backgroundLight = Color(0xFFF2F2F7);
-  static const Color backgroundDark = Color(0xFF000000);
+  static const Color backgroundLight = Color(0xFFF3F6FB);
+  static const Color backgroundDark = Color(0xFF0B0D12);
 
   // Semantic grouped surfaces.
   static const Color groupedBackgroundLight = backgroundLight;
   static const Color groupedBackgroundDark = backgroundDark;
   static const Color groupedSurfaceLight = Color(0xFFFFFFFF);
-  static const Color groupedSurfaceDark = Color(0xFF1C1C1E);
+  static const Color groupedSurfaceDark = Color(0xFF181B22);
   static const Color elevatedSurfaceLight = Color(0xFFFFFFFF);
-  static const Color elevatedSurfaceDark = Color(0xFF2C2C2E);
+  static const Color elevatedSurfaceDark = Color(0xFF242833);
 
   // Surfaces
   static const Color background = backgroundDark;
-  static const Color surface = Color(0xFF1C1C1E);
+  static const Color surface = groupedSurfaceDark;
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color surfaceDark = surface;
 
-  static const Color customBackground = Color(0xFF000000);
-  static const Color customSurface = Color(0xFF2C2C2E);
-  static const Color cardDark = Color(0xFF1C1C1E);
+  static const Color customBackground = backgroundDark;
+  static const Color customSurface = elevatedSurfaceDark;
+  static const Color cardDark = groupedSurfaceDark;
 
   // Text
   static const Color textPrimaryLight = Color(0xFF111111);
@@ -43,7 +43,7 @@ class AppColors {
   static const Color textSecondaryDark = Color(0xFF98989D);
 
   static const Color separatorLight = Color(0xFFD1D1D6);
-  static const Color separatorDark = Color(0xFF3A3A3C);
+  static const Color separatorDark = Color(0xFF343946);
 
   // States
   static const Color success = Color(0xFF34C759);
@@ -60,7 +60,7 @@ class AppColors {
   ];
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF5AC8FA), Color(0xFF0A84FF)],
+    colors: [Color(0xFF45C7FA), Color(0xFF007AFF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
