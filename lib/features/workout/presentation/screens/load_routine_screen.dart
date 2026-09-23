@@ -68,6 +68,7 @@ class _LoadRoutineScreenState extends State<LoadRoutineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('루틴 불러오기'),
@@ -75,21 +76,66 @@ class _LoadRoutineScreenState extends State<LoadRoutineScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _routines.isEmpty
-              ? const Center(child: Text('저장된 루틴이 아직 없어요.'))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(Icons.folder_open_rounded,
+                              color: theme.colorScheme.primary),
+                        ),
+                        const SizedBox(height: 18),
+                        Text('저장된 루틴이 아직 없어요.',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 6),
+                        Text('운동 화면에서 현재 목록을 루틴으로 저장할 수 있어요.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                )
               : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                   itemCount: _routines.length,
                   itemBuilder: (context, index) {
                     final routine = _routines[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      clipBehavior: Clip.antiAlias,
                       child: ListTile(
+                        minTileHeight: 72,
+                        leading: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(Icons.list_alt_rounded,
+                              color: theme.colorScheme.primary),
+                        ),
                         title: Text(routine.name),
                         subtitle: Text('${routine.exercises.length}가지 운동'),
                         onTap: () {
-                          Navigator.pop(context, routine); // Return selected routine
+                          Navigator.pop(
+                              context, routine); // Return selected routine
                         },
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          tooltip: '루틴 삭제',
+                          icon: Icon(Icons.delete_outline_rounded,
+                              color: theme.colorScheme.error),
                           onPressed: () => _deleteRoutine(routine.id),
                         ),
                       ),

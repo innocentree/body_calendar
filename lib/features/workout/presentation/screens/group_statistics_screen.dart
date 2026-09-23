@@ -282,33 +282,41 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
                               setState(() => _period = period),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _StatSummaryCard(
-                                title: '최고 라운드',
-                                value: _formatRounds(bestRound),
-                                subtitle: '하루 최고 기록',
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 156,
+                                child: _StatSummaryCard(
+                                  title: '최고 라운드',
+                                  value: _formatRounds(bestRound),
+                                  subtitle: '하루 최고 기록',
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _StatSummaryCard(
-                                title: '최고 1RM',
-                                value:
-                                    best1RM == 0 ? '-' : _formatWeight(best1RM),
-                                subtitle: '그룹 내 최고 세트 기준',
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 156,
+                                child: _StatSummaryCard(
+                                  title: '최고 1RM',
+                                  value: best1RM == 0
+                                      ? '-'
+                                      : _formatWeight(best1RM),
+                                  subtitle: '그룹 내 최고 세트 기준',
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _StatSummaryCard(
-                                title: '최장 수행',
-                                value: _formatDuration(longestDuration),
-                                subtitle: '완료 세트 합산',
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 156,
+                                child: _StatSummaryCard(
+                                  title: '최장 수행',
+                                  value: _formatDuration(longestDuration),
+                                  subtitle: '완료 세트 합산',
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 10),
                         _CompareInfoCard(
@@ -407,9 +415,8 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.dividerColor),
+              color: context.appGroupedSurface,
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,6 +613,17 @@ class _PeriodFilterBar extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: SegmentedButton<_StatisticsPeriod>(
+        style: SegmentedButton.styleFrom(
+          backgroundColor: context.appElevatedSurface,
+          selectedBackgroundColor: context.appGroupedSurface,
+          foregroundColor: context.appSecondaryText,
+          selectedForegroundColor: context.appPrimaryText,
+          side: BorderSide.none,
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
         segments: const [
           ButtonSegment(value: _StatisticsPeriod.days7, label: Text('7일')),
           ButtonSegment(value: _StatisticsPeriod.days30, label: Text('30일')),
@@ -641,9 +659,8 @@ class _CompareInfoCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        color: context.appGroupedSurface,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,9 +744,8 @@ class _StatSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        color: context.appGroupedSurface,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

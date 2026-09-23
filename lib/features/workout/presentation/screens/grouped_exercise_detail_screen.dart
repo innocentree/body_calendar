@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
-import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
@@ -15,10 +14,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-const _detailSurface = AppColors.surfaceDark;
-const _detailSoftSurface = AppColors.customSurface;
-const _detailMutedText = AppColors.textSecondaryDark;
 
 class GroupedExerciseDetailScreen extends StatefulWidget {
   final List<WorkoutRecord> workouts;
@@ -885,33 +880,39 @@ class _GroupedExerciseDetailScreenState
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SummaryCard(
-                              title: '완료 세트',
-                              value: '$_completedSetCount개',
-                              subtitle: '${_workouts.length}개 운동',
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 142,
+                              child: _SummaryCard(
+                                title: '완료 세트',
+                                value: '$_completedSetCount개',
+                                subtitle: '${_workouts.length}개 운동',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _SummaryCard(
-                              title: '볼륨',
-                              value: _formatVolume(_totalCompletedVolume),
-                              subtitle: '완료 세트 기준',
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 142,
+                              child: _SummaryCard(
+                                title: '볼륨',
+                                value: _formatVolume(_totalCompletedVolume),
+                                subtitle: '완료 세트 기준',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _SummaryCard(
-                              title: '진행 시간',
-                              value: _formatDuration(
-                                  Duration(seconds: _completedWorkSeconds)),
-                              subtitle: '대략치',
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              width: 142,
+                              child: _SummaryCard(
+                                title: '진행 시간',
+                                value: _formatDuration(
+                                    Duration(seconds: _completedWorkSeconds)),
+                                subtitle: '대략치',
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       ...List.generate(roundCount, (roundIndex) {
@@ -1241,9 +1242,8 @@ class _ExerciseRoundCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1274,7 +1274,9 @@ class _ExerciseRoundCard extends StatelessWidget {
                           : (workout.bodyPart ?? '세트 기록'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: _detailMutedText),
+                      style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 );
@@ -1348,9 +1350,8 @@ class _AdjustChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -1358,15 +1359,15 @@ class _AdjustChip extends StatelessWidget {
             width: 44,
             child: Text(
               label,
-              style: const TextStyle(
-                color: _detailMutedText,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(width: 4),
           IconButton(
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
             style: IconButton.styleFrom(
@@ -1390,7 +1391,7 @@ class _AdjustChip extends StatelessWidget {
             ),
           ),
           IconButton(
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             padding: EdgeInsets.zero,
             visualDensity: VisualDensity.compact,
             style: IconButton.styleFrom(
@@ -1448,17 +1449,16 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: _detailMutedText,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
@@ -1478,8 +1478,8 @@ class _SummaryCard extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: _detailMutedText,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 11,
             ),
           ),

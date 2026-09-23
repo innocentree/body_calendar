@@ -92,11 +92,11 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
                   builder: (context, value, _) {
                     return CircularProgressIndicator(
                       value: value,
-                      strokeWidth: 10,
+                      strokeWidth: 8,
                       backgroundColor:
-                          AppColors.separatorDark.withValues(alpha: 0.55),
+                          AppColors.elevatedSurfaceDark.withValues(alpha: 0.88),
                       valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.primary,
+                        AppColors.primaryDark,
                       ),
                     );
                   },
@@ -106,12 +106,14 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
                     width: 86,
                     height: 86,
                     decoration: BoxDecoration(
-                      color: AppColors.customSurface.withValues(alpha: 0.92),
+                      color:
+                          AppColors.groupedSurfaceDark.withValues(alpha: 0.96),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.18),
-                          blurRadius: 18,
+                          blurRadius: 14,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -120,7 +122,7 @@ class _TimerOverlayWidgetState extends State<TimerOverlayWidget> {
                         '$_remainingTime',
                         style: const TextStyle(
                           fontSize: 40,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           color: Colors.white,
                           decoration: TextDecoration.none,
                         ),

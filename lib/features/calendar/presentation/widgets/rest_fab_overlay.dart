@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
 import 'package:body_calendar/features/workout/presentation/screens/grouped_exercise_detail_screen.dart';
@@ -143,9 +142,7 @@ class _RestFabOverlayState extends State<RestFabOverlay> {
               }
             },
             onPanEnd: (_) {
-              if (_fabOffset != null) {
-                _saveFabOffset(_fabOffset);
-              }
+              _saveFabOffset(_fabOffset);
               _dragStartOffset = null;
               _dragStartPosition = null;
             },
@@ -162,24 +159,36 @@ class _RestFabOverlayState extends State<RestFabOverlay> {
       onTap: () => _goToRestingExercise(bloc),
       child: Container(
         key: const ValueKey('rest-fab-overlay'),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        constraints: const BoxConstraints(minHeight: 50),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
         decoration: BoxDecoration(
-          color: Colors.deepPurple,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+          color: Theme.of(context).colorScheme.primary,
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.18),
+            width: 0.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.timer, color: Colors.white),
-            const SizedBox(width: 8),
+            const Icon(Icons.timer_outlined, color: Colors.white, size: 20),
+            const SizedBox(width: 7),
             Text(
               '$duration',
               style: const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
                 decoration: TextDecoration.none,
-                fontSize: 40,
+                fontSize: 26,
+                fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
           ],

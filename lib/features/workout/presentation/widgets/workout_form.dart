@@ -40,7 +40,8 @@ class _WorkoutFormState extends State<WorkoutForm> {
     }
 
     final workout = Workout(
-      id: widget.workout?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.workout?.id ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       name: _nameController.text,
       exercises: _exercises,
       duration: _duration,
@@ -57,13 +58,24 @@ class _WorkoutFormState extends State<WorkoutForm> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
               Text(
                 widget.workout == null ? '운동 저장' : '운동 수정',
                 style: Theme.of(context).textTheme.titleLarge,
@@ -74,7 +86,7 @@ class _WorkoutFormState extends State<WorkoutForm> {
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: '운동 이름',
-                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.edit_rounded),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -84,30 +96,56 @@ class _WorkoutFormState extends State<WorkoutForm> {
                 },
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text('운동 시간: '),
-                  Text('$_duration분'),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.remove),
-                    onPressed: () {
-                      if (_duration > 0) {
-                        setState(() {
-                          _duration--;
-                        });
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () {
-                      setState(() {
-                        _duration++;
-                      });
-                    },
-                  ),
-                ],
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('운동 시간',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: '운동 시간 줄이기',
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            if (_duration > 0) {
+                              setState(() {
+                                _duration--;
+                              });
+                            }
+                          },
+                        ),
+                        Expanded(
+                          child: Text(
+                            '$_duration분',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        IconButton.filledTonal(
+                          tooltip: '운동 시간 늘리기',
+                          icon: const Icon(Icons.add),
+                          onPressed: () {
+                            setState(() {
+                              _duration++;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               if (_exercises.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -123,15 +161,21 @@ class _WorkoutFormState extends State<WorkoutForm> {
                   itemBuilder: (context, index) {
                     final exercise = _exercises[index];
                     return ListTile(
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 12),
+                      tileColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       title: Text(exercise.name),
-                      subtitle: Text('${exercise.sets}세트 • ${exercise.weight}kg'),
+                      subtitle:
+                          Text('${exercise.sets}세트 • ${exercise.weight}kg'),
                     );
                   },
                 ),
               ],
               const SizedBox(height: 16),
-              ElevatedButton(
+              FilledButton(
                 onPressed: _saveWorkout,
                 child: Text(widget.workout == null ? '저장' : '수정'),
               ),

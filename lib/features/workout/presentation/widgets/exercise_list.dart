@@ -11,13 +11,15 @@ class ExerciseList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: workouts.length,
       itemBuilder: (context, index) {
         final workout = workouts[index];
         return Card(
-          margin: const EdgeInsets.only(bottom: 16),
+          margin: const EdgeInsets.only(bottom: 12),
+          clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
             title: Text(
               workout.name,
@@ -28,15 +30,14 @@ class ExerciseList extends StatelessWidget {
             ),
             subtitle: Text(
               '${workout.exercises.length}개의 운동 • ${workout.duration}분',
-              style: TextStyle(
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
             leading: CircleAvatar(
-              backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              backgroundColor:
+                  theme.colorScheme.primary.withValues(alpha: 0.12),
               child: Icon(
                 Icons.fitness_center,
-                color: Theme.of(context).primaryColor,
+                color: theme.colorScheme.primary,
               ),
             ),
             children: [
@@ -50,9 +51,8 @@ class ExerciseList extends StatelessWidget {
                     title: Text(exercise.name),
                     subtitle: Text(
                       '${exercise.sets}세트 × ${exercise.reps}회',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                      ),
+                      style:
+                          TextStyle(color: theme.colorScheme.onSurfaceVariant),
                     ),
                     trailing: Text(
                       '${exercise.weight}kg',
@@ -79,9 +79,9 @@ class ExerciseList extends StatelessWidget {
                       onPressed: () {
                         // TODO: 운동 삭제 기능 구현
                       },
-                      child: const Text(
+                      child: Text(
                         '삭제',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(color: theme.colorScheme.error),
                       ),
                     ),
                   ],
@@ -93,4 +93,4 @@ class ExerciseList extends StatelessWidget {
       },
     );
   }
-} 
+}

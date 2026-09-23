@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/ios_widgets.dart';
 
 enum ExerciseStatisticType {
   volume,
@@ -165,148 +166,180 @@ class _ExerciseStatisticsPopupState extends State<ExerciseStatisticsPopup> {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).dividerColor),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.78,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              _title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
-              textAlign: TextAlign.center,
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            decoration: BoxDecoration(
+              color: context.appGroupedSurface,
+              borderRadius: BorderRadius.circular(22),
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 200,
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : displayDates.isEmpty
-                      ? const Center(
-                          child: Text(
-                            '아직 기록이 없어요.',
-                            style:
-                                TextStyle(color: AppColors.textSecondaryDark),
-                          ),
-                        )
-                      : LineChart(
-                          LineChartData(
-                            gridData: FlGridData(show: false),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                              topTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    final idx = value.toInt();
-                                    if (idx < 0 || idx >= displayDates.length) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    // Show date like '1/8'
-                                    try {
-                                      final date =
-                                          DateTime.parse(displayDates[idx]);
-                                      return Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 8.0),
-                                        child: Text(
-                                          '${date.month}/${date.day}',
-                                          style: TextStyle(
-                                            fontSize: 10,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: const IosModalHandle(),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _title,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '닫기',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  height: 220,
+                  padding: const EdgeInsets.fromLTRB(8, 16, 12, 8),
+                  decoration: BoxDecoration(
+                    color: context.appElevatedSurface,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : displayDates.isEmpty
+                          ? Center(
+                              child: Text(
+                                '아직 기록이 없어요.',
+                                style:
+                                    TextStyle(color: context.appSecondaryText),
+                              ),
+                            )
+                          : LineChart(
+                              LineChartData(
+                                gridData: FlGridData(show: false),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                      sideTitles:
+                                          SideTitles(showTitles: false)),
+                                  rightTitles: AxisTitles(
+                                      sideTitles:
+                                          SideTitles(showTitles: false)),
+                                  topTitles: AxisTitles(
+                                      sideTitles:
+                                          SideTitles(showTitles: false)),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        final idx = value.toInt();
+                                        if (idx < 0 ||
+                                            idx >= displayDates.length) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        // Show date like '1/8'
+                                        try {
+                                          final date =
+                                              DateTime.parse(displayDates[idx]);
+                                          return Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 8.0),
+                                            child: Text(
+                                              '${date.month}/${date.day}',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.color,
+                                              ),
+                                            ),
+                                          );
+                                        } catch (_) {
+                                          return const SizedBox.shrink();
+                                        }
+                                      },
+                                      interval: 1,
+                                      reservedSize: 24,
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                minX: 0,
+                                maxX: (displayDates.length - 1).toDouble(),
+                                minY: 0,
+                                // Ensure Y axis starts at 0 or appropriate min for better visualization
+                                // minY: (values.reduce(min) * 0.8), // Custom min if needed
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: [
+                                      for (int i = 0; i < values.length; i++)
+                                        FlSpot(i.toDouble(), values[i]),
+                                    ],
+                                    isCurved: true,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    barWidth: 3,
+                                    dotData: FlDotData(show: true),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: 0.18),
+                                    ),
+                                  ),
+                                ],
+                                lineTouchData: LineTouchData(
+                                  touchTooltipData: LineTouchTooltipData(
+                                    tooltipBgColor:
+                                        Theme.of(context).cardTheme.color ??
+                                            AppColors.customSurface,
+                                    getTooltipItems: (touchedSpots) {
+                                      return touchedSpots.map((spot) {
+                                        return LineTooltipItem(
+                                          widget.type ==
+                                                      ExerciseStatisticType
+                                                          .totalReps ||
+                                                  widget.type ==
+                                                      ExerciseStatisticType
+                                                          .maxReps
+                                              ? '${spot.y.toInt()} $_valueUnit'
+                                              : '${spot.y.toStringAsFixed(1)} $_valueUnit',
+                                          TextStyle(
                                             color: Theme.of(context)
                                                 .textTheme
-                                                .bodySmall
+                                                .bodyLarge
                                                 ?.color,
+                                            fontWeight: FontWeight.w700,
                                           ),
-                                        ),
-                                      );
-                                    } catch (_) {
-                                      return const SizedBox.shrink();
-                                    }
-                                  },
-                                  interval: 1,
-                                  reservedSize: 24,
+                                        );
+                                      }).toList();
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
-                            borderData: FlBorderData(show: false),
-                            minX: 0,
-                            maxX: (displayDates.length - 1).toDouble(),
-                            minY: 0,
-                            // Ensure Y axis starts at 0 or appropriate min for better visualization
-                            // minY: (values.reduce(min) * 0.8), // Custom min if needed
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: [
-                                  for (int i = 0; i < values.length; i++)
-                                    FlSpot(i.toDouble(), values[i]),
-                                ],
-                                isCurved: true,
-                                color: Theme.of(context).colorScheme.primary,
-                                barWidth: 3,
-                                dotData: FlDotData(show: true),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.18),
-                                ),
-                              ),
-                            ],
-                            lineTouchData: LineTouchData(
-                              touchTooltipData: LineTouchTooltipData(
-                                tooltipBgColor:
-                                    Theme.of(context).cardTheme.color ??
-                                        AppColors.customSurface,
-                                getTooltipItems: (touchedSpots) {
-                                  return touchedSpots.map((spot) {
-                                    return LineTooltipItem(
-                                      widget.type ==
-                                                  ExerciseStatisticType
-                                                      .totalReps ||
-                                              widget.type ==
-                                                  ExerciseStatisticType.maxReps
-                                          ? '${spot.y.toInt()} $_valueUnit'
-                                          : '${spot.y.toStringAsFixed(1)} $_valueUnit',
-                                      TextStyle(
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge
-                                            ?.color,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    );
-                                  }).toList();
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  '최근 7회 기록',
+                  style: TextStyle(
+                    color: context.appSecondaryText,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              '최근 7회 기록',
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodySmall?.color,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );

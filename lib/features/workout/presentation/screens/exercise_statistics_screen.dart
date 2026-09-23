@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:body_calendar/core/theme/app_colors.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -142,7 +143,6 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final dates = _filterDates(_dateToTotalWeight.keys);
     final weights = dates.map((d) => _dateToTotalWeight[d] ?? 0.0).toList();
     final maxDates = _filterDates(_dateToMaxWeight.keys);
@@ -160,24 +160,13 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
           preferredSize: const Size.fromHeight(56),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.dividerColor.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                tabs: const [
-                  Tab(text: '전체 볼륨'),
-                  Tab(text: '최고 무게'),
-                  Tab(text: '1RM'),
-                ],
-              ),
+            child: IosSegmentedTabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: '전체 볼륨'),
+                Tab(text: '최고 무게'),
+                Tab(text: '1RM'),
+              ],
             ),
           ),
         ),
@@ -197,37 +186,44 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
                               setState(() => _period = period),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _StatSummaryCard(
-                                title: '기록 일수',
-                                value: '${dates.length}일',
-                                subtitle: '이 운동 수행일',
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 156,
+                                child: _StatSummaryCard(
+                                  title: '기록 일수',
+                                  value: '${dates.length}일',
+                                  subtitle: '이 운동 수행일',
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _StatSummaryCard(
-                                title: '그룹 수행',
-                                value: '$groupedCount회',
-                                subtitle: '슈퍼세트/컴파운드 포함',
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 156,
+                                child: _StatSummaryCard(
+                                  title: '그룹 수행',
+                                  value: '$groupedCount회',
+                                  subtitle: '슈퍼세트/컴파운드 포함',
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _StatSummaryCard(
-                                title: '최고 1RM',
-                                value: oneRmWeights.isEmpty
-                                    ? '-'
-                                    : _formatWeight(
-                                        oneRmWeights
-                                            .reduce((a, b) => a > b ? a : b),
-                                      ),
-                                subtitle: '추정치',
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 156,
+                                child: _StatSummaryCard(
+                                  title: '최고 1RM',
+                                  value: oneRmWeights.isEmpty
+                                      ? '-'
+                                      : _formatWeight(
+                                          oneRmWeights
+                                              .reduce((a, b) => a > b ? a : b),
+                                        ),
+                                  subtitle: '추정치',
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 10),
                         _CompareInfoCard(
@@ -309,9 +305,8 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: theme.dividerColor),
+              color: context.appGroupedSurface,
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,6 +513,17 @@ class _PeriodFilterBar extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: SegmentedButton<_StatisticsPeriod>(
+        style: SegmentedButton.styleFrom(
+          backgroundColor: context.appElevatedSurface,
+          selectedBackgroundColor: context.appGroupedSurface,
+          foregroundColor: context.appSecondaryText,
+          selectedForegroundColor: context.appPrimaryText,
+          side: BorderSide.none,
+          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
         segments: const [
           ButtonSegment(value: _StatisticsPeriod.days7, label: Text('7일')),
           ButtonSegment(value: _StatisticsPeriod.days30, label: Text('30일')),
@@ -553,9 +559,8 @@ class _CompareInfoCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        color: context.appGroupedSurface,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -639,9 +644,8 @@ class _StatSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        color: context.appGroupedSurface,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -94,11 +94,10 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
 
         return Container(
           width: actualWidth,
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: theme.dividerColor),
+            color: context.appGroupedSurface,
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -113,7 +112,7 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                         ? _currentValue.toStringAsFixed(1)
                         : _currentValue.toInt().toString(),
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: highlight,
                       letterSpacing: -1,
                     ),
@@ -122,8 +121,8 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                   Text(
                     widget.unit,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: secondary.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w500,
+                      color: context.appSecondaryText,
                     ),
                   ),
                 ],
@@ -134,18 +133,6 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Container(
-                      width: 110,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: [
-                            highlight.withValues(alpha: 0.14),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
                     NotificationListener<ScrollNotification>(
                       onNotification: (notification) {
                         if (notification is ScrollUpdateNotification) {
@@ -196,19 +183,11 @@ class _HorizontalDialPickerState extends State<HorizontalDialPicker> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            width: 4,
-                            height: 60,
+                            width: 3,
+                            height: 54,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  highlight.withValues(alpha: 0.2),
-                                  highlight,
-                                  highlight.withValues(alpha: 0.2),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(2),
+                              color: highlight,
+                              borderRadius: BorderRadius.circular(1.5),
                             ),
                           ),
                         ],
@@ -261,9 +240,9 @@ class _DialPainter extends CustomPainter {
       final value = minValue + (i * step);
 
       if (isMajor) {
-        paint.color = majorColor.withValues(alpha: 0.82);
-        paint.strokeWidth = 2.5;
-        const tickHeight = 40.0;
+        paint.color = majorColor.withValues(alpha: 0.72);
+        paint.strokeWidth = 2;
+        const tickHeight = 36.0;
         canvas.drawLine(
           Offset(x, (size.height - tickHeight) / 2),
           Offset(x, (size.height + tickHeight) / 2),
@@ -277,7 +256,7 @@ class _DialPainter extends CustomPainter {
           text: label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
             color: labelColor.withValues(alpha: 0.72),
           ),
         );
@@ -287,9 +266,9 @@ class _DialPainter extends CustomPainter {
           Offset(x - textPainter.width / 2, (size.height + tickHeight) / 2 + 5),
         );
       } else {
-        paint.color = minorColor.withValues(alpha: 0.32);
-        paint.strokeWidth = 1.5;
-        const tickHeight = 20.0;
+        paint.color = minorColor.withValues(alpha: 0.3);
+        paint.strokeWidth = 1;
+        const tickHeight = 18.0;
         canvas.drawLine(
           Offset(x, (size.height - tickHeight) / 2),
           Offset(x, (size.height + tickHeight) / 2),

@@ -1,4 +1,5 @@
 import 'package:body_calendar/core/theme/app_colors.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -117,17 +118,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final formattedDate = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
     final totalItems =
         _bodyCompositionRecords.length + _measurementRecords.length;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('바디 로그 · $formattedDate'),
+        title: const Text('프로필'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             tooltip: '새로고침',
             onPressed: _loadRecords,
           ),
@@ -136,53 +136,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+              padding: const EdgeInsets.only(bottom: 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _HeroProfileCard(
-                    dateText: formattedDate,
-                    summary:
-                        !_hasBodyCompDataForDate && !_hasMeasurementDataForDate
-                            ? '아직 이 날짜에 기록된 바디 로그가 없어요.'
-                            : '체성분과 치수 변화를 같은 톤으로 빠르게 확인할 수 있어요.',
-                    totalItems: totalItems,
-                    hasBodyComp: _hasBodyCompDataForDate,
-                    hasMeasurements: _hasMeasurementDataForDate,
+                  IosLargeHeader(
+                    title: '바디 로그',
+                    subtitle: formattedDate,
                   ),
-                  const SizedBox(height: 18),
-                  if (!_hasBodyCompDataForDate && !_hasMeasurementDataForDate)
-                    _EmptyStateCard(
-                      title: '기록이 아직 없어요',
-                      message: '아래 + 버튼으로 오늘의 바디 로그를 바로 추가해보세요.',
-                      icon: Icons.monitor_weight_outlined,
-                    )
-                  else ...[
-                    if (_hasBodyCompDataForDate) ...[
-                      _SectionHeader(
-                        title: '체중/체성분',
-                        subtitle: '선택한 날짜와 누적 변화 흐름을 함께 봐요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildCategoryCard('체중/체성분', _bodyCompositionRecords, 0),
-                      const SizedBox(height: 18),
-                    ],
-                    if (_hasMeasurementDataForDate) ...[
-                      _SectionHeader(
-                        title: '치수',
-                        subtitle: '부위별 기록 추이를 한 화면에서 확인해요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildCategoryCard('치수', _measurementRecords, 1),
-                      const SizedBox(height: 18),
-                    ],
-                  ],
-                  _SectionHeader(
-                    title: '설정',
-                    subtitle: '바디 로그와 함께 쓰는 추천 옵션이에요.',
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _HeroProfileCard(
+                          dateText: formattedDate,
+                          summary: !_hasBodyCompDataForDate &&
+                                  !_hasMeasurementDataForDate
+                              ? '아직 이 날짜에 기록된 바디 로그가 없어요.'
+                              : '체성분과 치수 변화를 한눈에 확인해보세요.',
+                          totalItems: totalItems,
+                          hasBodyComp: _hasBodyCompDataForDate,
+                          hasMeasurements: _hasMeasurementDataForDate,
+                        ),
+                        const SizedBox(height: 20),
+                        if (!_hasBodyCompDataForDate &&
+                            !_hasMeasurementDataForDate)
+                          const _EmptyStateCard(
+                            title: '기록이 아직 없어요',
+                            message: '아래 + 버튼으로 오늘의 바디 로그를 추가해보세요.',
+                            icon: Icons.monitor_weight_outlined,
+                          )
+                        else ...[
+                          if (_hasBodyCompDataForDate) ...[
+                            const _SectionHeader(
+                              title: '체중/체성분',
+                              subtitle: '선택한 날짜와 누적 변화 흐름',
+                            ),
+                            const SizedBox(height: 8),
+                            _buildCategoryCard(
+                                '체중/체성분', _bodyCompositionRecords, 0),
+                            const SizedBox(height: 20),
+                          ],
+                          if (_hasMeasurementDataForDate) ...[
+                            const _SectionHeader(
+                              title: '치수',
+                              subtitle: '부위별 기록 추이',
+                            ),
+                            const SizedBox(height: 8),
+                            _buildCategoryCard('치수', _measurementRecords, 1),
+                            const SizedBox(height: 20),
+                          ],
+                        ],
+                        const _SectionHeader(
+                          title: '설정',
+                          subtitle: '운동 기록 추천 옵션',
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSettingsSection(),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  _buildSettingsSection(theme),
                 ],
               ),
             ),
@@ -197,7 +211,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
           _loadRecords();
         },
-        child: const Icon(Icons.add),
+        tooltip: '바디 로그 추가',
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -232,14 +247,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor),
-      ),
+    return IosGroupedSurface(
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(14),
         onTap: () async {
           final itemsToEdit = records.map((r) => r.name).toList();
           await Navigator.push(
@@ -255,7 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _loadRecords();
         },
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -271,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   Icon(
                     Icons.chevron_right_rounded,
-                    color: theme.textTheme.bodySmall?.color,
+                    color: context.appSecondaryText,
                   ),
                 ],
               ),
@@ -326,17 +338,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         sideTitles: SideTitles(showTitles: false),
                       ),
                     ),
-                    borderData: FlBorderData(
-                      show: true,
-                      border: Border.all(
-                        color: theme.dividerColor.withValues(alpha: 0.6),
-                      ),
-                    ),
+                    borderData: FlBorderData(show: false),
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
                       getDrawingHorizontalLine: (_) => FlLine(
-                        color: theme.dividerColor.withValues(alpha: 0.35),
+                        color: context.appSeparator.withValues(alpha: 0.35),
                         strokeWidth: 1,
                       ),
                     ),
@@ -373,7 +380,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLegend(List<BodyRecord> records, List<Color> colors) {
-    final theme = Theme.of(context);
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -383,8 +389,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(14),
+            color: context.appElevatedSurface,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -398,7 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(record.name),
+              Text(record.name, style: Theme.of(context).textTheme.labelMedium),
             ],
           ),
         );
@@ -406,15 +412,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsSection(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor),
-      ),
+  Widget _buildSettingsSection() {
+    final theme = Theme.of(context);
+    return IosGroupedSurface(
+      padding: EdgeInsets.zero,
       child: SwitchListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        secondary: const IosIconBadge(icon: Icons.auto_awesome_rounded),
         title: Text(
           '지난 주 운동 추천',
           style: theme.textTheme.titleSmall?.copyWith(
@@ -468,7 +472,7 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
         title: const Text('기록할 항목 선택'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -490,7 +494,7 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 24),
             const _SectionHeader(
               title: '치수',
               subtitle: '부위별 치수도 함께 기록할 수 있어요.',
@@ -512,10 +516,10 @@ class _SelectBodyPartScreenState extends State<SelectBodyPartScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: ElevatedButton(
+      bottomNavigationBar: IosBottomSafeAction(
+        child: SizedBox(
+          height: 50,
+          child: FilledButton(
             onPressed: () async {
               final selectedItems = <String>[];
               _bodyComposition.forEach((key, value) {
@@ -688,17 +692,23 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
           title: Text('$item 기록 수정'),
-          content: TextField(
-            controller: editController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: '값',
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: TextField(
+              controller: editController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: '값',
+              ),
             ),
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
               child: const Text('삭제'),
               onPressed: () {
                 setState(() {
@@ -745,31 +755,19 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
     final measurementSelected = widget.selectedItems
         .where((item) => !_bodyCompositionItems.contains(item))
         .toList();
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('바디 로그'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: const Size.fromHeight(52),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.dividerColor.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                tabs: const [
-                  Tab(text: '체중/체성분'),
-                  Tab(text: '치수'),
-                ],
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: IosSegmentedTabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: '체중/체성분'),
+                Tab(text: '치수'),
+              ],
             ),
           ),
         ),
@@ -787,7 +785,11 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   Widget _buildTab(List<String> items) {
     final theme = Theme.of(context);
     if (items.isEmpty) {
-      return const Center(child: Text('선택한 항목이 없어요.'));
+      return const IosEmptyState(
+        icon: Icons.checklist_rounded,
+        title: '선택한 항목이 없어요',
+        message: '이 종류에 추가한 기록 항목이 없습니다.',
+      );
     }
 
     final lineBarsData = items.map((item) {
@@ -814,17 +816,12 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
     }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: theme.dividerColor),
-            ),
+          IosGroupedSurface(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -841,7 +838,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
-                  height: 300,
+                  height: 280,
                   child: LineChart(
                     LineChartData(
                       lineTouchData: LineTouchData(
@@ -917,17 +914,12 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                           sideTitles: SideTitles(showTitles: false),
                         ),
                       ),
-                      borderData: FlBorderData(
-                        show: true,
-                        border: Border.all(
-                          color: theme.dividerColor.withValues(alpha: 0.6),
-                        ),
-                      ),
+                      borderData: FlBorderData(show: false),
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
                         getDrawingHorizontalLine: (_) => FlLine(
-                          color: theme.dividerColor.withValues(alpha: 0.35),
+                          color: context.appSeparator.withValues(alpha: 0.35),
                           strokeWidth: 1,
                         ),
                       ),
@@ -939,49 +931,62 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           const _SectionHeader(
             title: '오늘 기록',
             subtitle: '입력 후 포커스가 빠지면 자동 저장돼요.',
           ),
           const SizedBox(height: 10),
-          ...items.map((item) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.cardTheme.color,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.dividerColor),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: _itemColors[item],
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _controllers[item],
-                        focusNode: _focusNodes[item],
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        decoration: InputDecoration(
-                          labelText: '$item 값 입력',
+          IosGroupedSurface(
+            padding: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: items.asMap().entries.expand((entry) sync* {
+                final item = entry.value;
+                if (entry.key > 0) {
+                  yield Divider(
+                    height: 1,
+                    indent: 50,
+                    color: context.appSeparator.withValues(alpha: 0.55),
+                  );
+                }
+                yield Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: _itemColors[item],
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _controllers[item],
+                          focusNode: _focusNodes[item],
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: InputDecoration(
+                            labelText: item,
+                            hintText: '값 입력',
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -1009,7 +1014,6 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
   }
 
   Widget _buildLegend(List<String> items) {
-    final theme = Theme.of(context);
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -1017,8 +1021,8 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(14),
+            color: context.appElevatedSurface,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1032,7 +1036,7 @@ class _RecordBodyChangeScreenState extends State<RecordBodyChangeScreen>
                 ),
               ),
               const SizedBox(width: 6),
-              Text(item),
+              Text(item, style: Theme.of(context).textTheme.labelMedium),
             ],
           ),
         );
@@ -1059,58 +1063,84 @@ class _HeroProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.18),
-            theme.cardTheme.color ?? theme.cardColor,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: theme.dividerColor),
-      ),
+    return IosGroupedSurface(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '오늘의 바디 로그',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(dateText, style: theme.textTheme.bodySmall),
-          const SizedBox(height: 12),
-          Text(summary, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 16),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _MiniInfoPill(
-                  label: '항목 수',
-                  value: '$totalItems개',
-                ),
+              const IosIconBadge(
+                icon: Icons.monitor_weight_outlined,
+                size: 42,
+                iconSize: 21,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
-                child: _MiniInfoPill(
-                  label: '체성분',
-                  value: hasBodyComp ? '기록됨' : '없음',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MiniInfoPill(
-                  label: '치수',
-                  value: hasMeasurements ? '기록됨' : '없음',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '오늘의 바디 로그',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      dateText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: context.appSecondaryText,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            summary,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: context.appSecondaryText,
+            ),
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 390;
+              final itemWidth = isCompact
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - 16) / 3;
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  SizedBox(
+                    width: itemWidth,
+                    child: _MiniInfoPill(
+                      label: '항목 수',
+                      value: '$totalItems개',
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _MiniInfoPill(
+                      label: '체성분',
+                      value: hasBodyComp ? '기록됨' : '없음',
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _MiniInfoPill(
+                      label: '치수',
+                      value: hasMeasurements ? '기록됨' : '없음',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -1128,20 +1158,26 @@ class _MiniInfoPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(minHeight: 54),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(16),
+        color: context.appElevatedSurface,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: theme.textTheme.bodySmall),
-          const SizedBox(height: 6),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: context.appSecondaryText,
+            ),
+          ),
+          const SizedBox(height: 3),
           Text(
             value,
             style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -1159,18 +1195,28 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: context.appSecondaryText,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(subtitle, style: theme.textTheme.bodySmall),
-      ],
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: context.appSecondaryText,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1188,32 +1234,12 @@ class _EmptyStateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: AppColors.primary),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return IosGroupedSurface(
+      child: IosEmptyState(
+        icon: icon,
+        title: title,
+        message: message,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
       ),
     );
   }
@@ -1226,14 +1252,21 @@ class _SelectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor),
+    return IosGroupedSurface(
+      padding: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: children.asMap().entries.expand((entry) sync* {
+          if (entry.key > 0) {
+            yield Divider(
+              height: 1,
+              indent: 16,
+              color: context.appSeparator.withValues(alpha: 0.55),
+            );
+          }
+          yield entry.value;
+        }).toList(),
       ),
-      child: Column(children: children),
     );
   }
 }
@@ -1251,18 +1284,20 @@ class _AdaptiveCheckboxTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return CheckboxListTile(
-      title: Text(title),
-      value: value,
-      onChanged: (next) => onChanged(next ?? false),
-      checkboxShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: CheckboxListTile(
+        title: Text(title),
+        value: value,
+        onChanged: (next) => onChanged(next ?? false),
+        checkboxShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),
+        activeColor: context.appPrimary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        side: BorderSide(color: context.appSeparator),
+        controlAffinity: ListTileControlAffinity.trailing,
       ),
-      activeColor: theme.colorScheme.primary,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      side: BorderSide(color: theme.dividerColor),
-      controlAffinity: ListTileControlAffinity.trailing,
     );
   }
 }

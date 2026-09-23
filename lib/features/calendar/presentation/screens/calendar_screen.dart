@@ -572,7 +572,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const Text('캘린더'),
+            title: const SizedBox.shrink(),
             actions: [
               AnimatedBuilder(
                 animation: _cloudSyncService,
@@ -601,17 +601,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ],
           ),
           body: SafeArea(
-            child: Column(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 120),
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Theme.of(context).dividerColor),
+                      color: context.appGroupedSurface,
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -646,10 +646,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     ? AppColors.customBackground
                                         .withValues(alpha: 0.55)
                                     : Colors.white.withValues(alpha: 0.72),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Theme.of(context).dividerColor,
-                            ),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -669,9 +666,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Theme.of(context).dividerColor),
+                      color: context.appGroupedSurface,
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: TableCalendar(
                       locale: 'ko_KR',
@@ -851,11 +847,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Expanded(
+                Padding(
+                  padding: EdgeInsets.zero,
                   child: _selectedDay == null
                       ? const Center(child: Text('날짜를 선택해보세요'))
                       : ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                           children: _getEventsForDay(_selectedDay!).isEmpty
                               ? [
                                   Container(
@@ -864,11 +863,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       vertical: 28,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).cardTheme.color,
-                                      borderRadius: BorderRadius.circular(24),
-                                      border: Border.all(
-                                        color: Theme.of(context).dividerColor,
-                                      ),
+                                      color: context.appGroupedSurface,
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                     child: Column(
                                       children: [
@@ -916,16 +912,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).cardTheme.color,
-                                      borderRadius: BorderRadius.circular(22),
-                                      border: Border.all(
-                                        color: Theme.of(context).dividerColor,
-                                      ),
+                                      color: context.appGroupedSurface,
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                     child: Material(
                                       color: Colors.transparent,
                                       child: InkWell(
-                                        borderRadius: BorderRadius.circular(22),
+                                        borderRadius: BorderRadius.circular(18),
                                         onTap: _openWorkoutScreen,
                                         child: Padding(
                                           padding: const EdgeInsets.all(18),

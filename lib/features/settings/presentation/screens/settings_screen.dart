@@ -13,6 +13,8 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:body_calendar/core/theme/app_colors.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,82 +66,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('설정'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '앱 설정',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '테마, 단위, 데이터 관리 옵션을 한곳에서 정리해보세요.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.color
-                            ?.withValues(alpha: 0.68),
-                      ),
-                ),
-              ],
-            ),
+          const IosLargeHeader(
+            title: '앱 설정',
+            subtitle: '펌핑데이를 나에게 맞게 설정하세요.',
+            padding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildSectionHeader(context, '일반'),
-          BlocBuilder<ThemeBloc, ThemeState>(
-            builder: (context, state) {
-              final isDarkMode = state.themeData.brightness == Brightness.dark;
-              return _buildSettingsTile(
-                context,
-                child: SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18)),
+          _buildSettingsGroup(context, [
+            BlocBuilder<ThemeBloc, ThemeState>(
+              builder: (context, state) {
+                final isDarkMode =
+                    state.themeData.brightness == Brightness.dark;
+                return SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  secondary: _settingsIcon(context, Icons.dark_mode_rounded),
                   title: const Text('다크 모드'),
-                  subtitle: const Text('차분한 다크 테마로 전환해요.'),
+                  subtitle: const Text('어두운 화면으로 전환'),
                   value: isDarkMode,
-                  onChanged: (value) {
-                    context
-                        .read<ThemeBloc>()
-                        .add(ThemeChanged(isDarkMode: value));
-                  },
-                ),
-              );
-            },
-          ),
-          if (!_isLoading)
-            _buildSettingsTile(
-              context,
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
+                  onChanged: (value) => context
+                      .read<ThemeBloc>()
+                      .add(ThemeChanged(isDarkMode: value)),
+                );
+              },
+            ),
+            if (!_isLoading) ...[
+              _settingsSeparator(context),
+              SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                secondary: _settingsIcon(context, Icons.scale_rounded),
                 title: const Text('무게 단위 (Lbs)'),
                 subtitle:
                     Text(_useLbs ? '현재 단위: 파운드 (lbs)' : '현재 단위: 킬로그램 (kg)'),
                 value: _useLbs,
                 onChanged: _toggleWeightUnit,
               ),
-            ),
-          const Divider(height: 32),
+            ],
+          ]),
+          const SizedBox(height: 24),
           _buildSectionHeader(context, '클라우드 백업'),
-          _buildSettingsTile(
-            context,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.cloud_outlined),
+          _buildSettingsGroup(context, [
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: _settingsIcon(context, Icons.cloud_upload_rounded),
               title: const Text('Google 로그인 + 클라우드 업로드'),
               subtitle: Text(_buildCloudSubtitle()),
               trailing: _isCloudBusy
@@ -151,13 +122,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : const Icon(Icons.chevron_right),
               onTap: _isCloudBusy ? null : () => _uploadToCloud(context),
             ),
-          ),
-          const SizedBox(height: 10),
-          _buildSettingsTile(
-            context,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.cloud_download_outlined),
+            _settingsSeparator(context),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: _settingsIcon(context, Icons.cloud_download_rounded),
               title: const Text('클라우드에서 복원'),
               subtitle: Text(_buildCloudRestoreSubtitle()),
               trailing: _isCloudBusy
@@ -165,68 +133,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : const Icon(Icons.chevron_right),
               onTap: _isCloudBusy ? null : () => _restoreFromCloud(context),
             ),
-          ),
-          if (_cloudSyncService.isAvailable && _cloudUserEmail != null) ...[
-            const SizedBox(height: 10),
-            _buildSettingsTile(
-              context,
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.logout),
+            if (_cloudSyncService.isAvailable && _cloudUserEmail != null) ...[
+              _settingsSeparator(context),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                leading: _settingsIcon(context, Icons.logout_rounded,
+                    color: AppColors.error),
                 title: const Text('클라우드 계정 로그아웃'),
                 subtitle: Text(_cloudUserEmail!),
                 onTap: _isCloudBusy ? null : () => _signOutFromCloud(context),
               ),
-            ),
-          ],
-          const Divider(height: 32),
+            ],
+          ]),
+          const SizedBox(height: 24),
           _buildSectionHeader(context, '데이터 관리'),
-          _buildSettingsTile(
-            context,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.download),
+          _buildSettingsGroup(context, [
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: _settingsIcon(context, Icons.ios_share_rounded),
               title: const Text('데이터 백업'),
               subtitle: const Text('운동 기록과 루틴을 파일로 저장해요.'),
               onTap: () => _backupData(context),
             ),
-          ),
-          const SizedBox(height: 10),
-          _buildSettingsTile(
-            context,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.upload),
+            _settingsSeparator(context),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: _settingsIcon(context, Icons.file_download_rounded),
               title: const Text('데이터 복원'),
               subtitle: const Text('백업 파일로 데이터를 복원해요. 기존 데이터는 새 데이터로 대체돼요.'),
               onTap: () => _restoreData(context),
             ),
-          ),
+          ]),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsTile(BuildContext context, {required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: child,
+  Widget _buildSettingsGroup(BuildContext context, List<Widget> children) {
+    return IosGroupedSurface(
+      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.zero,
+      borderRadius: 16,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _settingsSeparator(BuildContext context) => Divider(
+        height: 1,
+        indent: 64,
+        color: context.appSeparator,
+      );
+
+  Widget _settingsIcon(BuildContext context, IconData icon, {Color? color}) {
+    final tint = color ?? context.appPrimary;
+    return IosIconBadge(
+      icon: icon,
+      color: tint,
+      size: 32,
+      iconSize: 18,
     );
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: context.appSecondaryText,
             ),
       ),
     );

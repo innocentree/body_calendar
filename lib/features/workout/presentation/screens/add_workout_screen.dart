@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 import '../../../workout/domain/models/exercise.dart';
 
@@ -59,20 +58,22 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Container(
-          height: 40,
+          height: 44,
           decoration: BoxDecoration(
             color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
               hintText: '운동 검색',
+              isDense: true,
               hintStyle: TextStyle(
                   color: Theme.of(context).textTheme.bodySmall?.color),
               prefixIcon: Icon(Icons.search,
                   color: Theme.of(context).textTheme.bodySmall?.color),
+              prefixIconConstraints:
+                  const BoxConstraints(minWidth: 40, minHeight: 40),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
@@ -85,38 +86,54 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           children: [
             // 최상단 탭 표시
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              height: 48,
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: const [
+                  children: [
                     SizedBox(width: 10),
                     Text('분류',
                         style: TextStyle(
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold)),
                     SizedBox(width: 20),
                     Text('전체',
-                        style: TextStyle(color: AppColors.textSecondaryDark)),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
                     SizedBox(width: 20),
                     Text('최근 30일',
-                        style: TextStyle(color: AppColors.textSecondaryDark)),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
                     SizedBox(width: 20),
                     Text('즐겨찾기',
-                        style: TextStyle(color: AppColors.textSecondaryDark)),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
                     SizedBox(width: 20),
                     Text('커스텀',
-                        style: TextStyle(color: AppColors.textSecondaryDark)),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
                     SizedBox(width: 20),
                     Text('유산소',
-                        style: TextStyle(color: AppColors.textSecondaryDark)),
+                        style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
                     SizedBox(width: 10),
                   ],
                 ),
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: AppColors.primary, width: 2),
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
             ),
@@ -164,8 +181,6 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                             decoration: BoxDecoration(
                               color: Theme.of(context).cardTheme.color,
                               borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                  color: Theme.of(context).dividerColor),
                             ),
                             child: Center(
                               child: Text(
@@ -180,9 +195,12 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          muscle,
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            muscle,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                         Text(
                           count.toString(),
@@ -203,14 +221,20 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                   top: BorderSide(color: Theme.of(context).dividerColor),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildHistoryItem('04 완료'),
-                  _buildHistoryItem('05 완료'),
-                  _buildHistoryItem('06 완료'),
-                  _buildHistoryItem('07 완료'),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    _buildHistoryItem(context, '04 완료'),
+                    const SizedBox(width: 12),
+                    _buildHistoryItem(context, '05 완료'),
+                    const SizedBox(width: 12),
+                    _buildHistoryItem(context, '06 완료'),
+                    const SizedBox(width: 12),
+                    _buildHistoryItem(context, '07 완료'),
+                  ],
+                ),
               ),
             ),
 
@@ -218,23 +242,29 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Icon(Icons.info_outline,
                       color: Theme.of(context).textTheme.bodySmall?.color),
-                  const Text('슈퍼세트',
-                      style: TextStyle(color: AppColors.primary)),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '슈퍼세트',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(72, 48),
                     ),
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: const Text('완료'),
+                    child: const FittedBox(child: Text('완료')),
                   ),
                 ],
               ),
@@ -245,7 +275,7 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
     );
   }
 
-  Widget _buildHistoryItem(String title) {
+  Widget _buildHistoryItem(BuildContext context, String title) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -253,17 +283,18 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: AppColors.customSurface,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.separatorDark),
           ),
-          child: const Icon(Icons.close, color: Colors.white),
+          child: Icon(Icons.close,
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         Text(
           title,
-          style:
-              const TextStyle(color: AppColors.textPrimaryDark, fontSize: 12),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12),
         ),
       ],
     );

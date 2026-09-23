@@ -44,14 +44,15 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-            color: AppColors.customSurface.withValues(alpha: 0.92),
-            borderRadius: BorderRadius.circular(22),
+            color: AppColors.groupedSurfaceDark.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.45), width: 1.5),
+                color: AppColors.separatorDark.withValues(alpha: 0.8),
+                width: 0.5),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 18,
+                blurRadius: 14,
                 offset: const Offset(0, 4),
               )
             ]),
@@ -69,14 +70,18 @@ class _TimerOverlayScreenState extends State<TimerOverlayScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.timer, color: AppColors.primary, size: 20),
+                const Icon(
+                  Icons.timer_outlined,
+                  color: AppColors.primaryDark,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   _formatDuration(_remainingTime),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     decoration: TextDecoration.none,
                   ),
                 ),

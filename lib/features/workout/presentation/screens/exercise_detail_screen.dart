@@ -17,10 +17,14 @@ import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
 import '../../../../core/widgets/horizontal_dial_picker.dart';
 
-const _detailBorderColor = AppColors.separatorDark;
-const _detailSurface = AppColors.surfaceDark;
-const _detailSoftSurface = AppColors.customSurface;
-const _detailMutedText = AppColors.textSecondaryDark;
+Color _detailBorderColor(BuildContext context) =>
+    Theme.of(context).colorScheme.outlineVariant;
+Color _detailSurface(BuildContext context) =>
+    Theme.of(context).colorScheme.surface;
+Color _detailSoftSurface(BuildContext context) =>
+    Theme.of(context).colorScheme.surfaceContainerHighest;
+Color _detailMutedText(BuildContext context) =>
+    Theme.of(context).colorScheme.onSurfaceVariant;
 
 class ExerciseDetailScreen extends StatefulWidget {
   final String exerciseName;
@@ -474,10 +478,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                         });
                       },
                       style: SegmentedButton.styleFrom(
-                        selectedBackgroundColor: AppColors.primary,
-                        selectedForegroundColor: Colors.white,
-                        backgroundColor: AppColors.customSurface,
-                        foregroundColor: AppColors.textPrimaryDark,
+                        selectedBackgroundColor:
+                            Theme.of(context).colorScheme.primary,
+                        selectedForegroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSurface,
                         visualDensity: VisualDensity.compact,
                         side: BorderSide(
                             color: Theme.of(context)
@@ -565,10 +574,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                   });
                 },
                 style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: AppColors.primary,
-                  selectedForegroundColor: Colors.white,
-                  backgroundColor: AppColors.customSurface,
-                  foregroundColor: AppColors.textPrimaryDark,
+                  selectedBackgroundColor:
+                      Theme.of(context).colorScheme.primary,
+                  selectedForegroundColor:
+                      Theme.of(context).colorScheme.onPrimary,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
                   visualDensity: VisualDensity.compact,
                   side: BorderSide(
                       color: Theme.of(context)
@@ -796,9 +808,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: _detailSurface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _detailBorderColor),
+          color: _detailSoftSurface(context),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -806,13 +817,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
           children: [
             Text(
               title,
-              style: const TextStyle(color: _detailMutedText, fontSize: 12),
+              style: TextStyle(color: _detailMutedText(context), fontSize: 12),
             ),
             const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -954,27 +965,39 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
         },
         child: Scaffold(
           appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  DateFormat('yyyy-MM-dd').format(widget.selectedDate),
-                  style: const TextStyle(fontSize: 13),
-                ),
-                Text(
-                  (widget.recordDay > 0 ? '${widget.recordDay}번째 운동 기록' : ''),
-                  style: const TextStyle(fontSize: 11),
-                ),
-                Text(
-                  widget.exerciseName,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
+            title: Text(widget.exerciseName,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
           body: Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded,
+                        size: 16, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        DateFormat('yyyy.MM.dd').format(widget.selectedDate),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                    if (widget.recordDay > 0)
+                      Text(
+                        '${widget.recordDay}번째 운동 기록',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                  ],
+                ),
+              ),
               // === 오늘/이전/역대 기록 요약 ===
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -1097,6 +1120,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
               // === 세트 목록 ===
               Expanded(
                 child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 132),
                   itemCount: _sets.length,
                   itemBuilder: (context, index) {
                     final set = _sets[index];
@@ -1104,8 +1128,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
-                        borderRadius: BorderRadius.circular(16),
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(18),
                         border: index == _currentSetIndex
                             ? Border.all(
                                 color: Theme.of(context)
@@ -1795,13 +1819,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const SizedBox(
+                                      SizedBox(
                                         width: 90,
                                         child: Text('휴식(초)',
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                color:
-                                                    AppColors.textPrimaryDark)),
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface)),
                                       ),
                                       Row(
                                         children: [
@@ -2110,9 +2135,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       width: double.infinity,
                                       height: 56,
                                       decoration: BoxDecoration(
-                                        color: AppColors.cardDark,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
                                         border: Border.all(
-                                            color: AppColors.cardDark,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .outlineVariant,
                                             width: 2),
                                       ),
                                     ),
@@ -2277,9 +2306,8 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: _detailSoftSurface,
+              color: _detailSoftSurface(context),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _detailBorderColor),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -2342,16 +2370,16 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: 110,
+      width: ((MediaQuery.sizeOf(context).width - 28) / 3).clamp(92.0, 110.0),
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _detailSurface,
+        color: _detailSurface(context),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isHighlighted
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.48)
-              : _detailBorderColor,
+              : _detailBorderColor(context),
           width: isHighlighted ? 1.4 : 1,
         ),
       ),
@@ -2359,34 +2387,54 @@ class _StatBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                   color: Theme.of(context).textTheme.bodyLarge?.color)),
           const SizedBox(height: 4),
-          Text(
-            '${formatter(value)} $unit',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.primary),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${formatter(value)} $unit',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.primary),
+            ),
           ),
           const SizedBox(height: 4),
           Row(
             children: [
-              Text('이전 ${formatter(prev)}',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).textTheme.bodySmall?.color)),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('이전 ${formatter(prev)}',
+                      maxLines: 1,
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).textTheme.bodySmall?.color)),
+                ),
+              ),
               const SizedBox(width: 4),
               _buildComparisonArrow(value, prev),
             ],
           ),
           Row(
             children: [
-              Text('최고 ${formatter(best)}',
-                  style:
-                      const TextStyle(fontSize: 11, color: _detailMutedText)),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('최고 ${formatter(best)}',
+                      maxLines: 1,
+                      style: TextStyle(
+                          fontSize: 11, color: _detailMutedText(context))),
+                ),
+              ),
               const SizedBox(width: 4),
               _buildComparisonArrow(value, best),
             ],

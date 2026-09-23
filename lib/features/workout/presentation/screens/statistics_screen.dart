@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:body_calendar/core/theme/app_colors.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -175,7 +176,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final hasData = _exerciseNames.isNotEmpty;
 
     return Stack(
@@ -188,31 +188,50 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               ? ListView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
                   children: [
+                    const IosLargeHeader(
+                      title: '나의 운동 리포트',
+                      subtitle: '쌓인 기록과 변화의 흐름을 한눈에 확인하세요.',
+                      padding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 16),
                     _HeroStatisticsCard(
                       exerciseCount: _exerciseNames.length,
                       groupCount: _groupEntries.length,
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _DashboardCard(
-                            title: '개별 운동 종목',
-                            value: '${_exerciseNames.length}',
-                            subtitle: '통계 진입 가능 종목 수',
-                            tint: AppColors.chartColors[0],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _DashboardCard(
-                            title: '그룹 조합',
-                            value: '${_groupEntries.length}',
-                            subtitle: '슈퍼세트/컴파운드 조합 수',
-                            tint: AppColors.chartColors[1],
-                          ),
-                        ),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final stackCards = constraints.maxWidth < 330 ||
+                            MediaQuery.textScalerOf(context).scale(1) > 1.3;
+                        final exerciseCard = _DashboardCard(
+                          title: '개별 운동 종목',
+                          value: '${_exerciseNames.length}',
+                          subtitle: '통계 진입 가능 종목 수',
+                          tint: AppColors.chartColors[0],
+                        );
+                        final groupCard = _DashboardCard(
+                          title: '그룹 조합',
+                          value: '${_groupEntries.length}',
+                          subtitle: '슈퍼세트/컴파운드 조합 수',
+                          tint: AppColors.chartColors[1],
+                        );
+                        if (stackCards) {
+                          return Column(
+                            children: [
+                              exerciseCard,
+                              const SizedBox(height: 10),
+                              groupCard,
+                            ],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            Expanded(child: exerciseCard),
+                            const SizedBox(width: 10),
+                            Expanded(child: groupCard),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 10),
                     _ComparisonBanner(
@@ -296,43 +315,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ],
                 )
-              : Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: theme.cardTheme.color,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.insights_rounded,
-                            size: 34,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '기록된 운동 종목이 아직 없어요.',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '운동 기록이 쌓이면 이 화면에서 흐름을 한눈에 볼 수 있어요.',
-                            style: theme.textTheme.bodyMedium,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              : const IosEmptyState(
+                  icon: Icons.insights_rounded,
+                  title: '기록된 운동 종목이 아직 없어요.',
+                  message: '운동 기록이 쌓이면 이 화면에서 흐름을 한눈에 볼 수 있어요.',
                 ),
         ),
         const RestFabOverlay(),
@@ -397,8 +383,7 @@ class _HeroStatisticsCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +396,7 @@ class _HeroStatisticsCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '운동별, 그룹별, 루틴별 기록 패턴을 SwiftUI 톤으로 한눈에 볼 수 있어요.',
+            '운동별, 그룹별, 루틴별 기록 패턴을 한눈에 볼 수 있어요.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -487,14 +472,13 @@ class _NavigationCardButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
             color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: theme.dividerColor),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             children: [
@@ -545,8 +529,7 @@ class _DashboardCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

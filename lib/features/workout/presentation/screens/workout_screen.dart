@@ -15,11 +15,12 @@ import 'grouped_exercise_detail_screen.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:body_calendar/core/widgets/ios_widgets.dart';
 
-const _workoutBorderColor = AppColors.separatorDark;
-const _workoutSurface = AppColors.surfaceDark;
-const _workoutSoftSurface = AppColors.customSurface;
+Color _workoutSurface(BuildContext context) =>
+    Theme.of(context).colorScheme.surface;
+Color _workoutSoftSurface(BuildContext context) =>
+    Theme.of(context).colorScheme.surfaceContainerHighest;
 
 class WorkoutListEntry {
   final WorkoutRecord? workout;
@@ -468,27 +469,13 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       children: [
         Scaffold(
           appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _getFormattedDate(),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                if (_recordDay > 0)
-                  Text(
-                    '$_recordDay번째 운동 기록',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.color
-                              ?.withValues(alpha: 0.82),
-                        ),
+            title: Text(
+              _getFormattedDate(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-              ],
             ),
             actions: [
               IconButton(
@@ -506,39 +493,14 @@ class _WorkoutScreenState extends State<WorkoutScreen>
               preferredSize: const Size.fromHeight(76),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: _workoutSurface,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: _workoutBorderColor),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    dividerColor: Colors.transparent,
-                    indicator: BoxDecoration(
-                      color: _workoutSoftSurface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.24),
-                      ),
-                    ),
-                    labelColor: Theme.of(context).textTheme.bodyLarge?.color,
-                    unselectedLabelColor: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.color
-                        ?.withValues(alpha: 0.56),
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w700),
-                    tabs: const [
-                      Tab(text: '1회차'),
-                      Tab(text: '2회차'),
-                      Tab(text: '3회차'),
-                    ],
-                  ),
+                child: IosSegmentedTabBar(
+                  controller: _tabController,
+                  height: 40,
+                  tabs: const [
+                    Tab(text: '1회차'),
+                    Tab(text: '2회차'),
+                    Tab(text: '3회차'),
+                  ],
                 ),
               ),
             ),
@@ -554,15 +516,31 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
                 return Column(
                   children: [
+                    if (_recordDay > 0)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '$_recordDay번째 운동 기록',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ),
+                      ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      padding: EdgeInsets.fromLTRB(
+                          16, _recordDay > 0 ? 8 : 16, 16, 12),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: _workoutSurface,
+                          color: _workoutSurface(context),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: _workoutBorderColor),
                         ),
                         child: sessionWorkouts.isEmpty
                             ? Column(
@@ -607,7 +585,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 14, vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: _workoutSoftSurface,
+                                          color: _workoutSoftSurface(context),
                                           borderRadius:
                                               BorderRadius.circular(16),
                                         ),
@@ -690,10 +668,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                                       width: 72,
                                       height: 72,
                                       decoration: BoxDecoration(
-                                        color: _workoutSurface,
+                                        color: _workoutSoftSurface(context),
                                         borderRadius: BorderRadius.circular(24),
-                                        border: Border.all(
-                                            color: _workoutBorderColor),
                                       ),
                                       child: Icon(
                                         Icons.fitness_center_rounded,
@@ -999,7 +975,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: _workoutSoftSurface,
+          color: _workoutSoftSurface(context),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: color.withValues(alpha: 0.24)),
         ),
@@ -1242,9 +1218,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _workoutSurface,
+        color: _workoutSurface(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _workoutBorderColor),
       ),
       child: Material(
         color: Colors.transparent,
@@ -1332,7 +1307,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: _workoutSoftSurface,
+                    color: _workoutSoftSurface(context),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -1389,7 +1364,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _workoutSurface,
+        color: _workoutSurface(context),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: accent.withValues(alpha: 0.55)),
       ),
@@ -1452,7 +1427,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: _workoutSoftSurface,
+                        color: _workoutSoftSurface(context),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(

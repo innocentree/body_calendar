@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // iOS / SwiftUI-inspired system palette
-  static const Color primary = Color(0xFF0A84FF);
+  // iOS / SwiftUI-inspired system palette.
+  static const Color primaryLight = Color(0xFF007AFF);
+  static const Color primaryDark = Color(0xFF0A84FF);
+
+  // Legacy alias kept for callers that do not have a BuildContext.
+  static const Color primary = primaryLight;
   static const Color secondary = Color(0xFF5AC8FA);
   static const Color accent = Color(0xFF34C759);
 
@@ -13,6 +17,14 @@ class AppColors {
   // Backgrounds
   static const Color backgroundLight = Color(0xFFF2F2F7);
   static const Color backgroundDark = Color(0xFF000000);
+
+  // Semantic grouped surfaces.
+  static const Color groupedBackgroundLight = backgroundLight;
+  static const Color groupedBackgroundDark = backgroundDark;
+  static const Color groupedSurfaceLight = Color(0xFFFFFFFF);
+  static const Color groupedSurfaceDark = Color(0xFF1C1C1E);
+  static const Color elevatedSurfaceLight = Color(0xFFFFFFFF);
+  static const Color elevatedSurfaceDark = Color(0xFF2C2C2E);
 
   // Surfaces
   static const Color background = backgroundDark;
@@ -52,4 +64,41 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static Color primaryFor(Brightness brightness) =>
+      brightness == Brightness.dark ? primaryDark : primaryLight;
+
+  static Color groupedBackgroundFor(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? groupedBackgroundDark
+          : groupedBackgroundLight;
+
+  static Color groupedSurfaceFor(Brightness brightness) =>
+      brightness == Brightness.dark ? groupedSurfaceDark : groupedSurfaceLight;
+
+  static Color elevatedSurfaceFor(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? elevatedSurfaceDark
+          : elevatedSurfaceLight;
+
+  static Color separatorFor(Brightness brightness) =>
+      brightness == Brightness.dark ? separatorDark : separatorLight;
+
+  static Color primaryTextFor(Brightness brightness) =>
+      brightness == Brightness.dark ? textPrimaryDark : textPrimaryLight;
+
+  static Color secondaryTextFor(Brightness brightness) =>
+      brightness == Brightness.dark ? textSecondaryDark : textSecondaryLight;
+}
+
+extension AppColorContext on BuildContext {
+  Brightness get appBrightness => Theme.of(this).brightness;
+  Color get appPrimary => AppColors.primaryFor(appBrightness);
+  Color get appGroupedBackground =>
+      AppColors.groupedBackgroundFor(appBrightness);
+  Color get appGroupedSurface => AppColors.groupedSurfaceFor(appBrightness);
+  Color get appElevatedSurface => AppColors.elevatedSurfaceFor(appBrightness);
+  Color get appSeparator => AppColors.separatorFor(appBrightness);
+  Color get appPrimaryText => AppColors.primaryTextFor(appBrightness);
+  Color get appSecondaryText => AppColors.secondaryTextFor(appBrightness);
 }

@@ -268,6 +268,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) {
         return DefaultTabController(
           length: 5,
@@ -278,7 +279,7 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             expand: false,
             builder: (context, scrollController) {
               return Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).bottomSheetTheme.backgroundColor,
                   borderRadius:
@@ -287,6 +288,17 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       exercise.name,
                       style: const TextStyle(
@@ -297,13 +309,15 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                     const SizedBox(height: 8),
                     Text(
                       exercise.description,
-                      style: const TextStyle(
-                        color: Colors.grey,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 16),
                     TabBar(
                       isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      dividerColor: Colors.transparent,
                       labelColor: Theme.of(context).textTheme.bodyLarge?.color,
                       unselectedLabelColor:
                           Theme.of(context).textTheme.bodySmall?.color,
@@ -423,103 +437,103 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             },
           ),
           title: Text(widget.title),
-          bottom: PreferredSize(
-            preferredSize:
-                Size.fromHeight(widget.helperText == null ? 64 : 118),
-            child: Column(
-              children: [
-                if (widget.helperText != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.18),
-                        ),
-                      ),
-                      child: Text(
-                        widget.helperText!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: '운동 검색',
-                        hintStyle: TextStyle(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                        ),
-                        prefixIcon: Icon(Icons.search,
-                            color:
-                                Theme.of(context).textTheme.bodySmall?.color),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                      ),
-                      onChanged: (value) {
-                        setState(() {});
-                      },
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    _buildTabButton('분류'),
-                    Container(
-                      height: 24,
-                      width: 1,
-                      color: Theme.of(context).dividerColor,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _bodyParts
-                              .where((part) => part != '분류')
-                              .map((part) => _buildTabButton(part))
-                              .toList(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  height: 1,
-                  color: Theme.of(context).dividerColor,
-                ),
-              ],
-            ),
-          ),
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _searchController.text.isNotEmpty
-                ? _buildSearchResults()
-                : _buildSelectedTabContent(),
+        body: Column(
+          children: [
+            if (widget.helperText != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    widget.helperText!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  16, widget.helperText == null ? 8 : 0, 16, 10),
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: '운동 검색',
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                    prefixIcon: Icon(Icons.search,
+                        color: Theme.of(context).textTheme.bodySmall?.color),
+                    border: InputBorder.none,
+                    suffixIcon: _searchController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: '검색어 지우기',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.cancel_rounded, size: 18),
+                          ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 46,
+              child: Row(
+                children: [
+                  _buildTabButton('분류'),
+                  Container(
+                    height: 24,
+                    width: 1,
+                    color: Theme.of(context).dividerColor,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _bodyParts
+                            .where((part) => part != '분류')
+                            .map((part) => _buildTabButton(part))
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: Theme.of(context).dividerColor),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _searchController.text.isNotEmpty
+                      ? _buildSearchResults()
+                      : _buildSelectedTabContent(),
+            ),
+          ],
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: _navigateToAddExercise,
           child: const Icon(Icons.add),
@@ -558,25 +572,73 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
 
   Widget _buildExerciseList(List<Exercise> exercises) {
     if (exercises.isEmpty) {
-      return const Center(
-        child: Text('표시할 운동이 없어요.'),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search_off_rounded,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(height: 12),
+              const Text('표시할 운동이 없어요.'),
+            ],
+          ),
+        ),
       );
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       itemCount: exercises.length,
       itemBuilder: (context, index) {
         final exercise = exercises[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: const EdgeInsets.only(bottom: 10),
+          clipBehavior: Clip.antiAlias,
           child: ListTile(
-            title: Text(exercise.name),
-            subtitle: Text(exercise.description),
-            trailing: Text(
-              exercise.needsWeight
-                  ? '${exercise.sets}세트 ${exercise.weight}kg'
-                  : '${exercise.sets}세트',
+            minTileHeight: 68,
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.fitness_center_rounded,
+                  size: 19, color: Theme.of(context).colorScheme.primary),
             ),
+            title: Text(
+              exercise.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (exercise.description.isNotEmpty)
+                  Text(
+                    exercise.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                const SizedBox(height: 2),
+                Text(
+                  exercise.needsWeight
+                      ? '${exercise.sets}세트 · ${exercise.weight}kg'
+                      : '${exercise.sets}세트',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
             onTap: () => _showVariations(exercise),
           ),
         );
@@ -587,14 +649,14 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
   Widget _buildTabButton(String text) {
     final isSelected = _selectedTab == text;
     final selectedColor = Theme.of(context).colorScheme.primary;
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         setState(() {
           _selectedTab = text;
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -620,12 +682,12 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     final categories =
         _bodyParts.where((part) => part != '분류' && part != '전체').toList();
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 2.0,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 2.2,
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -642,7 +704,6 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
-            side: BorderSide(color: Theme.of(context).dividerColor),
           ),
           child: Text(
             category,
