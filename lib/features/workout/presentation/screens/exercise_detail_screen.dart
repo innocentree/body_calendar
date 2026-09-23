@@ -27,6 +27,10 @@ Color _detailSoftSurface(BuildContext context) =>
 Color _detailMutedText(BuildContext context) =>
     Theme.of(context).colorScheme.onSurfaceVariant;
 
+@visibleForTesting
+double detailStatBoxWidthForViewport(double viewportWidth) =>
+    ((viewportWidth - 68) / 3).clamp(80.0, 110.0).toDouble();
+
 class ExerciseDetailScreen extends StatefulWidget {
   final String exerciseName;
   final DateTime selectedDate;
@@ -2388,7 +2392,7 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: ((MediaQuery.sizeOf(context).width - 28) / 3).clamp(92.0, 110.0),
+      width: detailStatBoxWidthForViewport(MediaQuery.sizeOf(context).width),
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(

@@ -1,9 +1,19 @@
 import 'package:body_calendar/features/workout/presentation/screens/add_workout_screen.dart';
+import 'package:body_calendar/features/workout/presentation/screens/exercise_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('detail metric cards fit the 320px hero content width', () {
+    final cardWidth = detailStatBoxWidthForViewport(320);
+    const totalHorizontalMargins = 3 * 4.0;
+    const availableHeroWidth = 320 - 32 - 4;
+
+    expect(cardWidth * 3 + totalHorizontalMargins,
+        lessThanOrEqualTo(availableHeroWidth));
+  });
 
   Future<void> pumpAddWorkout(
     WidgetTester tester, {

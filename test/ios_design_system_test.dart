@@ -94,7 +94,7 @@ void main() {
   test('dark palette has visible tonal separation', () {
     expect(AppColors.backgroundDark, isNot(AppColors.groupedSurfaceDark));
     expect(AppColors.groupedSurfaceDark, isNot(AppColors.elevatedSurfaceDark));
-    expect(AppColors.primaryDark, const Color(0xFF4DA3FF));
+    expect(AppColors.primaryDark, const Color(0xFF0066CC));
   });
 
   test('button themes retain intrinsic row sizing', () {

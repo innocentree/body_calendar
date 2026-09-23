@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // iOS / SwiftUI-inspired system palette.
   static const Color primaryLight = Color(0xFF007AFF);
-  static const Color primaryDark = Color(0xFF4DA3FF);
+  static const Color primaryDark = Color(0xFF0066CC);
 
   // Legacy alias kept for callers that do not have a BuildContext.
   static const Color primary = primaryLight;
