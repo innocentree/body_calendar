@@ -31,6 +31,123 @@ Color _detailMutedText(BuildContext context) =>
 double detailStatBoxWidthForViewport(double viewportWidth) =>
     ((viewportWidth - 68) / 3).clamp(80.0, 110.0).toDouble();
 
+@visibleForTesting
+class ExerciseRestActionPill extends StatelessWidget {
+  const ExerciseRestActionPill({
+    super.key,
+    required this.isRunning,
+    required this.duration,
+    required this.initialDuration,
+    required this.allCompleted,
+    required this.currentSetIndex,
+    required this.onPressed,
+  });
+
+  final bool isRunning;
+  final int duration;
+  final int initialDuration;
+  final bool allCompleted;
+  final int currentSetIndex;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = BorderRadius.all(Radius.circular(28));
+    final colorScheme = Theme.of(context).colorScheme;
+    final progress = initialDuration > 0
+        ? (duration / initialDuration).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Material(
+      key: const ValueKey('exercise-rest-action-pill'),
+      color: colorScheme.surfaceContainerHighest,
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onPressed,
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: Stack(
+            fit: StackFit.expand,
+            alignment: Alignment.center,
+            children: [
+              if (isRunning)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TweenAnimationBuilder<double>(
+                    key: const ValueKey('exercise-rest-progress'),
+                    tween: Tween<double>(end: progress),
+                    duration: const Duration(seconds: 1),
+                    curve: Curves.linear,
+                    builder: (context, value, child) {
+                      return FractionallySizedBox(
+                        widthFactor: value,
+                        heightFactor: 1,
+                        child: ColoredBox(
+                          color: colorScheme.primary.withValues(alpha: 0.8),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  if (isRunning) ...[
+                    Text(
+                      _formatExerciseDuration(duration),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.skip_next, color: colorScheme.onSurface),
+                        const SizedBox(width: 4),
+                        Text(
+                          '휴식 완료',
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else
+                    Text(
+                      allCompleted
+                          ? '모든 세트 완료'
+                          : '${currentSetIndex + 1}번 세트 완료',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _formatExerciseDuration(int seconds) {
+  final minutes = seconds ~/ 60;
+  final remainingSeconds = seconds % 60;
+  return '${minutes.toString().padLeft(2, '0')}:'
+      '${remainingSeconds.toString().padLeft(2, '0')}';
+}
+
 class ExerciseDetailScreen extends StatefulWidget {
   final String exerciseName;
   final DateTime selectedDate;
@@ -427,12 +544,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
             () => setState(() => _highlightVolume = false));
       }
     }
-  }
-
-  String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   void _showNumberInputDialog(
@@ -1265,13 +1376,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const SizedBox(
+                                            SizedBox(
                                               width: 90,
                                               child: Text('체중(kg)',
                                                   style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      color: Colors.white)),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface)),
                                             ),
                                             Row(
                                               children: [
@@ -1298,10 +1411,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       _saveSets();
                                                     });
                                                   },
-                                                  icon: const Icon(
+                                                  icon: Icon(
                                                       Icons
                                                           .remove_circle_outline,
-                                                      color: Colors.white),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface),
                                                 ),
                                                 SizedBox(
                                                   width: 40,
@@ -1340,9 +1455,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                                     70.0)
                                                                 .toStringAsFixed(
                                                                     1),
-                                                            style: const TextStyle(
-                                                                color: Colors
-                                                                    .white))),
+                                                            style: TextStyle(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .onSurface))),
                                                   ),
                                                 ),
                                                 IconButton(
@@ -1368,9 +1485,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       _saveSets();
                                                     });
                                                   },
-                                                  icon: const Icon(
+                                                  icon: Icon(
                                                       Icons.add_circle_outline,
-                                                      color: Colors.white),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface),
                                                 ),
                                               ],
                                             ),
@@ -1380,13 +1499,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const SizedBox(
+                                            SizedBox(
                                               width: 90,
                                               child: Text('보조(kg)',
                                                   style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      color: Colors.white)),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface)),
                                             ),
                                             Row(
                                               children: [
@@ -1415,10 +1536,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       _saveSets();
                                                     });
                                                   },
-                                                  icon: const Icon(
+                                                  icon: Icon(
                                                       Icons
                                                           .remove_circle_outline,
-                                                      color: Colors.white),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface),
                                                 ),
                                                 SizedBox(
                                                   width: 40,
@@ -1458,9 +1581,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                                     0.0)
                                                                 .toStringAsFixed(
                                                                     1),
-                                                            style: const TextStyle(
-                                                                color: Colors
-                                                                    .white))),
+                                                            style: TextStyle(
+                                                                color: Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .onSurface))),
                                                   ),
                                                 ),
                                                 IconButton(
@@ -1488,9 +1613,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       _saveSets();
                                                     });
                                                   },
-                                                  icon: const Icon(
+                                                  icon: Icon(
                                                       Icons.add_circle_outline,
-                                                      color: Colors.white),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface),
                                                 ),
                                               ],
                                             ),
@@ -1502,19 +1629,23 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                   // 일반 무게
                                   if ((_exercise?.needsWeight ?? true) &&
                                       !(_exercise?.isAssisted ?? false))
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                    Wrap(
+                                      alignment: WrapAlignment.spaceBetween,
                                       children: [
                                         SizedBox(
                                           width: 90,
                                           child: Text(
                                               '무게(${_unitStr(isLbs: _isLbs)})',
-                                              style: const TextStyle(
+                                              key: ValueKey(
+                                                  'set-editor-weight-label-$index'),
+                                              style: TextStyle(
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.white)),
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface)),
                                         ),
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
                                             IconButton(
                                               onPressed: () {
@@ -1537,9 +1668,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                   _saveSets();
                                                 });
                                               },
-                                              icon: const Icon(
+                                              icon: Icon(
                                                   Icons.remove_circle_outline,
-                                                  color: Colors.white),
+                                                  key: ValueKey(
+                                                      'set-editor-weight-remove-$index'),
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface),
                                             ),
                                             SizedBox(
                                               width: 40,
@@ -1576,9 +1711,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                                     .weight,
                                                                 isLbs: _isLbs)
                                                             .toStringAsFixed(1),
-                                                        style: const TextStyle(
-                                                            color:
-                                                                Colors.white))),
+                                                        key: ValueKey(
+                                                            'set-editor-weight-value-$index'),
+                                                        style: TextStyle(
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onSurface))),
                                               ),
                                             ),
                                             IconButton(
@@ -1602,9 +1741,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                   _saveSets();
                                                 });
                                               },
-                                              icon: const Icon(
+                                              icon: Icon(
                                                   Icons.add_circle_outline,
-                                                  color: Colors.white),
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface),
                                             ),
                                             Column(
                                               children: [
@@ -1634,10 +1775,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                         horizontal: 4,
                                                         vertical: 0),
                                                   ),
-                                                  child: const Text('전체에 적용',
+                                                  child: Text('전체에 적용',
                                                       style: TextStyle(
                                                           color:
-                                                              AppColors.primary,
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
                                                           fontSize: 12)),
                                                 ),
                                                 TextButton(
@@ -1669,10 +1812,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                         horizontal: 4,
                                                         vertical: 0),
                                                   ),
-                                                  child: const Text('이후 세트에 적용',
+                                                  child: Text('이후 세트에 적용',
                                                       style: TextStyle(
                                                           color:
-                                                              AppColors.primary,
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primary,
                                                           fontSize: 12)),
                                                 ),
                                               ],
@@ -1682,9 +1827,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                       ],
                                     ),
                                   // 횟수
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
                                     children: [
                                       SizedBox(
                                         width: 90,
@@ -1697,6 +1841,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     ?.color)),
                                       ),
                                       Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
                                             onPressed: () {
@@ -1789,10 +1934,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('전체에 적용',
+                                                child: Text('전체에 적용',
                                                     style: TextStyle(
-                                                        color:
-                                                            AppColors.primary,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
                                                         fontSize: 12)),
                                               ),
                                               TextButton(
@@ -1824,10 +1970,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('이후 세트에 적용',
+                                                child: Text('이후 세트에 적용',
                                                     style: TextStyle(
-                                                        color:
-                                                            AppColors.primary,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
                                                         fontSize: 12)),
                                               ),
                                             ],
@@ -1837,13 +1984,14 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                     ],
                                   ),
                                   // 휴식
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                  Wrap(
+                                    alignment: WrapAlignment.spaceBetween,
                                     children: [
                                       SizedBox(
                                         width: 90,
                                         child: Text('휴식(초)',
+                                            key: ValueKey(
+                                                'set-editor-rest-label-$index'),
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: Theme.of(context)
@@ -1851,6 +1999,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                     .onSurface)),
                                       ),
                                       Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
                                             onPressed: () {
@@ -1876,9 +2025,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                 }
                                               });
                                             },
-                                            icon: const Icon(
+                                            icon: Icon(
                                                 Icons.remove_circle_outline,
-                                                color: Colors.white),
+                                                key: ValueKey(
+                                                    'set-editor-rest-remove-$index'),
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface),
                                           ),
                                           SizedBox(
                                             width: 40,
@@ -1925,9 +2078,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                           .restTime
                                                           .inSeconds
                                                           .toString(),
-                                                      style: const TextStyle(
-                                                          color: AppColors
-                                                              .textPrimaryDark))),
+                                                      key: ValueKey(
+                                                          'set-editor-rest-value-$index'),
+                                                      style: TextStyle(
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onSurface))),
                                             ),
                                           ),
                                           IconButton(
@@ -1954,9 +2111,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                 }
                                               });
                                             },
-                                            icon: const Icon(
-                                                Icons.add_circle_outline,
-                                                color: Colors.white),
+                                            icon: Icon(Icons.add_circle_outline,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface),
                                           ),
                                           Column(
                                             children: [
@@ -1993,10 +2151,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('전체에 적용',
+                                                child: Text('전체에 적용',
                                                     style: TextStyle(
-                                                        color:
-                                                            AppColors.primary,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
                                                         fontSize: 12)),
                                               ),
                                               TextButton(
@@ -2035,10 +2194,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                                       horizontal: 4,
                                                       vertical: 0),
                                                 ),
-                                                child: const Text('이후 세트에 적용',
+                                                child: Text('이후 세트에 적용',
                                                     style: TextStyle(
-                                                        color:
-                                                            AppColors.primary,
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .primary,
                                                         fontSize: 12)),
                                               ),
                                             ],
@@ -2131,7 +2291,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                             final initialDuration =
                                 isRunning ? state.initialDuration : 0;
 
-                            return ElevatedButton(
+                            return ExerciseRestActionPill(
+                              isRunning: isRunning,
+                              duration: duration,
+                              initialDuration: initialDuration,
+                              allCompleted: allCompleted,
+                              currentSetIndex: _currentSetIndex,
                               onPressed: () {
                                 if (isRunning) {
                                   context
@@ -2141,112 +2306,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
                                   _completeSet();
                                 }
                               },
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(56),
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                padding: EdgeInsets.zero,
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // 1. 전체 배경: Dark Surface
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(28),
-                                    child: Container(
-                                      width: double.infinity,
-                                      height: 56,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                        border: Border.all(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .outlineVariant,
-                                            width: 2),
-                                      ),
-                                    ),
-                                  ),
-                                  // 2. 차오르는 게이지: Neon Cyan (Smooth Animation)
-                                  if (isRunning)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(28),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: TweenAnimationBuilder<double>(
-                                          tween: Tween<double>(
-                                            end: (initialDuration > 0)
-                                                ? ((initialDuration -
-                                                            duration) /
-                                                        initialDuration)
-                                                    .clamp(0.0, 1.0)
-                                                : 0.0,
-                                          ),
-                                          duration: const Duration(seconds: 1),
-                                          curve: Curves.linear,
-                                          builder: (context, value, child) {
-                                            return FractionallySizedBox(
-                                              widthFactor: value,
-                                              child: Container(
-                                                height: 56,
-                                                color: AppColors.primary
-                                                    .withValues(alpha: 0.8),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  // 3. 텍스트
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 56,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        if (isRunning) ...[
-                                          Text(
-                                            _formatDuration(duration),
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.skip_next,
-                                                  color: Colors.white),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                '휴식 완료',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                        if (!isRunning)
-                                          Text(
-                                            allCompleted
-                                                ? '모든 세트 완료'
-                                                : '${_currentSetIndex + 1}번 세트 완료',
-                                            style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.primary),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
                             );
                           },
                         ),
