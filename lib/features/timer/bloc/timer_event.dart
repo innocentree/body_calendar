@@ -68,6 +68,37 @@ class TimerDurationUpdated extends TimerEvent {
   List<Object?> get props => [duration];
 }
 
+class TimerRestored extends TimerEvent {
+  final int initialDuration;
+  final int remainingDuration;
+  final bool isPaused;
+  final String exerciseName;
+  final DateTime selectedDate;
+  final String? ownerId;
+  final GroupTimerNavigationContext? groupNavigationContext;
+
+  const TimerRestored({
+    required this.initialDuration,
+    required this.remainingDuration,
+    required this.isPaused,
+    required this.exerciseName,
+    required this.selectedDate,
+    this.ownerId,
+    this.groupNavigationContext,
+  });
+
+  @override
+  List<Object?> get props => [
+        initialDuration,
+        remainingDuration,
+        isPaused,
+        exerciseName,
+        selectedDate,
+        ownerId,
+        groupNavigationContext,
+      ];
+}
+
 class _TimerTicked extends TimerEvent {
   final int duration;
   final DateTime? expiresAt;

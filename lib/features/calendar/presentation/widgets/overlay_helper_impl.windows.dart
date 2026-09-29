@@ -1,5 +1,5 @@
+import 'package:body_calendar/core/navigation/app_navigator.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
-import 'package:body_calendar/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:window_manager/window_manager.dart';
@@ -17,7 +17,7 @@ Future<void> showOverlayFAB({
     if (!_isMiniMode) {
       _isMiniMode = true;
       _savedBounds = await windowManager.getBounds();
-      
+
       navigatorKey.currentState?.push(
         MaterialPageRoute(
           builder: (context) => const WindowsTimerOverlay(),
@@ -33,7 +33,6 @@ Future<void> showOverlayFAB({
   } catch (e) {
     debugPrint('Error entering mini mode: $e');
   }
-
 }
 
 Future<void> closeOverlayFAB() async {
@@ -57,7 +56,8 @@ Future<void> closeOverlayFAB() async {
   }
 }
 
-Future<void> updateOverlayFAB({required int totalDuration, required int remainingTime}) async {
+Future<void> updateOverlayFAB(
+    {required int totalDuration, required int remainingTime}) async {
   // Windows에서는 Bloc이 UI를 업데이트하므로 별도 통신 불필요
 }
 
@@ -72,13 +72,13 @@ class WindowsTimerOverlay extends StatelessWidget {
         builder: (context, state) {
           int duration = 0;
           String exerciseName = '';
-          
+
           if (state is TimerRunInProgress) {
             duration = state.duration;
             exerciseName = context.read<TimerBloc>().exerciseName ?? '휴식';
           } else if (state is TimerRunPause) {
-             duration = state.duration;
-             exerciseName = '일시정지';
+            duration = state.duration;
+            exerciseName = '일시정지';
           }
 
           return Center(
@@ -100,20 +100,20 @@ class WindowsTimerOverlay extends StatelessWidget {
                 ),
                 if (state is TimerRunComplete)
                   ElevatedButton(
-                     onPressed: () {
-                         // 앱으로 돌아가기 로직
-                         closeOverlayFAB();
-                     },
-                     child: const Text('앱으로 돌아가기'),
+                    onPressed: () {
+                      // 앱으로 돌아가기 로직
+                      closeOverlayFAB();
+                    },
+                    child: const Text('앱으로 돌아가기'),
                   )
                 else
-                 IconButton(
-                  icon: const Icon(Icons.skip_next, color: Colors.white),
-                  onPressed: () {
-                    context.read<TimerBloc>().add(const TimerReset());
-                    closeOverlayFAB();
-                  },
-                 )
+                  IconButton(
+                    icon: const Icon(Icons.skip_next, color: Colors.white),
+                    onPressed: () {
+                      context.read<TimerBloc>().add(const TimerReset());
+                      closeOverlayFAB();
+                    },
+                  )
               ],
             ),
           );

@@ -1,26 +1,113 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:body_calendar/core/navigation/app_navigator.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/overlay_helper_impl.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/timer/data/rest_timer_overlay_bridge.dart';
+import 'package:body_calendar/features/timer/presentation/timer_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TimerOverlayManager extends StatefulWidget {
   final Widget child;
+
   const TimerOverlayManager({super.key, required this.child});
 
   @override
   State<TimerOverlayManager> createState() => _TimerOverlayManagerState();
 }
 
-class _TimerOverlayManagerState extends State<TimerOverlayManager> with WidgetsBindingObserver, WindowListener {
-  
+class _TimerOverlayManagerState extends State<TimerOverlayManager>
+    with WidgetsBindingObserver, WindowListener {
+  final RestTimerOverlayBridge _androidBridge = RestTimerOverlayBridge();
+  Future<void> _androidSync = Future.value();
+  _AndroidTimerSnapshot _lastAndroidSnapshot =
+      const _AndroidTimerSnapshot.stopped();
+  bool _appVisible = true;
+  bool _permissionRequested = false;
+  bool _openingTimer = false;
+  bool _pendingOpenTimer = false;
+  bool _nativeRestoreInProgress = false;
+  bool _androidInitializationComplete = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     if (Platform.isWindows) {
       windowManager.addListener(this);
+    } else if (Platform.isAndroid) {
+      unawaited(_initializeAndroidBridge());
+    }
+  }
+
+  Future<void> _initializeAndroidBridge() async {
+    try {
+      await _androidBridge.initialize(onOpenTimer: _handleOpenTimerRequest);
+      if (!mounted) return;
+      final snapshot = await _androidBridge.getSnapshot();
+      if (snapshot != null &&
+          snapshot.remainingTime > 0 &&
+          snapshot.metadata.exerciseName.isNotEmpty &&
+          snapshot.metadata.selectedDateEpochMs > 0) {
+        final groupId = snapshot.metadata.groupId;
+        final sessionIndex = snapshot.metadata.sessionIndex;
+        final recordDay = snapshot.metadata.recordDay;
+        final groupContext =
+            groupId != null && sessionIndex != null && recordDay != null
+                ? GroupTimerNavigationContext(
+                    groupId: groupId,
+                    sessionIndex: sessionIndex,
+                    recordDay: recordDay,
+                  )
+                : null;
+        final bloc = context.read<TimerBloc>();
+        final restoredState = bloc.stream.first;
+        _nativeRestoreInProgress = true;
+        bloc.add(
+          TimerRestored(
+            initialDuration: snapshot.initialDuration,
+            remainingDuration: snapshot.remainingTime,
+            isPaused: snapshot.isPaused,
+            exerciseName: snapshot.metadata.exerciseName,
+            selectedDate: DateTime.fromMillisecondsSinceEpoch(
+              snapshot.metadata.selectedDateEpochMs,
+            ),
+            ownerId: snapshot.metadata.ownerId,
+            groupNavigationContext: groupContext,
+          ),
+        );
+        await restoredState;
+        final state = bloc.state;
+        if (state is TimerRunInProgress) {
+          _lastAndroidSnapshot = _AndroidTimerSnapshot.running(
+            initialDuration: state.initialDuration,
+            remainingTime: state.duration,
+            expiresAtEpochMs: state.expiresAt?.millisecondsSinceEpoch,
+          );
+        } else if (state is TimerRunPause) {
+          _lastAndroidSnapshot = _AndroidTimerSnapshot.paused(
+            initialDuration: state.initialDuration,
+            remainingTime: state.duration,
+          );
+        }
+        _nativeRestoreInProgress = false;
+      }
+      await _androidBridge.setAppVisible(_appVisible);
+      _androidInitializationComplete = true;
+      if (await _androidBridge.consumeOpenTimerRequest()) {
+        _handleOpenTimerRequest();
+      } else if (_pendingOpenTimer) {
+        _handleOpenTimerRequest();
+      }
+    } catch (error, stackTrace) {
+      _nativeRestoreInProgress = false;
+      _androidInitializationComplete = true;
+      if (_pendingOpenTimer) _handleOpenTimerRequest();
+      _logAndroidOverlayError(error, stackTrace);
     }
   }
 
@@ -29,119 +116,295 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager> with WidgetsB
     WidgetsBinding.instance.removeObserver(this);
     if (Platform.isWindows) {
       windowManager.removeListener(this);
+    } else if (Platform.isAndroid) {
+      _androidBridge.dispose();
     }
     super.dispose();
   }
 
-  // Android & iOS Lifecycle
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (Platform.isAndroid || Platform.isIOS) {
-      // Android: paused occurs when app is hidden (backgrounded).
-      // inactive can occur during phone calls, split screen, etc.
-      // We primarily want overlay when the app is no longer the primary focus on full screen.
-      // But 'inactive' often leads to 'paused'.
-      // Strict backgrounding is usually 'paused'.
-      _handleStateChange(state == AppLifecycleState.paused);
+    if (Platform.isAndroid) {
+      final bool visible;
+      switch (state) {
+        case AppLifecycleState.resumed:
+          visible = true;
+        case AppLifecycleState.inactive:
+          return;
+        case AppLifecycleState.hidden:
+        case AppLifecycleState.paused:
+        case AppLifecycleState.detached:
+          visible = false;
+      }
+      if (_appVisible != visible) {
+        _appVisible = visible;
+        _queueAndroid(() => _androidBridge.setAppVisible(visible));
+      }
     }
   }
 
-  // Windows Window Listener
   @override
   void onWindowBlur() {
-    // 포커스를 잃었을 때 (다른 앱 선택 등)
     if (Platform.isWindows) {
-      _handleStateChange(true);
+      _handleWindowsStateChange(true);
     }
   }
 
   @override
   void onWindowFocus() {
-    // 포커스를 다시 얻었을 때
-    if (Platform.isWindows) {
-        // MiniMode에서 돌아오는 것은 별도의 "앱으로 돌아가기" 버튼이나 closeOverlayFAB 호출에 의해 
-        // 이미 처리되었을 수도 있지만, 만약 사용자가 Alt+Tab으로 돌아왔다면?
-        // MiniMode 상태에서는 창이 작아져 있으므로, 포커스를 얻는다고 해서 바로 복원하면
-        // 사용자가 "작은 창"을 쓰려고 클릭한 것일 수도 있음.
-        // 따라서 "포커스 얻음" 만으로 복원하는 것은 좋지 않을 수 있음.
-        // 하지만 사용자가 "앱을 실행" (taskbar icon click) 하면 복원되길 원할 것.
-        // 일단은 명시적 앱으로 돌아가기를 유도하거나, 로직을 단순화.
-        
-        // 요구사항: "다른 앱을 실행해도... 유지하고 싶어" -> MiniMode 진입.
-        // 앱으로 돌아오면? "화면 최상단에 타이머 버튼을 유지" -> 이게 오버레이임.
-        // 앱을 다시 "활성화" 하면 원래대로 돌아오는게 자연스러움.
-        // 단, MiniMode 상태에서 "일시정지/스킵"을 누르려고 클릭했을 때 커지면 안됨.
-        
-        // 해결책: MiniMode UI 내에 "앱으로 돌아가기" 버튼을 둠.
-        // 여기서는 자동 복원 하지 않음. (또는 isMiniMode 플래그 확인 필요하지만 여기선 접근 어려움)
-        // -> _handleStateChange(false)를 호출하면 자동으로 원래 크기로 복원됨.
-        // MiniMode에서 버튼 클릭 하려면 포커스가 가야함. -> 포커스 가자마자 커지면 버튼 클릭 불가.
-        // 결론: Windows에서는 onWindowFocus로 자동 복원하지 않는다. 
-        // 사용자가 명시적으로 앱으로 돌아가기하거나, 타이머가 끝났을 때 앱으로 돌아가기.
-    }
+    // Windows mini mode stays active until the user explicitly returns.
   }
-  
+
   @override
   void onWindowMinimize() {
-    // 최소화 시 타이머가 돌고 있다면 오버레이 모드로 앱으로 돌아가기 (Windows)
-    if (Platform.isWindows) {
-      final timerState = context.read<TimerBloc>().state;
-      if (timerState is TimerRunInProgress) {
-        windowManager.restore();
-        _handleStateChange(true);
-      }
+    if (!Platform.isWindows) return;
+    final timerState = context.read<TimerBloc>().state;
+    if (timerState is TimerRunInProgress) {
+      unawaited(windowManager.restore());
+      _handleWindowsStateChange(true);
     }
   }
 
-  void _handleStateChange(bool isBackground) {
+  void _handleWindowsStateChange(bool isBackground) {
     if (!mounted) return;
-    
-    final timerState = context.read<TimerBloc>().state;
-    final isRunning = timerState is TimerRunInProgress;
-
-    if (isBackground) {
-      if (isRunning) {
-        // 백그라운드/포커스 상실 시 + 타이머 동작 중 -> 오버레이 실행
+    final bloc = context.read<TimerBloc>();
+    final timerState = bloc.state;
+    if (isBackground && timerState is TimerRunInProgress) {
+      unawaited(
         showOverlayFAB(
-          exerciseName: context.read<TimerBloc>().exerciseName ?? '',
+          exerciseName: bloc.exerciseName ?? '',
           restTime: timerState.duration,
           onComplete: () {},
+        ),
+      );
+    }
+  }
+
+  void _syncAndroidTimer(TimerState state) {
+    if (!Platform.isAndroid) return;
+
+    if (state is TimerRunInProgress) {
+      final expiresAt = state.expiresAt ??
+          DateTime.now().add(Duration(seconds: state.duration));
+      final next = _AndroidTimerSnapshot.running(
+        initialDuration: state.initialDuration,
+        remainingTime: state.duration,
+        expiresAtEpochMs: expiresAt.millisecondsSinceEpoch,
+      );
+      final previous = _lastAndroidSnapshot;
+      _lastAndroidSnapshot = next;
+
+      if (_nativeRestoreInProgress) return;
+
+      if (previous.phase == _AndroidTimerPhase.stopped) {
+        _queueAndroid(() async {
+          await _androidBridge.start(
+            initialDuration: next.initialDuration,
+            remainingTime: next.remainingTime,
+            expiresAt: expiresAt,
+            metadata: _androidMetadata(),
+          );
+          await _requestOverlayPermissionOnce();
+        });
+      } else if (previous.phase == _AndroidTimerPhase.paused) {
+        _queueAndroid(
+          () => _androidBridge.resume(
+            initialDuration: next.initialDuration,
+            remainingTime: next.remainingTime,
+            expiresAt: expiresAt,
+            metadata: _androidMetadata(),
+          ),
+        );
+      } else if (previous.initialDuration != next.initialDuration ||
+          previous.expiresAtEpochMs != next.expiresAtEpochMs) {
+        _queueAndroid(
+          () => _androidBridge.update(
+            initialDuration: next.initialDuration,
+            remainingTime: next.remainingTime,
+            expiresAt: expiresAt,
+            metadata: _androidMetadata(),
+          ),
         );
       }
-    } else {
-       // 포그라운드 앱으로 돌아가기 -> 오버레이 종료 
-       // (Android는 자동 앱으로 돌아가기가 자연스러움. Windows는 위 주석 참고하여 보류하거나 로직 추가)
-       if (Platform.isAndroid || Platform.isIOS) {
-          closeOverlayFAB();
-       }
+      return;
     }
+
+    if (state is TimerRunPause) {
+      final next = _AndroidTimerSnapshot.paused(
+        initialDuration: state.initialDuration,
+        remainingTime: state.duration,
+      );
+      if (_lastAndroidSnapshot != next) {
+        _lastAndroidSnapshot = next;
+        if (_nativeRestoreInProgress) return;
+        _queueAndroid(
+          () => _androidBridge.pause(
+            initialDuration: next.initialDuration,
+            remainingTime: next.remainingTime,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_lastAndroidSnapshot.phase != _AndroidTimerPhase.stopped) {
+      _lastAndroidSnapshot = const _AndroidTimerSnapshot.stopped();
+      _queueAndroid(_androidBridge.stop);
+    }
+  }
+
+  RestTimerOverlayMetadata _androidMetadata() {
+    final bloc = context.read<TimerBloc>();
+    final group = bloc.groupNavigationContext;
+    return RestTimerOverlayMetadata(
+      exerciseName: bloc.exerciseName ?? '',
+      selectedDateEpochMs: bloc.selectedDate?.millisecondsSinceEpoch ?? 0,
+      ownerId: bloc.ownerId,
+      groupId: group?.groupId,
+      sessionIndex: group?.sessionIndex,
+      recordDay: group?.recordDay,
+    );
+  }
+
+  Future<void> _requestOverlayPermissionOnce() async {
+    if (_permissionRequested) return;
+    _permissionRequested = true;
+    if (!await _androidBridge.isPermissionGranted()) {
+      await _androidBridge.requestPermission();
+    }
+  }
+
+  void _queueAndroid(Future<void> Function() operation) {
+    _androidSync = _androidSync
+        .then((_) => operation())
+        .catchError(_logAndroidOverlayError);
+  }
+
+  void _logAndroidOverlayError(Object error, [StackTrace? stackTrace]) {
+    if (error is MissingPluginException) return;
+    debugPrint('Android rest timer overlay error: $error');
+  }
+
+  void _handleOpenTimerRequest() {
+    if (!mounted || _openingTimer) return;
+    _pendingOpenTimer = true;
+    if (!_androidInitializationComplete) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openPendingTimer();
+    });
+  }
+
+  void _openPendingTimer() {
+    if (!mounted || !_pendingOpenTimer || _openingTimer) return;
+    final bloc = context.read<TimerBloc>();
+    if (bloc.state is TimerInitial || bloc.exerciseName == null) {
+      _pendingOpenTimer = false;
+      return;
+    }
+    if (const {'/exercise_detail', '/grouped_exercise_detail'}
+        .contains(appNavigatorObserver.currentRouteName)) {
+      final navigator = navigatorKey.currentState;
+      if (navigator?.canPop() == true) {
+        navigator!.pop();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _openPendingTimer();
+        });
+        return;
+      }
+    }
+    final navigationContext = navigatorKey.currentContext;
+    if (navigationContext == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openPendingTimer();
+      });
+      return;
+    }
+
+    _pendingOpenTimer = false;
+    _openingTimer = true;
+    unawaited(
+      navigateToRunningTimer(navigationContext, bloc).whenComplete(() {
+        _openingTimer = false;
+      }),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<TimerBloc, TimerState>(
       listener: (context, state) {
+        if (Platform.isAndroid) {
+          _syncAndroidTimer(state);
+          return;
+        }
+        if (!Platform.isWindows) return;
+
         if (state is TimerRunInProgress) {
-          updateOverlayFAB(
-            totalDuration: state.initialDuration,
-            remainingTime: state.duration,
+          unawaited(
+            updateOverlayFAB(
+              totalDuration: state.initialDuration,
+              remainingTime: state.duration,
+            ),
           );
         } else if (state is TimerRunPause) {
-          // 일시정지 상태도 업데이트 (필요시)
-          updateOverlayFAB(
-            totalDuration: state.initialDuration,
-            remainingTime: state.duration,
+          unawaited(
+            updateOverlayFAB(
+              totalDuration: state.initialDuration,
+              remainingTime: state.duration,
+            ),
           );
         } else {
-             // 타이머 종료 등 다른 상태 처리
-             updateOverlayFAB(
-               totalDuration: 1,
-               remainingTime: 0,
-             );
+          unawaited(
+            updateOverlayFAB(totalDuration: 1, remainingTime: 0),
+          );
         }
       },
       child: widget.child,
     );
   }
+}
+
+enum _AndroidTimerPhase { stopped, running, paused }
+
+class _AndroidTimerSnapshot {
+  final _AndroidTimerPhase phase;
+  final int initialDuration;
+  final int remainingTime;
+  final int? expiresAtEpochMs;
+
+  const _AndroidTimerSnapshot.stopped()
+      : phase = _AndroidTimerPhase.stopped,
+        initialDuration = 0,
+        remainingTime = 0,
+        expiresAtEpochMs = null;
+
+  const _AndroidTimerSnapshot.running({
+    required this.initialDuration,
+    required this.remainingTime,
+    required this.expiresAtEpochMs,
+  }) : phase = _AndroidTimerPhase.running;
+
+  const _AndroidTimerSnapshot.paused({
+    required this.initialDuration,
+    required this.remainingTime,
+  })  : phase = _AndroidTimerPhase.paused,
+        expiresAtEpochMs = null;
+
+  @override
+  bool operator ==(Object other) {
+    return other is _AndroidTimerSnapshot &&
+        other.phase == phase &&
+        other.initialDuration == initialDuration &&
+        other.remainingTime == remainingTime &&
+        other.expiresAtEpochMs == expiresAtEpochMs;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        phase,
+        initialDuration,
+        remainingTime,
+        expiresAtEpochMs,
+      );
 }

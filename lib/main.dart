@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:window_manager/window_manager.dart';
 
 import 'package:body_calendar/core/config/cloud_sync_config.dart';
+import 'package:body_calendar/core/navigation/app_navigator.dart';
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/timer/presentation/widgets/timer_overlay_manager.dart';
-import 'package:body_calendar/features/timer/presentation/screens/timer_overlay_screen.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,8 +30,6 @@ import 'package:body_calendar/features/workout/domain/repositories/workout_repos
 import 'package:body_calendar/features/workout/data/repositories/workout_repository_impl.dart';
 
 final GetIt getIt = GetIt.instance;
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
 Future<void> setupLocator() async {
   final SharedPreferences sharedPreferences =
       await SharedPreferences.getInstance();
@@ -79,15 +77,6 @@ Future<void> _restore() async {
       }
     }
   }
-}
-
-@pragma("vm:entry-point")
-void overlayMain() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: TimerOverlayScreen(),
-  ));
 }
 
 void main() async {
@@ -144,6 +133,7 @@ class MyApp extends StatelessWidget {
       builder: (context, state) {
         return MaterialApp(
           navigatorKey: navigatorKey,
+          navigatorObservers: [appNavigatorObserver],
           title: '펌핑데이',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

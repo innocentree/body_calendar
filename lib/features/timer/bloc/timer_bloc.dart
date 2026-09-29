@@ -25,6 +25,7 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
     on<TimerResumed>(_onResumed);
     on<TimerReset>(_onReset);
     on<TimerDurationUpdated>(_onDurationUpdated);
+    on<TimerRestored>(_onRestored);
     on<_TimerTicked>(_onTicked);
   }
 
@@ -107,6 +108,38 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
           (oldState.duration + delta).clamp(0, event.duration);
       emit(TimerRunPause(adjustedRemaining, event.duration));
     }
+  }
+
+  void _onRestored(TimerRestored event, Emitter<TimerState> emit) {
+    _tickerSubscription?.cancel();
+    final remaining = event.remainingDuration < 0 ? 0 : event.remainingDuration;
+    final initialDuration =
+        event.initialDuration < remaining ? remaining : event.initialDuration;
+    exerciseName = event.exerciseName;
+    selectedDate = event.selectedDate;
+    ownerId = event.ownerId;
+    groupNavigationContext = event.groupNavigationContext;
+
+    if (remaining == 0) {
+      _expiresAt = null;
+      emit(const TimerRunComplete());
+      return;
+    }
+    if (event.isPaused) {
+      _expiresAt = null;
+      emit(TimerRunPause(remaining, initialDuration));
+      return;
+    }
+
+    _expiresAt = DateTime.now().add(Duration(seconds: remaining));
+    emit(
+      TimerRunInProgress(
+        remaining,
+        initialDuration,
+        expiresAt: _expiresAt,
+      ),
+    );
+    _restartTicker(remaining);
   }
 
   void _restartTicker(int ticks) {
