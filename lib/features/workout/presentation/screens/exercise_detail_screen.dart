@@ -11,7 +11,6 @@ import '../../domain/models/exercise.dart';
 import '../../domain/models/exercise_set.dart';
 import '../../domain/repositories/exercise_repository.dart';
 import 'dart:async';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
 import '../../../../core/widgets/horizontal_dial_picker.dart';
@@ -167,8 +166,7 @@ class ExerciseDetailScreen extends StatefulWidget {
   State<ExerciseDetailScreen> createState() => _ExerciseDetailScreenState();
 }
 
-class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
-    with WidgetsBindingObserver {
+class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   List<ExerciseSet> _sets = [];
   double _currentWeight = 0;
   int _currentReps = 12;
@@ -220,21 +218,16 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _currentWeight = widget.initialWeight.toDouble();
     _exerciseRepository = GetIt.I<ExerciseRepository>();
     unawaited(_restTimerCuePlayer.configure());
     _loadExercise().then((_) {
       _initializePrefs();
     });
-    // 화면이 꺼지지 않게 설정
-    WakelockPlus.enable();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    WakelockPlus.disable();
     unawaited(_restTimerCuePlayer.dispose());
     super.dispose();
   }

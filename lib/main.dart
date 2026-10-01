@@ -17,6 +17,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_wakelock.dart';
 import 'features/calendar/presentation/screens/calendar_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:get_it/get_it.dart';
@@ -119,7 +120,9 @@ void main() async {
           create: (_) => ThemeBloc(getIt<SharedPreferences>()),
         ),
       ],
-      child: const TimerOverlayManager(child: MyApp()),
+      child: const AppWakelock(
+        child: TimerOverlayManager(child: MyApp()),
+      ),
     ),
   );
 }
