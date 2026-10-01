@@ -1,4 +1,5 @@
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/timer/presentation/rest_timer_cue_player.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,8 +12,6 @@ import '../../domain/models/exercise_set.dart';
 import '../../domain/repositories/exercise_repository.dart';
 import 'dart:async';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:vibration/vibration.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/exercise_statistics_popup.dart';
 import '../../../../core/widgets/horizontal_dial_picker.dart';
@@ -184,7 +183,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
   double _weightStep = 5.0;
   int _repsStep = 1;
   int _restTimeStep = 10;
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final RestTimerCuePlayer _restTimerCuePlayer = RestTimerCuePlayer();
   bool _isLbs = false;
 
   void _updateAllSetsUnit(bool isLbs) {
@@ -224,7 +223,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     WidgetsBinding.instance.addObserver(this);
     _currentWeight = widget.initialWeight.toDouble();
     _exerciseRepository = GetIt.I<ExerciseRepository>();
-    unawaited(_configureCueAudioPlayer());
+    unawaited(_restTimerCuePlayer.configure());
     _loadExercise().then((_) {
       _initializePrefs();
     });
@@ -232,26 +231,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
     WakelockPlus.enable();
   }
 
-  Future<void> _configureCueAudioPlayer() async {
-    try {
-      await _audioPlayer.setPlayerMode(PlayerMode.lowLatency);
-      await _audioPlayer.setReleaseMode(ReleaseMode.stop);
-      await _audioPlayer.setAudioContext(
-        AudioContextConfig(
-          route: AudioContextConfigRoute.system,
-          duckAudio: true,
-        ).build(),
-      );
-    } catch (error) {
-      debugPrint('Failed to configure cue audio player: $error');
-    }
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     WakelockPlus.disable();
-    _audioPlayer.dispose(); // Dispose audio player
+    unawaited(_restTimerCuePlayer.dispose());
     super.dispose();
   }
 
@@ -1063,20 +1047,13 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen>
       // === UI ===
       return BlocListener<TimerBloc, TimerState>(
         listener: (context, state) {
-          if (state is TimerRunInProgress) {
-            final duration = state.duration;
-            if (duration == 10 ||
-                duration == 3 ||
-                duration == 2 ||
-                duration == 1) {
-              Vibration.vibrate(duration: 100); // Short vibration
-              _audioPlayer.play(AssetSource('sounds/beep.mp3')); // Single beep
-            }
-          } else if (state is TimerRunComplete) {
-            Vibration.vibrate(duration: 500); // Long vibration
-            _audioPlayer.play(
-                AssetSource('sounds/bell.mp3')); // Play twice for two beeps
-            _audioPlayer.play(AssetSource('sounds/bell.mp3'));
+          final timerBloc = context.read<TimerBloc>();
+          if (restTimerBelongsToSoloExercise(
+            bloc: timerBloc,
+            exerciseName: widget.exerciseName,
+            selectedDate: widget.selectedDate,
+          )) {
+            _restTimerCuePlayer.handleState(state);
           }
         },
         child: Scaffold(

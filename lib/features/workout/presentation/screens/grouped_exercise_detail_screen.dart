@@ -5,6 +5,7 @@ import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
 import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
+import 'package:body_calendar/features/timer/presentation/rest_timer_cue_player.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_set.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
@@ -52,14 +53,22 @@ class _GroupedExerciseDetailScreenState
   bool _isLoading = true;
   final double _weightStep = 5.0;
   final int _repStep = 1;
+  final RestTimerCuePlayer _restTimerCuePlayer = RestTimerCuePlayer();
 
   @override
   void initState() {
     super.initState();
     _exerciseRepository = GetIt.I<ExerciseRepository>();
+    unawaited(_restTimerCuePlayer.configure());
     _workouts = [...widget.workouts]
       ..sort((a, b) => (a.groupOrder ?? 0).compareTo(b.groupOrder ?? 0));
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_restTimerCuePlayer.dispose());
+    super.dispose();
   }
 
   Future<void> _initialize() async {
@@ -652,21 +661,35 @@ class _GroupedExerciseDetailScreenState
           ),
         ],
       ),
-      floatingActionButton: useCompactLayout
-          ? FloatingActionButton(
-              onPressed: _isLoading ? null : _addRound,
-              backgroundColor: accent,
-              foregroundColor: Colors.white,
-              tooltip: '라운드 추가',
-              child: const Icon(Icons.add),
-            )
-          : FloatingActionButton.extended(
-              onPressed: _isLoading ? null : _addRound,
-              backgroundColor: accent,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
-              label: const Text('라운드 추가'),
-            ),
+      floatingActionButton: BlocListener<TimerBloc, TimerState>(
+        listener: (context, state) {
+          final timerBloc = context.read<TimerBloc>();
+          if (restTimerBelongsToGroup(
+            bloc: timerBloc,
+            groupId: _groupTimerId,
+            sessionIndex: _workouts.first.sessionIndex,
+            recordDay: widget.recordDay,
+            selectedDate: widget.selectedDate,
+          )) {
+            _restTimerCuePlayer.handleState(state);
+          }
+        },
+        child: useCompactLayout
+            ? FloatingActionButton(
+                onPressed: _isLoading ? null : _addRound,
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                tooltip: '라운드 추가',
+                child: const Icon(Icons.add),
+              )
+            : FloatingActionButton.extended(
+                onPressed: _isLoading ? null : _addRound,
+                backgroundColor: accent,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add),
+                label: const Text('라운드 추가'),
+              ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
