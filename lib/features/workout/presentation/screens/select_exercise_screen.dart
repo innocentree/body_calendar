@@ -51,7 +51,8 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     '허리',
     '엉덩이',
     '하체',
-    '종아리'
+    '종아리',
+    '유산소',
   ];
 
   @override

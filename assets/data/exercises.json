@@ -127,6 +127,46 @@
         "weight": 20.0,
         "description": "후면 삼각근을 고립하여 발달시킵니다.",
         "variations": []
+      },
+      {
+        "name": "숄더 프레스: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신을 사용해 안정적으로 어깨를 밀어 올리는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "레터럴 레이즈: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신의 일정한 저항으로 측면 삼각근을 자극하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "리어 델트 플라이: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "덤벨을 벌려 후면 삼각근을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "리어 델트 플라이: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "케이블의 지속적인 저항으로 후면 삼각근을 자극하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -166,7 +206,8 @@
         "sets": 4,
         "weight": 30.0,
         "description": "승모근과 삼각근을 동시에 발달시킵니다.",
-        "variations": []
+        "variations": [],
+        "equipment": "바벨"
       }
     ]
   },
@@ -321,6 +362,16 @@
         "weight": 40.0,
         "description": "머신을 사용하여 안전하게 가슴을 자극합니다.",
         "variations": []
+      },
+      {
+        "name": "인클라인 프레스: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "인클라인 머신으로 윗가슴을 집중적으로 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -529,6 +580,46 @@
         "description": "철봉 아래에 매달려 수행하는 로우 동작입니다.",
         "variations": [],
         "needsWeight": false
+      },
+      {
+        "name": "스트레이트 암 풀다운",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "팔을 편 채 케이블을 내려 광배근을 자극하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "체스트 서포티드 로우: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "가슴을 지지하고 덤벨을 당겨 등을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "체스트 서포티드 로우: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "가슴을 지지한 상태에서 머신 손잡이를 당겨 등을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "친업: 맨몸",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "언더핸드 그립으로 몸을 당겨 등과 이두근을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": false
       }
     ]
   },
@@ -654,6 +745,26 @@
         "description": "벤치를 이용하여 삼두근을 자극합니다.",
         "variations": [],
         "needsWeight": false
+      },
+      {
+        "name": "트라이셉스 킥백: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "덤벨을 뒤로 펴며 삼두근을 수축하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "트라이셉스 킥백: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "케이블을 뒤로 밀어 삼두근을 지속적으로 자극하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -767,6 +878,36 @@
         "weight": 20.0,
         "description": "이지바를 사용하여 손목 부담을 줄이며 이두를 집중적으로 타격합니다.",
         "variations": []
+      },
+      {
+        "name": "바이셉스 컬: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "케이블의 지속적인 저항으로 이두근을 수축하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "컨센트레이션 컬",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "팔꿈치를 허벅지에 고정하고 덤벨을 들어 이두근을 집중 자극하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "바이셉스 컬: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신의 고정된 궤도로 이두근을 안정적으로 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -853,6 +994,16 @@
         "weight": 20.0,
         "description": "두 개의 플레이트를 사용하여 더 높은 강도로 운동합니다.",
         "variations": []
+      },
+      {
+        "name": "리버스 컬: 이지바",
+        "equipment": "이지바",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "이지바를 오버핸드로 들어 전완과 상완근을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -984,6 +1135,46 @@
         "weight": 0.0,
         "description": "자전거 타듯이 다리를 교차하며 복사근을 자극합니다.",
         "variations": []
+      },
+      {
+        "name": "리버스 크런치",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "골반을 말아 올려 하복부를 자극하는 맨몸 운동입니다.",
+        "variations": [],
+        "needsWeight": false
+      },
+      {
+        "name": "크런치: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신 저항에 맞서 상체를 굽혀 복근을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "데드 버그",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "팔다리를 교차로 뻗으며 코어 안정성을 높이는 맨몸 운동입니다.",
+        "variations": [],
+        "needsWeight": false
+      },
+      {
+        "name": "팔로프 프레스: 케이블",
+        "equipment": "케이블",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "케이블의 회전 저항을 버티며 코어 안정성을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -1088,6 +1279,26 @@
         "weight": 0.0,
         "description": "자세를 유지하며 수행하는 정적인 슈퍼맨입니다.",
         "variations": []
+      },
+      {
+        "name": "루마니안 데드리프트: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "덤벨을 몸 가까이 내리며 햄스트링과 후면 사슬을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "버드독",
+        "equipment": "맨몸",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "네발 자세에서 반대쪽 팔과 다리를 뻗어 허리와 코어를 안정화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": false
       }
     ]
   },
@@ -1201,6 +1412,26 @@
         "weight": 0.0,
         "description": "밴드를 사용하여 수행하는 킥백 운동입니다.",
         "variations": []
+      },
+      {
+        "name": "힙 스러스트: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신으로 엉덩이를 밀어 올려 둔근을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "힙 킥백: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신 패드를 뒤로 밀어 둔근을 집중적으로 자극하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -1341,6 +1572,46 @@
         "weight": 16.0,
         "description": "덤벨을 가슴 앞에 들고 수행하는 스쿼트입니다.",
         "variations": []
+      },
+      {
+        "name": "힙 어덕션: 머신",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "머신에서 다리를 모으며 허벅지 안쪽을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "프론트 스쿼트: 바벨",
+        "equipment": "바벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "바벨을 몸 앞에 두고 앉아 하체와 코어를 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "스텝업: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "덤벨을 들고 발판에 올라 하체와 균형 능력을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "리버스 런지: 덤벨",
+        "equipment": "덤벨",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "덤벨을 들고 뒤로 내디뎌 하체와 둔근을 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
@@ -1380,7 +1651,28 @@
         "sets": 4,
         "weight": 0.0,
         "description": "종아리 전체를 발달시키는 유산소 운동입니다.",
-        "variations": []
+        "variations": [],
+        "equipment": "줄넘기"
+      },
+      {
+        "name": "카프 레이즈: 머신 스탠딩",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "스탠딩 머신에서 발뒤꿈치를 들어 종아리를 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
+      },
+      {
+        "name": "카프 레이즈: 레그 프레스",
+        "equipment": "머신",
+        "imagePath": "assets/images/exercise.png",
+        "sets": 4,
+        "weight": 0.0,
+        "description": "레그 프레스 발판을 발끝으로 밀어 종아리를 강화하는 운동입니다.",
+        "variations": [],
+        "needsWeight": true
       }
     ]
   },
