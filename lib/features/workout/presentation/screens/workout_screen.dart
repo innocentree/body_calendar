@@ -4,15 +4,15 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
+import 'package:body_calendar/core/navigation/app_navigator.dart';
 import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
 import '../../domain/models/exercise_set.dart';
 import '../../domain/models/workout_record.dart';
 import '../../domain/models/workout_routine.dart';
 import '../../domain/repositories/workout_routine_repository.dart';
+import '../navigation/workout_detail_navigation.dart';
 import 'select_exercise_screen.dart';
-import 'exercise_detail_screen.dart';
-import 'grouped_exercise_detail_screen.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
@@ -62,13 +62,28 @@ class WorkoutScreen extends StatefulWidget {
 }
 
 class _WorkoutScreenState extends State<WorkoutScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   List<WorkoutRecord> _workouts = [];
   late TabController _tabController;
   late SharedPreferences _prefs;
+  bool _prefsReady = false;
   int _recordDay = 0;
   late final WorkoutRoutineRepository _workoutRoutineRepository;
   int _groupSequence = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      appNavigatorObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
+    if (_prefsReady) _loadWorkouts();
+  }
 
   @override
   void initState() {
@@ -90,15 +105,20 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
   Future<void> _initData() async {
     await _initializePrefs();
+    if (!mounted) return;
     await _checkAndRecommendPreviousWorkout();
   }
 
   Future<void> _initializePrefs() async {
-    _prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    _prefs = prefs;
+    _prefsReady = true;
     _loadWorkouts();
   }
 
   void _loadWorkouts() {
+    if (!mounted || !_prefsReady) return;
     try {
       final dateKey = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
       final workoutsJson = _prefs.getStringList('workouts_$dateKey') ?? [];
@@ -203,6 +223,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
   @override
   void dispose() {
+    appNavigatorObserver.unsubscribe(this);
     _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
     super.dispose();
@@ -238,6 +259,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final todayStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
     final sortedDates = recordedDates.toList()..sort();
     final idx = sortedDates.indexOf(todayStr);
+    if (!mounted) return;
     setState(() {
       _recordDay = idx != -1 ? idx + 1 : 0;
     });
@@ -1241,19 +1263,14 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
           onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ExerciseDetailScreen(
-                  exerciseName: workout.name,
-                  selectedDate: widget.selectedDate,
-                  initialWeight: workout.weight.toInt(),
-                  initialSets: workout.sets,
-                  recordDay: _recordDay,
-                ),
-              ),
+            await openExerciseDetail(
+              context: context,
+              exerciseName: workout.name,
+              selectedDate: widget.selectedDate,
+              initialWeight: workout.weight.toInt(),
+              initialSets: workout.sets,
+              recordDay: _recordDay,
             );
-            _loadWorkouts();
           },
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -1389,17 +1406,12 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
           onTap: () async {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => GroupedExerciseDetailScreen(
-                  workouts: workouts,
-                  selectedDate: widget.selectedDate,
-                  recordDay: _recordDay,
-                ),
-              ),
+            await openGroupedExerciseDetail(
+              context: context,
+              workouts: workouts,
+              selectedDate: widget.selectedDate,
+              recordDay: _recordDay,
             );
-            _loadWorkouts();
           },
           child: Padding(
             padding: const EdgeInsets.all(18),

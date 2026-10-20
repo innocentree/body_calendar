@@ -78,11 +78,15 @@ class _GroupedExerciseDetailScreenState
 
   Future<void> _initialize() async {
     _prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     await _checkAndSetFirstRecordDate();
+    if (!mounted) return;
     for (final workout in _workouts) {
       _exerciseByName[workout.name] =
           await _exerciseRepository.getExerciseByName(workout.name);
+      if (!mounted) return;
       await _seedSetsFromSingleHistoryIfNeeded(workout);
+      if (!mounted) return;
       _setsByExerciseName[workout.name] = _loadSets(workout.name);
     }
 

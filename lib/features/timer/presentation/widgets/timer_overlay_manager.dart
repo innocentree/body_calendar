@@ -302,17 +302,6 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager>
       _pendingOpenTimer = false;
       return;
     }
-    if (const {'/exercise_detail', '/grouped_exercise_detail'}
-        .contains(appNavigatorObserver.currentRouteName)) {
-      final navigator = navigatorKey.currentState;
-      if (navigator?.canPop() == true) {
-        navigator!.pop();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _openPendingTimer();
-        });
-        return;
-      }
-    }
     final navigationContext = navigatorKey.currentContext;
     if (navigationContext == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

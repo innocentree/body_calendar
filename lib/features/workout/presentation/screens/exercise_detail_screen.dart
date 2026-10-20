@@ -200,6 +200,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   bool _highlightMaxWeight = false;
   bool _highlight1RM = false;
   bool _highlightVolume = false;
+  final List<Timer> _highlightTimers = [];
 
   // Running Bests for PR detection
   double _runningBestMaxWeight = 0;
@@ -221,20 +222,28 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
     _currentWeight = widget.initialWeight.toDouble();
     _exerciseRepository = GetIt.I<ExerciseRepository>();
     unawaited(_restTimerCuePlayer.configure());
-    _loadExercise().then((_) {
-      _initializePrefs();
-    });
+    unawaited(_initialize());
   }
 
   @override
   void dispose() {
+    for (final timer in _highlightTimers) {
+      timer.cancel();
+    }
     unawaited(_restTimerCuePlayer.dispose());
     super.dispose();
+  }
+
+  Future<void> _initialize() async {
+    await _loadExercise();
+    if (!mounted) return;
+    await _initializePrefs();
   }
 
   Future<void> _loadExercise() async {
     final exercise =
         await _exerciseRepository.getExerciseByName(widget.exerciseName);
+    if (!mounted) return;
     setState(() {
       _exercise = exercise;
     });
@@ -242,8 +251,11 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
 
   Future<void> _initializePrefs() async {
     _prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     await _checkAndSetFirstRecordDate();
+    if (!mounted) return;
     await _loadPreviousExerciseSets();
+    if (!mounted) return;
     _loadSets();
     if (_sets.isEmpty) {
       setState(() {
@@ -375,6 +387,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   }
 
   void _loadSets() {
+    if (!mounted) return;
     try {
       final key = _getStorageKey();
       final setsJson = _prefs.getStringList(key) ?? [];
@@ -480,6 +493,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   }
 
   void _checkAndHighlightPRs() {
+    if (!mounted) return;
     // Re-calculate today's stats based on the UPDATED sets
     double todayMaxWeight = 0;
     double todayMax1RM = 0;
@@ -503,22 +517,25 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       if (todayMaxWeight > _runningBestMaxWeight) {
         _runningBestMaxWeight = todayMaxWeight;
         setState(() => _highlightMaxWeight = true);
-        Timer(const Duration(seconds: 3),
-            () => setState(() => _highlightMaxWeight = false));
+        _highlightTimers.add(Timer(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _highlightMaxWeight = false);
+        }));
       }
 
       if (todayMax1RM > _runningBest1RM) {
         _runningBest1RM = todayMax1RM;
         setState(() => _highlight1RM = true);
-        Timer(const Duration(seconds: 3),
-            () => setState(() => _highlight1RM = false));
+        _highlightTimers.add(Timer(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _highlight1RM = false);
+        }));
       }
 
       if (todayTotalVolume > _runningBestVolume) {
         _runningBestVolume = todayTotalVolume;
         setState(() => _highlightVolume = true);
-        Timer(const Duration(seconds: 3),
-            () => setState(() => _highlightVolume = false));
+        _highlightTimers.add(Timer(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _highlightVolume = false);
+        }));
       }
     }
   }
@@ -854,6 +871,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
               .toList();
 
           if (previousSets.isNotEmpty) {
+            if (!mounted) return;
             // 마지막 세트의 정보로 현재 값 설정
             final lastSet = previousSets.last;
             setState(() {
