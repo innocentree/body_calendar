@@ -1,111 +1,147 @@
-# 이 워크플로우는 'main' 브랜치에 코드가 푸시될 때마다 실행됩니다.
-name: Flutter CI/CD to Github Drive
+name: Flutter Android release
 
 on:
   push:
-    branches: [ master, release ]
-  # 수동 실행(Run workflow 버튼)을 위한 트리거 추가
+    branches: [master, release]
   workflow_dispatch:
 
 permissions:
-  contents: write # 릴리스 생성에 필요한 쓰기 권한 추가
+  contents: write
 
 jobs:
-  build-and-upload:
-    # 워크플로우를 실행할 가상 머신 환경을 지정합니다.
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. 소스 코드 체크아웃
-    # 리포지토리의 코드를 가상 머신으로 가져옵니다.
-    #- name: Checkout code
-    #  uses: actions/checkout@v3
-    - name: Check out repository
-      uses: actions/checkout@v4
-      with:
-        #repository: octocat/my-private-repo
-        repository: innocentree/body_calendar
-        #ref: v1.0
-        # secrets 에 토큰이 없으면 빌드 실패
+      - name: Check out repository
+        uses: actions/checkout@v4
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
 
-    # 2. 자바(JDK) 설정
-    # Flutter 안드로이드 빌드에 필요한 자바 환경을 설정합니다.
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '17'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.2"
+          cache: true
 
-    # 3. Flutter SDK 설정
-    # Flutter 개발 환경을 설정합니다.
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.35.2' # 사용자의 로컬 버전과 일치시켜 호환성 확보
+      - name: Set release version
+        run: |
+          set -euo pipefail
+          sed -i -E "s/^version: .*/version: 1.0.${GITHUB_RUN_NUMBER}+${GITHUB_RUN_NUMBER}/" pubspec.yaml
+          grep '^version:' pubspec.yaml
 
-    - name: Update version number
-      run: |
-        VERSION_NAME=$(grep 'version:' pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
-        NEW_VERSION="$VERSION_NAME+${{ github.run_number }}"
-        sed -i "s/version: .*/version: $NEW_VERSION/" pubspec.yaml
-        
-    # 4. Flutter 의존성 패키지 설치
-    # pubspec.yaml 파일에 명시된 모든 패키지를 다운로드합니다.
-    #- name: Flutter clean
-    #  run: flutter clean
-    - name: Install dependencies
-      run: flutter pub get
+      - name: Install dependencies
+        run: flutter pub get
 
-    - name: Create key.properties
-      run: |
-        echo "storePassword=${{ secrets.KEY_STORE_PASSWORD }}" > android/key.properties
-        echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-        echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-        echo "storeFile=upload-keystore.jks" >> android/key.properties
-      
-    - name: Decode Keystore
-      run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+      - name: Analyze
+        run: flutter analyze --no-pub
 
-    - name: Validate Supabase config secrets
-      run: |
-        test -n "${{ secrets.SUPABASE_URL }}" || (echo "Missing secret: SUPABASE_URL" && exit 1)
-        test -n "${{ secrets.SUPABASE_ANON_KEY }}" || (echo "Missing secret: SUPABASE_ANON_KEY" && exit 1)
+      - name: Test
+        run: flutter test --no-pub
 
-    # 5. Flutter 릴리즈 APK 빌드
-    # 릴리즈 버전의 APK 파일을 생성합니다. 
-    - name: Build release APK
-      run: |
-        flutter build apk \
-          --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-          --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
-          --dart-define=SUPABASE_REDIRECT_URL=bodycalendar://login-callback/
+      - name: Validate release secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          for variable_name in \
+            KEYSTORE_BASE64 \
+            KEY_STORE_PASSWORD \
+            KEY_PASSWORD \
+            KEY_ALIAS \
+            SUPABASE_URL \
+            SUPABASE_ANON_KEY; do
+            if [[ -z "${!variable_name//[[:space:]]/}" ]]; then
+              echo "Missing or blank secret: ${variable_name}" >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$SUPABASE_URL" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "SUPABASE_URL must be a valid HTTPS URL." >&2
+            exit 1
+          fi
 
-    # 6. GitHub Releases에 APK 업로드
-    # https://github.com/softprops/action-gh-release
-    - name: Create and upload GitHub Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        # 릴리스 태그: 예) v1.0.0
-        tag_name: v1.0.${{ github.run_number }}
-        # 릴리스 이름
-        name: Release ${{ github.run_number }}
-        # 릴리스 설명
-        #body: |
-        #  This is a new release generated by GitHub Actions.
-        #  - New features
-        #  - Bug fixes
-        body_path: commit_message.txt
-        # 업로드할 파일 경로
-        files: build/app/outputs/flutter-apk/app-release.apk
-        #files: build/app/outputs/flutter-apk/app-debug.apk
-        # 릴리스 초안으로 생성
-        draft: false
-        # 릴리스를 최신 릴리스로 설정
-        prerelease: false
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          printf '%s\n' \
+            "storePassword=$KEY_STORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
+            "storeFile=upload-keystore.jks" > android/key.properties
+          keytool -list \
+            -keystore android/app/upload-keystore.jks \
+            -storepass "$KEY_STORE_PASSWORD" \
+            -alias "$KEY_ALIAS" > /dev/null
 
-        
+      - name: Build signed APK and AAB
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_REDIRECT_URL: com.innocentree.pumpingday://login-callback/
+        run: |
+          set -euo pipefail
+          flutter build apk --release --no-pub \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=SUPABASE_REDIRECT_URL="$SUPABASE_REDIRECT_URL"
+          flutter build appbundle --release --no-pub \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=SUPABASE_REDIRECT_URL="$SUPABASE_REDIRECT_URL"
+
+      - name: Validate Android App Bundle
+        env:
+          BUNDLETOOL_VERSION: 1.18.1
+          BUNDLETOOL_SHA256: 675786493983787ffa11550bdb7c0715679a44e1643f3ff980a529e9c822595c
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" \
+            --output bundletool.jar
+          echo "${BUNDLETOOL_SHA256}  bundletool.jar" | sha256sum --check --strict
+          java -jar bundletool.jar validate \
+            --bundle=build/app/outputs/bundle/release/app-release.aab
+          java -jar bundletool.jar dump config \
+            --bundle=build/app/outputs/bundle/release/app-release.aab \
+            > build/app/outputs/bundle/release/bundle-config.txt
+          grep -q 'PAGE_ALIGNMENT_16K' build/app/outputs/bundle/release/bundle-config.txt
+
+      - name: Create release checksums
+        run: |
+          set -euo pipefail
+          (
+            cd build/app/outputs/flutter-apk
+            sha256sum app-release.apk
+            cd ../bundle/release
+            sha256sum app-release.aab
+          ) > build/app/outputs/release-sha256.txt
+          cat build/app/outputs/release-sha256.txt
+
+      - name: Create and upload GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release 1.0.${{ github.run_number }}
+          body_path: commit_message.txt
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/release-sha256.txt
+          draft: false
+          prerelease: false

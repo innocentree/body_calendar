@@ -7,10 +7,50 @@ plugins {
 
 import java.util.Properties
 import java.io.FileInputStream
+import org.gradle.api.GradleException
+
+val keyPropsFile = rootProject.file("key.properties")
+val keyProps = Properties()
+if (keyPropsFile.isFile) {
+    FileInputStream(keyPropsFile).use(keyProps::load)
+}
+
+val releaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val signingPropertyNames = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val missingSigningProperties = signingPropertyNames.filter {
+    keyProps.getProperty(it).isNullOrBlank()
+}
+val releaseStoreFile = keyProps.getProperty("storeFile")
+    ?.takeIf { it.isNotBlank() }
+    ?.let { storeFilePath ->
+        if (storeFilePath.contains("/") || storeFilePath.contains("\\")) {
+            rootProject.file(storeFilePath)
+        } else {
+            file(storeFilePath)
+        }
+    }
+val hasReleaseSigning = keyPropsFile.isFile &&
+    missingSigningProperties.isEmpty() &&
+    releaseStoreFile?.isFile == true
+
+if (releaseTaskRequested && !hasReleaseSigning) {
+    val reasons = buildList {
+        if (!keyPropsFile.isFile) add("android/key.properties is missing")
+        if (missingSigningProperties.isNotEmpty()) {
+            add("missing properties: ${missingSigningProperties.joinToString()}")
+        }
+        if (releaseStoreFile != null && !releaseStoreFile.isFile) {
+            add("keystore does not exist: ${releaseStoreFile.path}")
+        }
+    }
+    throw GradleException("Release signing is not configured (${reasons.joinToString("; ")}).")
+}
 
 android {
-    namespace = "com.example.body_calendar"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.innocentree.pumpingday"
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -23,32 +63,17 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.body_calendar"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.innocentree.pumpingday"
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    val keyPropsFile = rootProject.file("key.properties")
-    val keyProps = Properties()
-    val hasKeyProps = keyPropsFile.exists()
-    if (hasKeyProps) {
-        keyProps.load(FileInputStream(keyPropsFile))
-    }
-
     signingConfigs {
-        if (hasKeyProps) {
+        if (hasReleaseSigning) {
             create("release") {
-                val storeFilePath = keyProps.getProperty("storeFile")
-                storeFile = if (storeFilePath.contains("/") || storeFilePath.contains("\\")) {
-                    rootProject.file(storeFilePath)
-                } else {
-                    file(storeFilePath)
-                }
+                storeFile = releaseStoreFile
                 storePassword = keyProps.getProperty("storePassword")
                 keyAlias = keyProps.getProperty("keyAlias")
                 keyPassword = keyProps.getProperty("keyPassword")
@@ -58,10 +83,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (hasKeyProps) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }

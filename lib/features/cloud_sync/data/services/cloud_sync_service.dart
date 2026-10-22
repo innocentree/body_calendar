@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:body_calendar/core/config/cloud_sync_config.dart';
@@ -7,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 enum CloudSyncVisualState {
   synced,
@@ -35,6 +33,7 @@ class CloudSyncService extends ChangeNotifier {
 
   final SharedPreferences _prefs;
 
+  static const int snapshotVersion = 2;
   static const String _deviceIdKey = 'cloud_sync_device_id';
   static const String _lastUploadedAtKey = 'cloud_sync_last_uploaded_at';
   static const String _lastDownloadedAtKey = 'cloud_sync_last_downloaded_at';
@@ -43,22 +42,33 @@ class CloudSyncService extends ChangeNotifier {
   static const String _lastErrorKey = 'cloud_sync_last_error';
   static const Duration _autoUploadDebounce = Duration(seconds: 2);
   static const Duration _interactiveSignInTimeout = Duration(minutes: 2);
-  static const List<String> _trackedExactKeys = [
+  static const List<String> _appDataExactKeys = [
+    'workouts',
     'workout_routines',
     'custom_exercises',
     'use_lbs',
     'isDarkMode',
     'first_record_date',
     'enable_workout_recommendation',
-    _deviceIdKey,
-    _lastUploadedAtKey,
-    _lastDownloadedAtKey,
   ];
-  static const List<String> _trackedPrefixes = [
+  static const List<String> _appDataPrefixes = [
     'workouts_',
     'exercise_sets_',
     'recorded_dates_',
     'body_change_record_',
+  ];
+  static const List<String> _booleanAppDataKeys = [
+    'use_lbs',
+    'isDarkMode',
+    'enable_workout_recommendation',
+  ];
+  static const List<String> _syncMetadataKeys = [
+    _deviceIdKey,
+    _lastUploadedAtKey,
+    _lastDownloadedAtKey,
+    _lastLocalChangeAtKey,
+    _isDirtyKey,
+    _lastErrorKey,
   ];
 
   Timer? _autoUploadTimer;
@@ -153,7 +163,6 @@ class CloudSyncService extends ChangeNotifier {
         'display_name':
             user.userMetadata?['full_name'] ?? user.userMetadata?['name'],
         'provider': user.appMetadata['provider'],
-        'device_id': snapshot['deviceId'],
         'backup_version': snapshot['version'],
         'summary': snapshot['summary'],
         'payload': snapshot['preferences'],
@@ -438,6 +447,49 @@ class CloudSyncService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<CloudSyncResult> deleteAccount() async {
+    if (!isAvailable) {
+      return const CloudSyncResult(
+        success: false,
+        message: 'Supabase 설정이 없어 계정을 삭제할 수 없어요.',
+      );
+    }
+    if (currentUser == null) {
+      return const CloudSyncResult(
+        success: false,
+        message: '삭제할 로그인 계정을 확인하지 못했어요.',
+      );
+    }
+
+    try {
+      await _client.rpc('delete_own_account');
+      try {
+        await _client.auth.signOut(scope: SignOutScope.local);
+      } finally {
+        await clearSyncMetadata();
+      }
+      notifyListeners();
+      return const CloudSyncResult(
+        success: true,
+        message: '클라우드 계정과 저장된 데이터를 삭제했어요.',
+      );
+    } catch (error) {
+      debugPrint('CloudSyncService.deleteAccount failed: $error');
+      return const CloudSyncResult(
+        success: false,
+        message: '계정 삭제 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.',
+      );
+    }
+  }
+
+  @visibleForTesting
+  Future<void> clearSyncMetadata() async {
+    _autoUploadTimer?.cancel();
+    for (final key in _syncMetadataKeys) {
+      await _prefs.remove(key);
+    }
+  }
+
   Future<void> notifyLocalChange({bool scheduleUpload = true}) async {
     if (!_computeTrackedDataExists()) {
       return;
@@ -473,9 +525,10 @@ class CloudSyncService extends ChangeNotifier {
 
   Future<Map<String, dynamic>> exportSnapshot() async {
     final serializablePrefs = <String, dynamic>{};
-    final keys = _prefs.getKeys().toList()..sort();
+    final keys = _prefs.getKeys().where(isAppDataKey).toList()..sort();
     for (final key in keys) {
       final value = _prefs.get(key);
+      if (!isValidAppDataValue(key, value)) continue;
       if (value is List<String>) {
         serializablePrefs[key] = List<String>.from(value);
       } else if (value is String ||
@@ -488,22 +541,54 @@ class CloudSyncService extends ChangeNotifier {
 
     final summary = _buildSummary(serializablePrefs);
     return {
-      'version': 1,
+      'version': snapshotVersion,
       'exportedAt': DateTime.now().toUtc().toIso8601String(),
-      'deviceId': await _getOrCreateDeviceId(),
       'summary': summary,
       'preferences': serializablePrefs,
     };
   }
 
+  Future<void> restoreExportedSnapshot(Map<String, dynamic> snapshot) async {
+    final version = snapshot['version'];
+    final preferences = snapshot['preferences'];
+    if (version is int &&
+        version >= 1 &&
+        version <= snapshotVersion &&
+        preferences is Map) {
+      await restoreSnapshot(Map<String, dynamic>.from(preferences));
+      return;
+    }
+
+    // Migrate the original file-backup format. It contained only the legacy
+    // workout list and routines, but neither value is privileged metadata.
+    if (version == 1 &&
+        snapshot.containsKey('workouts') &&
+        snapshot.containsKey('routines')) {
+      await restoreSnapshot({
+        'workouts': snapshot['workouts'],
+        'workout_routines': snapshot['routines'],
+      });
+      return;
+    }
+
+    throw const FormatException('지원하지 않는 펌핑데이 백업 파일이에요.');
+  }
+
   Future<void> restoreSnapshot(Map<String, dynamic> payload) async {
-    final currentKeys = _prefs.getKeys().where(_isTrackedAppKey).toList();
+    final entries = payload.entries
+        .where((entry) => isAppDataKey(entry.key))
+        .toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    for (final entry in entries) {
+      if (!isValidAppDataValue(entry.key, entry.value)) {
+        throw FormatException('백업 데이터 형식이 올바르지 않아요: ${entry.key}');
+      }
+    }
+
+    final currentKeys = _prefs.getKeys().where(isAppDataKey).toList();
     for (final key in currentKeys) {
       await _prefs.remove(key);
     }
-
-    final entries = payload.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
 
     for (final entry in entries) {
       final value = entry.value;
@@ -515,13 +600,11 @@ class CloudSyncService extends ChangeNotifier {
         await _prefs.setDouble(entry.key, value);
       } else if (value is String) {
         await _prefs.setString(entry.key, value);
-      } else if (value is List) {
+      } else if (value is List && value.every((item) => item is String)) {
         await _prefs.setStringList(
           entry.key,
-          value.map((item) => item.toString()).toList(),
+          value.cast<String>(),
         );
-      } else if (value != null) {
-        await _prefs.setString(entry.key, jsonEncode(value));
       }
     }
   }
@@ -555,22 +638,20 @@ class CloudSyncService extends ChangeNotifier {
     };
   }
 
-  Future<String> _getOrCreateDeviceId() async {
-    final existing = _prefs.getString(_deviceIdKey);
-    if (existing != null && existing.isNotEmpty) {
-      return existing;
-    }
-
-    final deviceId = const Uuid().v4();
-    await _prefs.setString(_deviceIdKey, deviceId);
-    return deviceId;
-  }
-
-  bool _isTrackedAppKey(String key) {
-    if (_trackedExactKeys.contains(key)) {
+  @visibleForTesting
+  static bool isAppDataKey(String key) {
+    if (_appDataExactKeys.contains(key)) {
       return true;
     }
-    return _trackedPrefixes.any(key.startsWith);
+    return _appDataPrefixes.any(key.startsWith);
+  }
+
+  @visibleForTesting
+  static bool isValidAppDataValue(String key, Object? value) {
+    if (!isAppDataKey(key)) return false;
+    if (_booleanAppDataKeys.contains(key)) return value is bool;
+    if (key == 'first_record_date') return value is String;
+    return value is List && value.every((item) => item is String);
   }
 
   bool _computeDirtyFromTimestamps() {
@@ -595,6 +676,6 @@ class CloudSyncService extends ChangeNotifier {
   }
 
   bool _computeTrackedDataExists() {
-    return _prefs.getKeys().any(_isTrackedAppKey);
+    return _prefs.getKeys().any(isAppDataKey);
   }
 }

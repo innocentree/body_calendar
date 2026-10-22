@@ -50,14 +50,14 @@
 2. `supabase/cloud_sync_schema.sql` 실행
 3. Supabase Auth에서 Google provider 활성화
 4. Redirect URL에 아래 값 추가
-   - `bodycalendar://login-callback/`
+   - `com.innocentree.pumpingday://login-callback/`
 5. 앱 실행 시 dart-define 전달
 
 ```bash
 flutter run \
   --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY \
-  --dart-define=SUPABASE_REDIRECT_URL=bodycalendar://login-callback/
+  --dart-define=SUPABASE_REDIRECT_URL=com.innocentree.pumpingday://login-callback/
 ```
 
 ### 참고

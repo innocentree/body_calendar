@@ -6,9 +6,11 @@ import 'package:body_calendar/features/calendar/presentation/widgets/overlay_hel
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/timer/data/rest_timer_overlay_bridge.dart';
 import 'package:body_calendar/features/timer/presentation/timer_navigation.dart';
+import 'package:body_calendar/features/timer/presentation/widgets/rest_timer_overlay_consent_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TimerOverlayManager extends StatefulWidget {
@@ -22,6 +24,8 @@ class TimerOverlayManager extends StatefulWidget {
 
 class _TimerOverlayManagerState extends State<TimerOverlayManager>
     with WidgetsBindingObserver, WindowListener {
+  static const _overlayConsentKey = 'rest_timer_overlay_consent_v1';
+
   final RestTimerOverlayBridge _androidBridge = RestTimerOverlayBridge();
   Future<void> _androidSync = Future.value();
   _AndroidTimerSnapshot _lastAndroidSnapshot =
@@ -205,7 +209,9 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager>
             expiresAt: expiresAt,
             metadata: _androidMetadata(),
           );
-          await _requestOverlayPermissionOnce();
+          unawaited(
+            _requestOverlayPermissionOnce().catchError(_logAndroidOverlayError),
+          );
         });
       } else if (previous.phase == _AndroidTimerPhase.paused) {
         _queueAndroid(
@@ -270,7 +276,22 @@ class _TimerOverlayManagerState extends State<TimerOverlayManager>
   Future<void> _requestOverlayPermissionOnce() async {
     if (_permissionRequested) return;
     _permissionRequested = true;
-    if (!await _androidBridge.isPermissionGranted()) {
+    if (await _androidBridge.isPermissionGranted()) return;
+
+    final preferences = await SharedPreferences.getInstance();
+    var consent = preferences.getBool(_overlayConsentKey);
+    if (consent == null) {
+      final dialogContext = navigatorKey.currentContext;
+      if (dialogContext == null) {
+        _permissionRequested = false;
+        return;
+      }
+      consent = await showRestTimerOverlayConsentDialog(dialogContext);
+      if (consent == null) return;
+      await preferences.setBool(_overlayConsentKey, consent);
+    }
+
+    if (consent) {
       await _androidBridge.requestPermission();
     }
   }

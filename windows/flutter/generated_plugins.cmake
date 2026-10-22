@@ -5,7 +5,6 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   audioplayers_windows
-  permission_handler_windows
   screen_brightness_windows
   screen_retriever_windows
   share_plus

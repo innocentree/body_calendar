@@ -3,8 +3,6 @@ import 'dart:io';
 
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/settings/bloc/theme_bloc.dart';
-import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
-import 'package:body_calendar/features/workout/domain/repositories/workout_routine_repository.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,6 +13,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/core/widgets/ios_widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+const _privacyPolicyUrl =
+    'https://github.com/innocentree/body_calendar/blob/master/docs/privacy-policy-ko.md';
+const _accountDeletionUrl =
+    'https://github.com/innocentree/body_calendar/blob/master/docs/account-deletion-ko.md';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -136,6 +140,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (_cloudSyncService.isAvailable && _cloudUserEmail != null) ...[
               _settingsSeparator(context),
               ListTile(
+                key: const ValueKey('delete-cloud-account'),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                leading: _settingsIcon(context, Icons.person_remove_rounded,
+                    color: AppColors.error),
+                title: const Text('클라우드 계정 삭제'),
+                subtitle: const Text('계정과 클라우드 백업을 영구 삭제해요.'),
+                onTap:
+                    _isCloudBusy ? null : () => _confirmDeleteAccount(context),
+              ),
+              _settingsSeparator(context),
+              ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 leading: _settingsIcon(context, Icons.logout_rounded,
                     color: AppColors.error),
@@ -162,6 +177,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: const Text('데이터 복원'),
               subtitle: const Text('백업 파일로 데이터를 복원해요. 기존 데이터는 새 데이터로 대체돼요.'),
               onTap: () => _restoreData(context),
+            ),
+          ]),
+          const SizedBox(height: 24),
+          _buildSectionHeader(context, '개인정보 및 계정'),
+          _buildSettingsGroup(context, [
+            ListTile(
+              key: const ValueKey('open-privacy-policy'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: _settingsIcon(context, Icons.privacy_tip_rounded),
+              title: const Text('개인정보처리방침'),
+              trailing: const Icon(Icons.open_in_new_rounded),
+              onTap: () => _openExternalLink(context, _privacyPolicyUrl),
+            ),
+            _settingsSeparator(context),
+            ListTile(
+              key: const ValueKey('open-account-deletion-guide'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: _settingsIcon(context, Icons.manage_accounts_rounded),
+              title: const Text('외부 계정 삭제 안내'),
+              trailing: const Icon(Icons.open_in_new_rounded),
+              onTap: () => _openExternalLink(context, _accountDeletionUrl),
             ),
           ]),
         ],
@@ -308,6 +344,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('클라우드 계정을 삭제할까요?'),
+        content: const Text(
+          'Google 로그인 계정과 Supabase에 저장된 운동 백업이 영구 삭제됩니다. '
+          '이 기기의 운동 기록은 삭제되지 않아요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            key: const ValueKey('confirm-delete-cloud-account'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('계정 삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCloudBusy = true);
+    try {
+      final result = await _cloudSyncService.deleteAccount();
+      if (!mounted) return;
+      await _loadSettings();
+      if (!mounted) return;
+      _showSnackBar(context, result.message);
+    } finally {
+      if (mounted) setState(() => _isCloudBusy = false);
+    }
+  }
+
+  Future<void> _openExternalLink(BuildContext context, String url) async {
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      _showSnackBar(context, '링크를 열지 못했어요.');
+    }
+  }
+
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -316,19 +399,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _backupData(BuildContext context) async {
     try {
-      final workoutRepo = GetIt.I<WorkoutRepository>();
-      final routineRepo = GetIt.I<WorkoutRoutineRepository>();
-
-      final workoutsJson = await workoutRepo.getWorkoutsJson();
-      final routinesJson = await routineRepo.getRoutinesJson();
-
-      final backupData = {
-        'version': 1,
-        'timestamp': DateTime.now().toIso8601String(),
-        'workouts': jsonDecode(workoutsJson),
-        'routines': jsonDecode(routinesJson),
-      };
-
+      final backupData = await _cloudSyncService.exportSnapshot();
       final jsonString = jsonEncode(backupData);
       final dateStr = DateFormat('yyyyMMdd').format(DateTime.now());
       final fileName = 'body_calendar_backup_$dateStr.json';
@@ -360,8 +431,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final result = await SharePlus.instance.share(
           ShareParams(
             files: [XFile(file.path)],
-            text: 'PumpingDay 데이터 백업 ($dateStr)',
-            subject: 'PumpingDay 백업 파일',
+            text: '펌핑데이 데이터 백업 ($dateStr)',
+            subject: '펌핑데이 백업 파일',
           ),
         );
 
@@ -394,25 +465,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final jsonString = await file.readAsString();
         final Map<String, dynamic> backupData = jsonDecode(jsonString);
 
-        // 간단한 유효성 검사
-        if (!backupData.containsKey('workouts') ||
-            !backupData.containsKey('routines')) {
-          throw Exception('백업 파일 형식이 올바르지 않아요.');
-        }
-
-        final workoutRepo = GetIt.I<WorkoutRepository>();
-        final routineRepo = GetIt.I<WorkoutRoutineRepository>();
-
-        if (backupData['workouts'] != null) {
-          await workoutRepo
-              .restoreWorkoutsFromJson(jsonEncode(backupData['workouts']));
-        }
-        if (backupData['routines'] != null) {
-          await routineRepo
-              .restoreRoutinesFromJson(jsonEncode(backupData['routines']));
-        }
+        await _cloudSyncService.restoreExportedSnapshot(backupData);
 
         if (context.mounted) {
+          final isDarkMode =
+              (await SharedPreferences.getInstance()).getBool('isDarkMode') ??
+                  false;
+          if (!context.mounted) return;
+          context.read<ThemeBloc>().add(ThemeChanged(isDarkMode: isDarkMode));
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('데이터를 복원했어요. 앱을 다시 열어 주세요.')),
           );

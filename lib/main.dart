@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:window_manager/window_manager.dart';
@@ -14,8 +13,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/app_wakelock.dart';
 import 'features/calendar/presentation/screens/calendar_screen.dart';
@@ -45,41 +42,6 @@ Future<void> setupLocator() async {
       .registerLazySingleton<CloudSyncService>(() => CloudSyncService(getIt()));
 }
 
-Future<void> _restore() async {
-  if (Platform.isAndroid) {
-    if (await Permission.storage.request().isGranted) {
-      try {
-        final directory = await getExternalStorageDirectory();
-        if (directory != null) {
-          final backupDir = Directory('${directory.path}/body_calendar_backup');
-          final file = File('${backupDir.path}/prefs_backup.json');
-          if (await file.exists()) {
-            final json = await file.readAsString();
-            final allPrefs = jsonDecode(json) as Map<String, dynamic>;
-            final prefs = await SharedPreferences.getInstance();
-            for (final key in allPrefs.keys) {
-              final value = allPrefs[key];
-              if (value is bool) {
-                await prefs.setBool(key, value);
-              } else if (value is double) {
-                await prefs.setDouble(key, value);
-              } else if (value is int) {
-                await prefs.setInt(key, value);
-              } else if (value is String) {
-                await prefs.setString(key, value);
-              } else if (value is List) {
-                await prefs.setStringList(key, value.cast<String>());
-              }
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Error during auto restore: $e');
-      }
-    }
-  }
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CloudSyncConfig.load();
@@ -107,7 +69,6 @@ void main() async {
       await windowManager.focus();
     });
   }
-  await _restore();
   await setupLocator(); // Initialize GetIt
   initializeDateFormatting();
   runApp(

@@ -1,13 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/workout/domain/models/workout.dart';
 import 'package:get_it/get_it.dart';
-import 'package:flutter/foundation.dart';
 import 'package:body_calendar/features/workout/domain/repositories/workout_repository.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkoutRepositoryImpl implements WorkoutRepository {
@@ -53,33 +49,6 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
         workouts.map((workout) => jsonEncode(workout.toJson())).toList();
     await _prefs.setStringList(_workoutsKey, workoutsJson);
     await GetIt.I<CloudSyncService>().notifyLocalChange();
-    await _backup();
-  }
-
-  Future<void> _backup() async {
-    if (Platform.isAndroid) {
-      if (await Permission.storage.request().isGranted) {
-        try {
-          final directory = await getExternalStorageDirectory();
-          if (directory != null) {
-            final backupDir =
-                Directory('${directory.path}/body_calendar_backup');
-            if (!await backupDir.exists()) {
-              await backupDir.create(recursive: true);
-            }
-            final file = File('${backupDir.path}/prefs_backup.json');
-            final allPrefs =
-                _prefs.getKeys().fold<Map<String, dynamic>>({}, (map, key) {
-              map[key] = _prefs.get(key);
-              return map;
-            });
-            await file.writeAsString(jsonEncode(allPrefs));
-          }
-        } catch (e) {
-          print('Error during auto backup: $e');
-        }
-      }
-    }
   }
 
   @override

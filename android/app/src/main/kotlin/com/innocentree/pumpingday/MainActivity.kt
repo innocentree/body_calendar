@@ -1,4 +1,4 @@
-package com.example.body_calendar
+package com.innocentree.pumpingday
 
 import android.Manifest
 import android.content.Intent
@@ -41,7 +41,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (RestTimerOverlayService.hasActiveTimer(this) && isOverlayPermissionGranted()) {
+        if (RestTimerOverlayService.hasActiveTimer(this)) {
             requestNotificationPermissionBestEffort()
         }
     }
@@ -161,7 +161,7 @@ class MainActivity : FlutterActivity() {
         }
         if (action == RestTimerOverlayService.ACTION_START) {
             ContextCompat.startForegroundService(this, serviceIntent)
-            if (isOverlayPermissionGranted()) requestNotificationPermissionBestEffort()
+            requestNotificationPermissionBestEffort()
         } else {
             startService(serviceIntent)
         }

@@ -9,7 +9,7 @@ class CloudSyncConfig {
     anonKey: String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: ''),
     redirectUrl: String.fromEnvironment(
       'SUPABASE_REDIRECT_URL',
-      defaultValue: 'bodycalendar://login-callback/',
+      defaultValue: 'com.innocentree.pumpingday://login-callback/',
     ),
     sourceName: 'dart-define',
   );
@@ -38,7 +38,7 @@ class CloudSyncConfig {
           url: url,
           anonKey: anonKey,
           redirectUrl: redirectUrl.isEmpty
-              ? 'bodycalendar://login-callback/'
+              ? 'com.innocentree.pumpingday://login-callback/'
               : redirectUrl,
           sourceName: 'asset:$path',
         );

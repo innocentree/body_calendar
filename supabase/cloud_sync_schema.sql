@@ -14,6 +14,11 @@ create table if not exists public.user_sync_snapshots (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+-- Older builds stored an app-generated device identifier. It is not needed for
+-- one-snapshot-per-account sync and is removed to minimize retained data.
+alter table public.user_sync_snapshots
+drop column if exists device_id;
+
 create or replace function public.touch_user_sync_snapshots_updated_at()
 returns trigger
 language plpgsql
@@ -62,3 +67,23 @@ on public.user_sync_snapshots
 for delete
 to authenticated
 using (auth.uid() = user_id);
+
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+
+  delete from auth.users
+  where id = auth.uid();
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public;
+revoke all on function public.delete_own_account() from anon;
+grant execute on function public.delete_own_account() to authenticated;
