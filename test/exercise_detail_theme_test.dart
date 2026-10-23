@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:body_calendar/core/theme/app_theme.dart';
 import 'package:body_calendar/core/utils/ticker.dart';
+import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
@@ -108,6 +109,122 @@ void main() {
       expect(icon.color, isNot(Colors.white), reason: key);
     }
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dial scope actions commit the edited weight and reps directly',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final sets = [
+      ExerciseSet(
+        weight: 28,
+        reps: 10,
+        restTime: const Duration(seconds: 70),
+        isCompleted: true,
+      ),
+      ExerciseSet(
+        weight: 28,
+        reps: 10,
+        restTime: const Duration(seconds: 70),
+      ),
+      ExerciseSet(
+        weight: 28,
+        reps: 10,
+        restTime: const Duration(seconds: 70),
+      ),
+    ];
+    SharedPreferences.setMockInitialValues({
+      'exercise_sets_인클라인 프레스: 덤벨_2026-09-28':
+          sets.map((set) => jsonEncode(set.toJson())).toList(),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final timerBloc = TimerBloc(ticker: const Ticker());
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: ExerciseDetailScreen(
+            exerciseName: '인클라인 프레스: 덤벨',
+            selectedDate: DateTime(2026, 9, 28),
+            initialWeight: 28,
+            initialSets: 3,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'initial set list');
+    await tester.tap(find.text('28.0kg × 10회').at(1));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'expanded set editor');
+
+    await tester.tap(
+      find.byKey(const ValueKey('set-editor-weight-value-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'weight dial');
+    final weightDial = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(HorizontalDialPicker),
+    );
+    await tester.drag(
+      find.descendant(
+        of: weightDial,
+        matching: find.byType(SingleChildScrollView),
+      ),
+      const Offset(-200, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('dialog-apply-remaining-sets')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'weight propagation');
+
+    var saved = prefs
+        .getStringList('exercise_sets_인클라인 프레스: 덤벨_2026-09-28')!
+        .map((raw) => ExerciseSet.fromJson(jsonDecode(raw)))
+        .toList();
+    expect(saved[0].weight, 28);
+    expect(saved[1].weight, greaterThan(28));
+    expect(saved[2].weight, saved[1].weight);
+
+    await tester.tap(
+      find.byKey(const ValueKey('set-editor-reps-value-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'reps dial');
+    final repsDial = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(HorizontalDialPicker),
+    );
+    await tester.drag(
+      find.descendant(
+        of: repsDial,
+        matching: find.byType(SingleChildScrollView),
+      ),
+      const Offset(-100, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('dialog-apply-all-sets')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'reps propagation');
+
+    saved = prefs
+        .getStringList('exercise_sets_인클라인 프레스: 덤벨_2026-09-28')!
+        .map((raw) => ExerciseSet.fromJson(jsonDecode(raw)))
+        .toList();
+    expect(saved.map((set) => set.reps).toSet(), hasLength(1));
+    expect(saved.first.reps, greaterThan(10));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('rest action uses one exact pill clip in light and dark themes',

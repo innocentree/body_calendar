@@ -318,6 +318,7 @@ class _GroupedExerciseDetailScreenState
     TimerState state, {
     bool force = false,
     bool notify = true,
+    bool preserveManualExpansion = false,
   }) {
     final currentRound = _firstIncompleteRoundIndex;
     final activeTimerRound = _activeOwnedTimerRound(bloc, state);
@@ -327,19 +328,15 @@ class _GroupedExerciseDetailScreenState
       return;
     }
 
-    if (currentRound != _lastCurrentRoundIndex && currentRound != null) {
+    if (!preserveManualExpansion &&
+        currentRound != _lastCurrentRoundIndex &&
+        currentRound != null) {
       _manualRoundExpansion.remove(currentRound);
     }
-    if (activeTimerRound != _lastActiveTimerRoundIndex &&
-        activeTimerRound != null) {
-      _manualRoundExpansion.remove(activeTimerRound);
-    }
-
     _automaticExpandedRounds
       ..clear()
       ..addAll({
         if (currentRound != null) currentRound,
-        if (activeTimerRound != null) activeTimerRound,
       });
     _lastCurrentRoundIndex = currentRound;
     _lastActiveTimerRoundIndex = activeTimerRound;
@@ -530,6 +527,12 @@ class _GroupedExerciseDetailScreenState
   Future<void> _toggleRoundCompletion(int roundIndex) async {
     final shouldComplete = !_isRoundFullyCompleted(roundIndex);
     final wasRoundComplete = _isRoundFullyCompleted(roundIndex);
+    final expansionBeforeCompletion = shouldComplete
+        ? {
+            for (var i = 0; i < _resolvedRoundCount(); i++)
+              i: _isRoundExpanded(i),
+          }
+        : null;
 
     for (final workout in _workouts) {
       final sets = _setsByExerciseName[workout.name]!;
@@ -541,7 +544,9 @@ class _GroupedExerciseDetailScreenState
     }
 
     if (shouldComplete) {
-      _manualRoundExpansion.remove(roundIndex);
+      _manualRoundExpansion
+        ..clear()
+        ..addAll(expansionBeforeCompletion!);
     } else {
       _manualRoundExpansion[roundIndex] = true;
     }
@@ -553,6 +558,7 @@ class _GroupedExerciseDetailScreenState
       context.read<TimerBloc>(),
       context.read<TimerBloc>().state,
       force: true,
+      preserveManualExpansion: shouldComplete,
     );
 
     if (!shouldComplete && _ownsRoundTimer(roundIndex)) {

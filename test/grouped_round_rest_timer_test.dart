@@ -75,6 +75,28 @@ Future<void> _scrollUntilBuilt(
   await tester.pump();
 }
 
+Future<List<bool>> _roundExpansionStates(
+  WidgetTester tester,
+  int roundCount,
+) async {
+  final listScrollable = find.descendant(
+    of: find.byType(ListView),
+    matching: find.byType(Scrollable),
+  );
+  tester.state<ScrollableState>(listScrollable.first).position.jumpTo(0);
+  await tester.pump();
+
+  final states = <bool>[];
+  for (var i = 0; i < roundCount; i++) {
+    await _scrollUntilBuilt(
+      tester,
+      find.byKey(ValueKey('round-toggle-$i')),
+    );
+    states.add(find.byKey(ValueKey('round-body-$i')).evaluate().isNotEmpty);
+  }
+  return states;
+}
+
 void main() {
   final selectedDate = DateTime(2026, 9, 17);
   final workouts = [
@@ -136,7 +158,7 @@ void main() {
   tearDown(() => GetIt.I.reset());
 
   testWidgets(
-      'the single header action completes the current round and keeps its timer visible',
+      'the single header action preserves expansion while starting the timer',
       (tester) async {
     final prefs = await SharedPreferences.getInstance();
     for (final workout in workouts) {
@@ -187,6 +209,9 @@ void main() {
     expect(find.byKey(const ValueKey('round-action-0')), findsNothing);
     expect(find.byKey(const ValueKey('round-action-1')), findsNothing);
     expect(find.byKey(const ValueKey('round-action-2')), findsNothing);
+    final expansionBeforeCompletion = await _roundExpansionStates(tester, 3);
+    expect(expansionBeforeCompletion, [false, true, false]);
+    await _scrollUntilBuilt(tester, headerAction, down: false);
     final originalRect = tester.getRect(headerAction);
 
     await tester.tap(find.byKey(const ValueKey('complete-current-round-1')));
@@ -214,23 +239,17 @@ void main() {
     );
     expect(find.byKey(const ValueKey('header-round-rest-timer-1')),
         findsOneWidget);
-    await _scrollUntilBuilt(
-      tester,
-      find.byKey(const ValueKey('round-body-1')),
+    expect(
+      await _roundExpansionStates(tester, 3),
+      expansionBeforeCompletion,
     );
-    expect(find.byKey(const ValueKey('round-body-1')), findsOneWidget);
-    await _scrollUntilBuilt(
-      tester,
-      find.byKey(const ValueKey('round-body-2')),
-    );
-    expect(find.byKey(const ValueKey('round-body-2')), findsOneWidget);
+    await _scrollUntilBuilt(tester, headerAction, down: false);
     expect(find.text('3/3'), findsOneWidget);
     expect(tester.getRect(headerAction), originalRect);
     final gauge = find.byKey(const ValueKey('round-timer-gauge'));
     final initialGaugeWidth = tester.getSize(gauge).width;
     expect(initialGaugeWidth, tester.getSize(headerAction).width);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byKey(const ValueKey('round-body-2')), findsOneWidget);
     final decreasedGaugeWidth = tester.getSize(gauge).width;
     expect(decreasedGaugeWidth, lessThan(initialGaugeWidth));
     for (final workout in workouts) {
@@ -255,12 +274,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('round-timer-reset')));
     await tester.pump();
     expect(timerBloc.state, isA<TimerInitial>());
-    await _scrollUntilBuilt(
-      tester,
-      find.byKey(const ValueKey('round-body-2')),
-      down: false,
+    expect(
+      await _roundExpansionStates(tester, 3),
+      expansionBeforeCompletion,
     );
-    expect(find.byKey(const ValueKey('round-body-2')), findsOneWidget);
+    await _scrollUntilBuilt(tester, headerAction, down: false);
     expect(
         find.byKey(const ValueKey('complete-current-round-2')), findsOneWidget);
     expect(tester.getRect(headerAction), originalRect);
@@ -350,6 +368,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(firstBody, findsOneWidget);
 
+    final currentToggle = find.byKey(const ValueKey('round-toggle-2'));
+    await _scrollUntilBuilt(tester, currentToggle);
+    expect(find.byKey(const ValueKey('round-body-2')), findsOneWidget);
+    await tester.tap(currentToggle);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('round-body-2')), findsNothing);
+
     timerBloc.add(TimerStarted(
       duration: 5,
       exerciseName: '그룹',
@@ -368,8 +393,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(firstBody, findsOneWidget);
+    expect(find.byKey(const ValueKey('round-body-2')), findsNothing);
     timerBloc.add(const TimerReset());
     await tester.pump();
+    expect(find.byKey(const ValueKey('round-body-2')), findsNothing);
   });
 
   testWidgets('completed timers do not keep a round expanded', (tester) async {

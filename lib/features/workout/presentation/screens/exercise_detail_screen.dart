@@ -544,25 +544,44 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
     BuildContext context,
     String title,
     double initialValue,
-    Function(double) onChanged, {
+    FutureOr<void> Function(double) onChanged, {
     bool isDouble = false,
     bool showUnitToggle = false,
+    FutureOr<void> Function(double)? onApplyAll,
+    FutureOr<void> Function(double)? onApplyRemaining,
   }) {
     double tempValue = initialValue;
     bool tempIsLbs = _isLbs;
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
+            Future<void> apply(
+              FutureOr<void> Function(double) action,
+            ) async {
+              if (showUnitToggle && tempIsLbs != _isLbs) {
+                _updateAllSetsUnit(tempIsLbs);
+              }
+              await action(tempValue);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            }
+
             return AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24)),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title),
+                  Expanded(
+                    child: Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   if (showUnitToggle)
                     SegmentedButton<bool>(
                       segments: const [
@@ -609,20 +628,47 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
               ),
               content: SizedBox(
                 width: 350,
-                child: HorizontalDialPicker(
-                  minValue: 0,
-                  maxValue: isDouble ? 1000 : 500,
-                  initialValue: tempValue,
-                  step: isDouble ? 0.5 : 1.0,
-                  unit: title.contains('휴식')
-                      ? '초'
-                      : (showUnitToggle
-                          ? (tempIsLbs ? 'lb' : 'kg')
-                          : (title.contains('횟수') ? '회' : '')),
-                  onChanged: (value) {
-                    tempValue = value;
-                  },
-                  width: 350,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    HorizontalDialPicker(
+                      minValue: 0,
+                      maxValue: isDouble ? 1000 : 500,
+                      initialValue: tempValue,
+                      step: isDouble ? 0.5 : 1.0,
+                      unit: title.contains('휴식')
+                          ? '초'
+                          : (showUnitToggle
+                              ? (tempIsLbs ? 'lb' : 'kg')
+                              : (title.contains('횟수') ? '회' : '')),
+                      onChanged: (value) {
+                        tempValue = value;
+                      },
+                      width: 350,
+                    ),
+                    if (onApplyAll != null || onApplyRemaining != null) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (onApplyAll != null)
+                            TextButton(
+                              key: const ValueKey('dialog-apply-all-sets'),
+                              onPressed: () => apply(onApplyAll),
+                              child: const Text('전체 세트에 적용'),
+                            ),
+                          if (onApplyRemaining != null)
+                            TextButton(
+                              key:
+                                  const ValueKey('dialog-apply-remaining-sets'),
+                              onPressed: () => apply(onApplyRemaining),
+                              child: const Text('이후 세트에 적용'),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
               actions: [
@@ -631,13 +677,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                   child: const Text('취소'),
                 ),
                 TextButton(
-                  onPressed: () {
-                    if (showUnitToggle && tempIsLbs != _isLbs) {
-                      _updateAllSetsUnit(tempIsLbs);
-                    }
-                    onChanged(tempValue);
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => apply(onChanged),
                   child: const Text('적용'),
                 ),
               ],
@@ -645,6 +685,51 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
           },
         );
       },
+    );
+  }
+
+  Future<void> _applyWeightToSets(
+    int sourceIndex, {
+    double? displayValue,
+    required bool remainingOnly,
+  }) async {
+    final targetWeight = displayValue == null
+        ? _sets[sourceIndex].weight
+        : _toStorageWeight(
+            displayValue.clamp(0.0, 1000.0),
+            isLbs: _isLbs,
+          );
+    setState(() {
+      for (var i = remainingOnly ? sourceIndex : 0; i < _sets.length; i++) {
+        if (!remainingOnly || !_sets[i].isCompleted) {
+          _sets[i] = _sets[i].copyWith(weight: targetWeight);
+        }
+      }
+    });
+    await _saveSets();
+    if (!mounted) return;
+    _showTopNotification(
+      remainingOnly ? '이후 미완료 세트에 무게를 적용했어요.' : '모든 세트에 무게를 적용했어요.',
+    );
+  }
+
+  Future<void> _applyRepsToSets(
+    int sourceIndex, {
+    double? value,
+    required bool remainingOnly,
+  }) async {
+    final targetReps = value?.toInt().clamp(1, 100) ?? _sets[sourceIndex].reps;
+    setState(() {
+      for (var i = remainingOnly ? sourceIndex : 0; i < _sets.length; i++) {
+        if (!remainingOnly || !_sets[i].isCompleted) {
+          _sets[i] = _sets[i].copyWith(reps: targetReps);
+        }
+      }
+    });
+    await _saveSets();
+    if (!mounted) return;
+    _showTopNotification(
+      remainingOnly ? '이후 미완료 세트에 횟수가 적용되었습니다.' : '모든 세트에 횟수가 적용되었습니다.',
     );
   }
 
@@ -1690,6 +1775,18 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                                     },
                                                     isDouble: true,
                                                     showUnitToggle: true,
+                                                    onApplyAll: (value) =>
+                                                        _applyWeightToSets(
+                                                      index,
+                                                      displayValue: value,
+                                                      remainingOnly: false,
+                                                    ),
+                                                    onApplyRemaining: (value) =>
+                                                        _applyWeightToSets(
+                                                      index,
+                                                      displayValue: value,
+                                                      remainingOnly: true,
+                                                    ),
                                                   );
                                                 },
                                                 child: Center(
@@ -1738,23 +1835,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                             Column(
                                               children: [
                                                 TextButton(
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      final targetWeight =
-                                                          _sets[index].weight;
-                                                      for (int i = 0;
-                                                          i < _sets.length;
-                                                          i++) {
-                                                        _sets[i] = _sets[i]
-                                                            .copyWith(
-                                                                weight:
-                                                                    targetWeight);
-                                                      }
-                                                      _saveSets();
-                                                    });
-                                                    _showTopNotification(
-                                                        '모든 세트에 무게를 적용했어요.');
-                                                  },
+                                                  onPressed: () => unawaited(
+                                                    _applyWeightToSets(
+                                                      index,
+                                                      remainingOnly: false,
+                                                    ),
+                                                  ),
                                                   style: TextButton.styleFrom(
                                                     visualDensity:
                                                         VisualDensity.compact,
@@ -1772,26 +1858,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                                           fontSize: 12)),
                                                 ),
                                                 TextButton(
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      final targetWeight =
-                                                          _sets[index].weight;
-                                                      for (int i = index;
-                                                          i < _sets.length;
-                                                          i++) {
-                                                        if (!_sets[i]
-                                                            .isCompleted) {
-                                                          _sets[i] = _sets[i]
-                                                              .copyWith(
-                                                                  weight:
-                                                                      targetWeight);
-                                                        }
-                                                      }
-                                                      _saveSets();
-                                                    });
-                                                    _showTopNotification(
-                                                        '이후 미완료 세트에 무게를 적용했어요.');
-                                                  },
+                                                  onPressed: () => unawaited(
+                                                    _applyWeightToSets(
+                                                      index,
+                                                      remainingOnly: true,
+                                                    ),
+                                                  ),
                                                   style: TextButton.styleFrom(
                                                     visualDensity:
                                                         VisualDensity.compact,
@@ -1865,6 +1937,18 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                                       _saveSets();
                                                     });
                                                   },
+                                                  onApplyAll: (value) =>
+                                                      _applyRepsToSets(
+                                                    index,
+                                                    value: value,
+                                                    remainingOnly: false,
+                                                  ),
+                                                  onApplyRemaining: (value) =>
+                                                      _applyRepsToSets(
+                                                    index,
+                                                    value: value,
+                                                    remainingOnly: true,
+                                                  ),
                                                 );
                                               },
                                               child: Center(
@@ -1872,6 +1956,8 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                                       _sets[index]
                                                           .reps
                                                           .toString(),
+                                                      key: ValueKey(
+                                                          'set-editor-reps-value-$index'),
                                                       style: TextStyle(
                                                           color:
                                                               Theme.of(context)
@@ -1898,22 +1984,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                           Column(
                                             children: [
                                               TextButton(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    final targetReps =
-                                                        _sets[index].reps;
-                                                    for (int i = 0;
-                                                        i < _sets.length;
-                                                        i++) {
-                                                      _sets[i] = _sets[i]
-                                                          .copyWith(
-                                                              reps: targetReps);
-                                                    }
-                                                    _saveSets();
-                                                  });
-                                                  _showTopNotification(
-                                                      '모든 세트에 횟수가 적용되었습니다.');
-                                                },
+                                                onPressed: () => unawaited(
+                                                  _applyRepsToSets(
+                                                    index,
+                                                    remainingOnly: false,
+                                                  ),
+                                                ),
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
                                                       VisualDensity.compact,
@@ -1930,26 +2006,12 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                                         fontSize: 12)),
                                               ),
                                               TextButton(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    final targetReps =
-                                                        _sets[index].reps;
-                                                    for (int i = index;
-                                                        i < _sets.length;
-                                                        i++) {
-                                                      if (!_sets[i]
-                                                          .isCompleted) {
-                                                        _sets[i] = _sets[i]
-                                                            .copyWith(
-                                                                reps:
-                                                                    targetReps);
-                                                      }
-                                                    }
-                                                    _saveSets();
-                                                  });
-                                                  _showTopNotification(
-                                                      '이후 미완료 세트에 횟수가 적용되었습니다.');
-                                                },
+                                                onPressed: () => unawaited(
+                                                  _applyRepsToSets(
+                                                    index,
+                                                    remainingOnly: true,
+                                                  ),
+                                                ),
                                                 style: TextButton.styleFrom(
                                                   visualDensity:
                                                       VisualDensity.compact,
