@@ -7,6 +7,7 @@ import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_set.dart';
+import 'package:body_calendar/features/workout/domain/models/workout_group_type.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
 import 'package:body_calendar/features/workout/presentation/screens/exercise_detail_screen.dart';
@@ -97,32 +98,37 @@ Future<List<bool>> _roundExpansionStates(
   return states;
 }
 
+List<WorkoutRecord> _groupWorkouts(String groupType, DateTime selectedDate) => [
+      WorkoutRecord(
+        id: 1,
+        name: '벤치 프레스',
+        sets: 3,
+        weight: 20,
+        timestamp: selectedDate,
+        sessionIndex: 1,
+        groupId: 'group-a',
+        groupType: groupType,
+        groupOrder: 0,
+      ),
+      WorkoutRecord(
+        id: 2,
+        name: '덤벨 플라이',
+        sets: 3,
+        weight: 10,
+        timestamp: selectedDate,
+        sessionIndex: 1,
+        groupId: 'group-a',
+        groupType: groupType,
+        groupOrder: 1,
+      ),
+    ];
+
 void main() {
   final selectedDate = DateTime(2026, 9, 17);
-  final workouts = [
-    WorkoutRecord(
-      id: 1,
-      name: '벤치 프레스',
-      sets: 3,
-      weight: 20,
-      timestamp: selectedDate,
-      sessionIndex: 1,
-      groupId: 'group-a',
-      groupType: 'superset',
-      groupOrder: 0,
-    ),
-    WorkoutRecord(
-      id: 2,
-      name: '덤벨 플라이',
-      sets: 3,
-      weight: 10,
-      timestamp: selectedDate,
-      sessionIndex: 1,
-      groupId: 'group-a',
-      groupType: 'superset',
-      groupOrder: 1,
-    ),
-  ];
+  final workouts = _groupWorkouts(
+    WorkoutGroupType.legacySuperset,
+    selectedDate,
+  );
 
   setUp(() async {
     await GetIt.I.reset();
@@ -283,6 +289,58 @@ void main() {
         find.byKey(const ValueKey('complete-current-round-2')), findsOneWidget);
     expect(tester.getRect(headerAction), originalRect);
   });
+
+  for (final groupType in [
+    WorkoutGroupType.legacySuperset,
+    WorkoutGroupType.legacyCompound,
+    WorkoutGroupType.setWorkout,
+  ]) {
+    testWidgets(
+        'collapsed rounds stay collapsed through completion and rest for $groupType',
+        (tester) async {
+      final timerBloc = TimerBloc(ticker: const Ticker());
+      addTearDown(timerBloc.close);
+
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: timerBloc,
+          child: MaterialApp(
+            home: GroupedExerciseDetailScreen(
+              workouts: _groupWorkouts(groupType, selectedDate),
+              selectedDate: selectedDate,
+              recordDay: 1,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('세트 운동'), findsOneWidget);
+      final currentToggle = find.byKey(const ValueKey('round-toggle-2'));
+      await _scrollUntilBuilt(tester, currentToggle);
+      expect(find.byKey(const ValueKey('round-body-2')), findsOneWidget);
+      await tester.tap(currentToggle);
+      await tester.pump();
+      expect(await _roundExpansionStates(tester, 3), [false, false, false]);
+
+      final complete = find.byKey(
+        const ValueKey('complete-current-round-2'),
+      );
+      await _scrollUntilBuilt(tester, complete, down: false);
+      await tester.tap(complete);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(timerBloc.state, isA<TimerRunInProgress>());
+      expect(await _roundExpansionStates(tester, 3), [false, false, false]);
+      await tester.pump(const Duration(seconds: 1));
+      expect(await _roundExpansionStates(tester, 3), [false, false, false]);
+
+      timerBloc.add(const TimerReset());
+      await tester.pump();
+      expect(await _roundExpansionStates(tester, 3), [false, false, false]);
+    });
+  }
 
   testWidgets('compact mode keeps only the current round open', (tester) async {
     final timerBloc = TimerBloc(ticker: const Ticker());

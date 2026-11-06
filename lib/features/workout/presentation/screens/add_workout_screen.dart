@@ -248,7 +248,7 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '슈퍼세트',
+                      '세트 운동',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,

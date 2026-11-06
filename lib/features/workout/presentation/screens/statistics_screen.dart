@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/core/widgets/ios_widgets.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
+import 'package:body_calendar/features/workout/domain/models/workout_group_type.dart';
+import 'package:body_calendar/features/workout/presentation/workout_group_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -154,19 +156,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   String _buildGroupSignature(List<Map<String, dynamic>> workouts) {
-    final type = workouts.first['groupType']?.toString() ?? 'group';
+    final type = WorkoutGroupType.statisticsKey(
+      workouts.first['groupType']?.toString(),
+    );
     final names =
         workouts.map((workout) => workout['name']?.toString() ?? '').join('::');
     return '$type::$names';
   }
 
   String _buildGroupTitle(List<Map<String, dynamic>> workouts) {
-    final type = workouts.first['groupType']?.toString();
-    final label = switch (type) {
-      'superset' => '슈퍼세트',
-      'compound' => '컴파운드 세트',
-      _ => '그룹',
-    };
+    final label = workoutGroupDisplayLabel(
+      workouts.first['groupType']?.toString(),
+    );
     final names = workouts
         .map((workout) => workout['name']?.toString() ?? '')
         .where((name) => name.isNotEmpty)
@@ -212,7 +213,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         final groupCard = _DashboardCard(
                           title: '그룹 조합',
                           value: '${_groupEntries.length}',
-                          subtitle: '슈퍼세트/컴파운드 조합 수',
+                          subtitle: '세트 운동 조합 수',
                           tint: AppColors.chartColors[1],
                         );
                         if (stackCards) {

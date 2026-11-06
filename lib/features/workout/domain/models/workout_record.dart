@@ -1,3 +1,5 @@
+import 'package:body_calendar/features/workout/domain/models/workout_group_type.dart';
+
 class WorkoutRecord {
   final int id;
   final String name;
@@ -30,6 +32,9 @@ class WorkoutRecord {
   });
 
   bool get isGrouped => groupId != null && groupId!.isNotEmpty;
+
+  WorkoutGroupBehavior? get groupBehavior =>
+      isGrouped ? WorkoutGroupType.behaviorFor(groupType) : null;
 
   Map<String, dynamic> toJson() => {
         'id': id,

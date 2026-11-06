@@ -8,10 +8,12 @@ import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/timer/presentation/rest_timer_cue_player.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_set.dart';
+import 'package:body_calendar/features/workout/domain/models/workout_group_type.dart';
 import 'package:body_calendar/features/workout/domain/models/workout_record.dart';
 import 'package:body_calendar/features/workout/domain/repositories/exercise_repository.dart';
 import 'package:body_calendar/features/workout/presentation/screens/group_statistics_screen.dart';
 import 'package:body_calendar/features/workout/presentation/widgets/exercise_statistics_popup.dart';
+import 'package:body_calendar/features/workout/presentation/workout_group_presentation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -607,28 +609,6 @@ class _GroupedExerciseDetailScreenState
     return false;
   }
 
-  String _groupTypeLabel(String? groupType) {
-    switch (groupType) {
-      case 'superset':
-        return '슈퍼세트';
-      case 'compound':
-        return '컴파운드 세트';
-      default:
-        return '그룹';
-    }
-  }
-
-  Color _groupAccentColor(String? groupType) {
-    switch (groupType) {
-      case 'superset':
-        return const Color(0xFF32ADE6);
-      case 'compound':
-        return const Color(0xFFF97316);
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
-  }
-
   String _formatDuration(Duration duration) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
@@ -768,7 +748,7 @@ class _GroupedExerciseDetailScreenState
   }
 
   String _groupSignature() {
-    final type = _workouts.first.groupType ?? 'group';
+    final type = WorkoutGroupType.statisticsKey(_workouts.first.groupType);
     final names = _workouts.map((w) => w.name).join('::');
     return '$type::$names';
   }
@@ -1265,8 +1245,8 @@ class _GroupedExerciseDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final accent = _groupAccentColor(_workouts.first.groupType);
-    final groupLabel = _groupTypeLabel(_workouts.first.groupType);
+    const accent = workoutGroupAccentColor;
+    final groupLabel = workoutGroupDisplayLabel(_workouts.first.groupType);
     final badge = _workouts.first.groupLabel == null
         ? ''
         : ' ${_workouts.first.groupLabel}';

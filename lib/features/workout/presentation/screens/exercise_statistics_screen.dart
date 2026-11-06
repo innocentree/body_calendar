@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/core/widgets/ios_widgets.dart';
+import 'package:body_calendar/features/workout/presentation/workout_group_presentation.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,11 +67,7 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
             order = i + 1;
             final groupType = workout['groupType']?.toString();
             if (groupType != null && groupType.isNotEmpty) {
-              final label = switch (groupType) {
-                'superset' => '슈퍼세트',
-                'compound' => '컴파운드 세트',
-                _ => '그룹 운동',
-              };
+              final label = workoutGroupDisplayLabel(groupType);
               final badge = workout['groupLabel']?.toString();
               groupLabel =
                   badge == null || badge.isEmpty ? label : '$label $badge';
@@ -205,7 +202,7 @@ class _ExerciseStatisticsScreenState extends State<ExerciseStatisticsScreen>
                                 child: _StatSummaryCard(
                                   title: '그룹 수행',
                                   value: '$groupedCount회',
-                                  subtitle: '슈퍼세트/컴파운드 포함',
+                                  subtitle: '세트 운동 포함',
                                 ),
                               ),
                               const SizedBox(width: 10),

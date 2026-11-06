@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:body_calendar/core/theme/app_colors.dart';
+import 'package:body_calendar/features/workout/domain/models/workout_group_type.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -184,7 +185,9 @@ class _GroupStatisticsScreenState extends State<GroupStatisticsScreen>
   static String _buildSignature(List<Map<String, dynamic>> workouts) {
     final sorted = [...workouts]..sort((a, b) => ((a['groupOrder'] ?? 0) as int)
         .compareTo((b['groupOrder'] ?? 0) as int));
-    final type = sorted.first['groupType']?.toString() ?? 'group';
+    final type = WorkoutGroupType.statisticsKey(
+      sorted.first['groupType']?.toString(),
+    );
     final names = sorted.map((w) => w['name']?.toString() ?? '').join('::');
     return '$type::$names';
   }

@@ -8,10 +8,12 @@ import 'package:body_calendar/core/navigation/app_navigator.dart';
 import 'package:get_it/get_it.dart';
 import '../../domain/models/exercise.dart';
 import '../../domain/models/exercise_set.dart';
+import '../../domain/models/workout_group_type.dart';
 import '../../domain/models/workout_record.dart';
 import '../../domain/models/workout_routine.dart';
 import '../../domain/repositories/workout_routine_repository.dart';
 import '../navigation/workout_detail_navigation.dart';
+import '../workout_group_presentation.dart';
 import 'select_exercise_screen.dart';
 import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_overlay.dart';
 import 'package:body_calendar/features/profile/profile_feature.dart';
@@ -45,7 +47,7 @@ class WorkoutListEntry {
       : 'single_${workout!.id}';
 }
 
-enum _WorkoutAddMode { single, superset, compound }
+enum _WorkoutAddMode { single, setWorkout }
 
 class WorkoutScreen extends StatefulWidget {
   final DateTime selectedDate;
@@ -197,28 +199,6 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       }
     }
     return entries;
-  }
-
-  Color _groupAccentColor(String? groupType) {
-    switch (groupType) {
-      case 'superset':
-        return const Color(0xFF32ADE6);
-      case 'compound':
-        return const Color(0xFFF97316);
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
-  }
-
-  String _groupTypeLabel(String? groupType) {
-    switch (groupType) {
-      case 'superset':
-        return '슈퍼세트';
-      case 'compound':
-        return '컴파운드 세트';
-      default:
-        return '그룹';
-    }
   }
 
   @override
@@ -855,36 +835,18 @@ class _WorkoutScreenState extends State<WorkoutScreen>
           context,
           MaterialPageRoute(
             builder: (context) => SelectExerciseScreen(
-              title: addMode == _WorkoutAddMode.superset
-                  ? '슈퍼세트 만들기'
-                  : '컴파운드 세트 만들기',
-              helperText: addMode == _WorkoutAddMode.superset
-                  ? '첫 운동: ${selectedExercise.name}\n함께 묶을 두 번째 운동을 선택하세요.'
-                  : '첫 운동: ${selectedExercise.name}\n같은 부위 운동을 추천해요.',
-              preferredBodyPart: addMode == _WorkoutAddMode.compound
-                  ? selectedExercise.bodyPart
-                  : null,
+              title: '세트 운동 만들기',
+              helperText:
+                  '첫 운동: ${selectedExercise.name}\n함께 묶을 두 번째 운동을 선택하세요.',
             ),
           ),
         );
 
         if (secondExercise == null) return;
 
-        if (addMode == _WorkoutAddMode.compound &&
-            selectedExercise.bodyPart != null &&
-            secondExercise.bodyPart != null &&
-            selectedExercise.bodyPart != secondExercise.bodyPart) {
-          final proceed = await _confirmCrossBodyPartCompound(
-            selectedExercise,
-            secondExercise,
-          );
-          if (!proceed) return;
-        }
-
         await _addWorkoutGroup(
           first: selectedExercise,
           second: secondExercise,
-          type: addMode,
         );
       }
     } catch (e) {
@@ -969,19 +931,11 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                 ),
                 const SizedBox(height: 10),
                 _buildAddModeTile(
-                  mode: _WorkoutAddMode.superset,
+                  mode: _WorkoutAddMode.setWorkout,
                   icon: Icons.link_rounded,
-                  title: '슈퍼세트',
+                  title: '세트 운동',
                   subtitle: '다른 운동 1개와 묶어서 추가',
-                  accentColor: const Color(0xFF32ADE6),
-                ),
-                const SizedBox(height: 10),
-                _buildAddModeTile(
-                  mode: _WorkoutAddMode.compound,
-                  icon: Icons.local_fire_department_rounded,
-                  title: '컴파운드 세트',
-                  subtitle: '같은 부위 운동 조합을 추천',
-                  accentColor: const Color(0xFFF97316),
+                  accentColor: workoutGroupAccentColor,
                 ),
               ],
             ),
@@ -1061,42 +1015,11 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     );
   }
 
-  Future<bool> _confirmCrossBodyPartCompound(
-    Exercise first,
-    Exercise second,
-  ) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('다른 부위 조합이에요'),
-        content: Text(
-          '${first.name}(${first.bodyPart ?? '미지정'})와 ${second.name}(${second.bodyPart ?? '미지정'})는 다른 부위예요.\n그래도 컴파운드 세트로 추가할까요?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('추가'),
-          ),
-        ],
-      ),
-    );
-
-    return result ?? false;
-  }
-
   Future<void> _addWorkoutGroup({
     required Exercise first,
     required Exercise second,
-    required _WorkoutAddMode type,
   }) async {
     final groupId = DateTime.now().microsecondsSinceEpoch.toString();
-    final groupType =
-        type == _WorkoutAddMode.superset ? 'superset' : 'compound';
     final label = _nextGroupLabel();
 
     setState(() {
@@ -1104,14 +1027,14 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         _createWorkoutRecord(
           first,
           groupId: groupId,
-          groupType: groupType,
+          groupType: WorkoutGroupType.setWorkout,
           groupLabel: label,
           groupOrder: 0,
         ),
         _createWorkoutRecord(
           second,
           groupId: groupId,
-          groupType: groupType,
+          groupType: WorkoutGroupType.setWorkout,
           groupLabel: label,
           groupOrder: 1,
         ),
@@ -1389,8 +1312,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
   Widget _buildGroupedWorkoutCard(List<WorkoutRecord> workouts) {
     final first = workouts.first;
-    final accent = _groupAccentColor(first.groupType);
-    final label = _groupTypeLabel(first.groupType);
+    const accent = workoutGroupAccentColor;
+    final label = workoutGroupDisplayLabel(first.groupType);
     final groupBadge = first.groupLabel != null ? ' ${first.groupLabel}' : '';
 
     return Container(
