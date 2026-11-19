@@ -88,7 +88,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final addSetAction = find.widgetWithText(FilledButton, '세트 추가');
+    final addSetAction = find.ancestor(
+      of: find.text('세트 추가'),
+      matching: find.byWidgetPredicate((widget) => widget is FilledButton),
+    );
     expect(addSetAction, findsOneWidget);
     expect(tester.widget<FilledButton>(addSetAction).onPressed, isNotNull);
 
@@ -259,7 +262,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final action = find.widgetWithText(FilledButton, '세트 추가');
+    final action = find.ancestor(
+      of: find.text('세트 추가'),
+      matching: find.byWidgetPredicate((widget) => widget is FilledButton),
+    );
     final label = find.descendant(of: action, matching: find.text('세트 추가'));
     Focus.of(tester.element(label)).requestFocus();
     await tester.pump();

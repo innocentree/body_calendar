@@ -210,7 +210,7 @@ void main() {
         find.byKey(const ValueKey('complete-current-round-1')), findsOneWidget);
     final completeButton = find.descendant(
       of: find.byKey(const ValueKey('complete-current-round-1')),
-      matching: find.byType(FilledButton),
+      matching: find.byWidgetPredicate((widget) => widget is FilledButton),
     );
     expect(completeButton, findsOneWidget);
     expect(tester.widget<FilledButton>(completeButton).onPressed, isNotNull);
