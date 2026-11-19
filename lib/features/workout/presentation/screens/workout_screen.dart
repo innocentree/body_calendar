@@ -340,19 +340,13 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       );
 
       if (accept == true && mounted) {
+        final copiedWorkouts = copyWorkoutRecordsToSession(
+          records: recommendedWorkouts,
+          sessionIndex: _tabController.index + 1,
+          timestamp: DateTime.now(),
+        );
         setState(() {
-          for (var workout in recommendedWorkouts) {
-            _workouts.add(WorkoutRecord(
-              id: DateTime.now().millisecondsSinceEpoch + _workouts.length,
-              name: workout.name,
-              imagePath: workout.imagePath,
-              sets: workout.sets,
-              weight: workout.weight,
-              timestamp: DateTime.now(),
-              sessionIndex: _tabController.index + 1,
-              equipment: workout.equipment,
-            ));
-          }
+          _workouts.addAll(copiedWorkouts);
         });
         await _saveWorkouts();
       }

@@ -68,3 +68,40 @@ class WorkoutRecord {
         groupOrder: json['groupOrder'],
       );
 }
+
+List<WorkoutRecord> copyWorkoutRecordsToSession({
+  required Iterable<WorkoutRecord> records,
+  required int sessionIndex,
+  required DateTime timestamp,
+}) {
+  final copiedGroupIds = <String, String>{};
+  var groupSequence = 0;
+  var recordSequence = 0;
+
+  return records.map((workout) {
+    final sourceGroupId = workout.isGrouped ? workout.groupId! : null;
+    final copiedGroupId = sourceGroupId == null
+        ? null
+        : copiedGroupIds.putIfAbsent(
+            sourceGroupId,
+            () =>
+                'copied_${timestamp.microsecondsSinceEpoch}_${groupSequence++}',
+          );
+
+    return WorkoutRecord(
+      id: timestamp.microsecondsSinceEpoch + recordSequence++,
+      name: workout.name,
+      imagePath: workout.imagePath,
+      sets: workout.sets,
+      weight: workout.weight,
+      timestamp: timestamp,
+      sessionIndex: sessionIndex,
+      equipment: workout.equipment,
+      bodyPart: workout.bodyPart,
+      groupId: copiedGroupId,
+      groupType: copiedGroupId == null ? null : WorkoutGroupType.setWorkout,
+      groupLabel: copiedGroupId == null ? null : workout.groupLabel,
+      groupOrder: copiedGroupId == null ? null : workout.groupOrder,
+    );
+  }).toList();
+}

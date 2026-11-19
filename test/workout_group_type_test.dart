@@ -71,4 +71,96 @@ void main() {
       WorkoutGroupType.setWorkout,
     );
   });
+
+  test('previous set workouts keep their group when copied to a new session',
+      () {
+    final copiedAt = DateTime(2026, 11, 19, 12);
+
+    for (final storedType in [
+      WorkoutGroupType.setWorkout,
+      WorkoutGroupType.legacySuperset,
+      WorkoutGroupType.legacyCompound,
+    ]) {
+      final source = [
+        WorkoutRecord(
+          id: 1,
+          name: '벤치 프레스',
+          sets: 3,
+          weight: 60,
+          timestamp: DateTime(2026, 11, 12),
+          sessionIndex: 1,
+          equipment: '바벨',
+          bodyPart: '가슴',
+          groupId: 'source-group',
+          groupType: storedType,
+          groupLabel: 'A',
+          groupOrder: 0,
+        ),
+        WorkoutRecord(
+          id: 2,
+          name: '덤벨 플라이',
+          sets: 3,
+          weight: 12,
+          timestamp: DateTime(2026, 11, 12),
+          sessionIndex: 1,
+          equipment: '덤벨',
+          bodyPart: '가슴',
+          groupId: 'source-group',
+          groupType: storedType,
+          groupLabel: 'A',
+          groupOrder: 1,
+        ),
+      ];
+
+      final copied = copyWorkoutRecordsToSession(
+        records: source,
+        sessionIndex: 2,
+        timestamp: copiedAt,
+      );
+
+      expect(copied, hasLength(2));
+      expect(copied.map((workout) => workout.groupId).toSet(), hasLength(1));
+      expect(copied.first.groupId, isNot('source-group'));
+      expect(
+        copied.map((workout) => workout.groupType).toSet(),
+        {WorkoutGroupType.setWorkout},
+      );
+      expect(copied.map((workout) => workout.groupOrder), [0, 1]);
+      expect(copied.map((workout) => workout.groupLabel), ['A', 'A']);
+      expect(copied.map((workout) => workout.sessionIndex), [2, 2]);
+      expect(copied.map((workout) => workout.bodyPart), ['가슴', '가슴']);
+    }
+  });
+
+  test('copying previous workouts does not merge separate groups or solo work',
+      () {
+    WorkoutRecord record(String name, {String? groupId}) => WorkoutRecord(
+          id: name.hashCode,
+          name: name,
+          sets: 3,
+          weight: 20,
+          timestamp: DateTime(2026, 11, 12),
+          sessionIndex: 1,
+          groupId: groupId,
+          groupType: groupId == null ? null : WorkoutGroupType.setWorkout,
+        );
+
+    final copied = copyWorkoutRecordsToSession(
+      records: [
+        record('그룹 A 1', groupId: 'group-a'),
+        record('그룹 A 2', groupId: 'group-a'),
+        record('단독 운동'),
+        record('그룹 B 1', groupId: 'group-b'),
+        record('그룹 B 2', groupId: 'group-b'),
+      ],
+      sessionIndex: 1,
+      timestamp: DateTime(2026, 11, 19),
+    );
+
+    expect(copied[0].groupId, copied[1].groupId);
+    expect(copied[3].groupId, copied[4].groupId);
+    expect(copied[0].groupId, isNot(copied[3].groupId));
+    expect(copied[2].isGrouped, isFalse);
+    expect(copied[2].groupType, isNull);
+  });
 }
