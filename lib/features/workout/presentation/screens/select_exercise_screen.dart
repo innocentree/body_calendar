@@ -282,7 +282,18 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
               return Container(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).bottomSheetTheme.backgroundColor,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Theme.of(context).bottomSheetTheme.backgroundColor ??
+                          Theme.of(context).colorScheme.surface,
+                      Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.045),
+                    ],
+                  ),
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(28)),
                 ),
@@ -319,9 +330,24 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                       isScrollable: true,
                       tabAlignment: TabAlignment.start,
                       dividerColor: Colors.transparent,
-                      labelColor: Theme.of(context).textTheme.bodyLarge?.color,
+                      labelColor: Colors.white,
                       unselectedLabelColor:
                           Theme.of(context).textTheme.bodySmall?.color,
+                      indicator: BoxDecoration(
+                        gradient: context.appPrimaryGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.22),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
                       tabs: [
                         Tab(text: '전체'),
                         Tab(text: '덤벨'),
@@ -388,7 +414,30 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
         final variation = variations[index];
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 6),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+            ),
+          ),
           child: ListTile(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: context.appPrimaryGradient,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.fitness_center_rounded,
+                color: Colors.white,
+                size: 19,
+              ),
+            ),
             title: Text(variation.name),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,11 +498,22 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(14),
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.16),
+                        AppColors.secondary.withValues(alpha: 0.08),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.18),
+                    ),
                   ),
                   child: Text(
                     widget.helperText!,
@@ -467,10 +527,36 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
               padding: EdgeInsets.fromLTRB(
                   16, widget.helperText == null ? 8 : 0, 16, 10),
               child: Container(
-                height: 44,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).cardTheme.color ??
+                          Theme.of(context).colorScheme.surface,
+                      Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.055),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.14),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: Theme.of(context).brightness == Brightness.dark
+                            ? 0.24
+                            : 0.07,
+                      ),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: TextField(
                   controller: _searchController,
@@ -501,31 +587,48 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
               ),
             ),
             SizedBox(
-              height: 46,
-              child: Row(
-                children: [
-                  _buildTabButton('분류'),
-                  Container(
-                    height: 24,
-                    width: 1,
-                    color: Theme.of(context).dividerColor,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _bodyParts
-                            .where((part) => part != '분류')
-                            .map((part) => _buildTabButton(part))
-                            .toList(),
-                      ),
+              height: 54,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 2, 12, 6),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.10),
                     ),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      _buildTabButton('분류'),
+                      Container(
+                        height: 22,
+                        width: 1,
+                        color: Theme.of(context).dividerColor,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _bodyParts
+                                .where((part) => part != '분류')
+                                .map((part) => _buildTabButton(part))
+                                .toList(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            Divider(height: 1, color: Theme.of(context).dividerColor),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -535,9 +638,30 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _navigateToAddExercise,
-          child: const Icon(Icons.add),
+        floatingActionButton: Container(
+          decoration: BoxDecoration(
+            gradient: context.appPrimaryGradient,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.34),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            heroTag: 'select-exercise-add-custom',
+            elevation: 0,
+            highlightElevation: 0,
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            onPressed: _navigateToAddExercise,
+            child: const Icon(Icons.add_rounded),
+          ),
         ),
       ),
     );
@@ -595,52 +719,108 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       itemCount: exercises.length,
       itemBuilder: (context, index) {
         final exercise = exercises[index];
-        return Card(
+        return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          clipBehavior: Clip.antiAlias,
-          child: ListTile(
-            minTileHeight: 68,
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.fitness_center_rounded,
-                  size: 19, color: Theme.of(context).colorScheme.primary),
-            ),
-            title: Text(
-              exercise.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (exercise.description.isNotEmpty)
-                  Text(
-                    exercise.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                const SizedBox(height: 2),
-                Text(
-                  exercise.needsWeight
-                      ? '${exercise.sets}세트 · ${exercise.weight}kg'
-                      : '${exercise.sets}세트',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).cardTheme.color ??
+                    Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.055),
               ],
             ),
-            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-            onTap: () => _showVariations(exercise),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.22
+                      : 0.065,
+                ),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              minTileHeight: 76,
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: context.appPrimaryGradient,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.22),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.fitness_center_rounded,
+                  size: 19,
+                  color: Colors.white,
+                ),
+              ),
+              title: Text(
+                exercise.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (exercise.description.isNotEmpty)
+                    Text(
+                      exercise.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    exercise.needsWeight
+                        ? '${exercise.sets}세트 · ${exercise.weight}kg'
+                        : '${exercise.sets}세트',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              onTap: () => _showVariations(exercise),
+            ),
           ),
         );
       },
@@ -651,26 +831,34 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
     final isSelected = _selectedTab == text;
     final selectedColor = Theme.of(context).colorScheme.primary;
     return InkWell(
+      borderRadius: BorderRadius.circular(15),
       onTap: () {
         setState(() {
           _selectedTab = text;
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        margin: const EdgeInsets.all(3),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? selectedColor : Colors.transparent,
-              width: 2,
-            ),
-          ),
+          color: isSelected ? null : Colors.transparent,
+          gradient: isSelected ? context.appPrimaryGradient : null,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: selectedColor.withValues(alpha: 0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           text,
           style: TextStyle(
             color: isSelected
-                ? selectedColor
+                ? Colors.white
                 : Theme.of(context).textTheme.bodySmall?.color,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -693,24 +881,82 @@ class _SelectExerciseScreenState extends State<SelectExerciseScreen> {
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
-        return FilledButton.tonal(
-          onPressed: () {
-            setState(() {
-              _selectedTab = category;
-            });
-          },
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).cardTheme.color,
-            foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+        return Semantics(
+          button: true,
+          label: category,
+          excludeSemantics: true,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).cardTheme.color ??
+                      Theme.of(context).colorScheme.surface,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.15),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.065),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-          ),
-          child: Text(
-            category,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () {
+                  setState(() {
+                    _selectedTab = category;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: context.appPrimaryGradient,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          category.substring(0, 1),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         );

@@ -39,23 +39,18 @@ class IosGroupedSurface extends StatelessWidget {
           color: showBorder
               ? context.appSeparator
               : (isDark
-                  ? Colors.white.withValues(alpha: 0.075)
-                  : Colors.white.withValues(alpha: 0.92)),
-          width: showBorder ? 1 : 0.8,
+                  ? context.appSeparator.withValues(alpha: 0.78)
+                  : const Color(0xFFE7E1F4)),
+          width: 1,
         ),
         boxShadow: showShadow
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.34 : 0.10),
-                  blurRadius: isDark ? 22 : 18,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
                   color: isDark
-                      ? Colors.white.withValues(alpha: 0.025)
-                      : Colors.white.withValues(alpha: 0.80),
-                  blurRadius: 2,
-                  offset: const Offset(0, -1),
+                      ? Colors.black.withValues(alpha: 0.20)
+                      : AppColors.primaryLight.withValues(alpha: 0.055),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
                 ),
               ]
             : null,
@@ -91,21 +86,18 @@ class IosHeroSurface extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? const [Color(0xFF173A63), Color(0xFF162432)]
-              : const [Color(0xFFDCEEFF), Color(0xFFF8FBFF)],
+              ? const [Color(0xFF30264B), Color(0xFF1A1628)]
+              : const [Color(0xFFE7E2FF), Color(0xFFFCFAFF)],
         ),
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: context.appPrimary.withValues(alpha: 0.22)),
+        border: Border.all(
+          color: context.appPrimary.withValues(alpha: isDark ? 0.28 : 0.20),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.36 : 0.12),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: context.appPrimary.withValues(alpha: isDark ? 0.12 : 0.10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: context.appPrimary.withValues(alpha: isDark ? 0.10 : 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -222,14 +214,33 @@ class IosIconBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = color ?? context.appPrimary;
+    final usesBrandGradient = color == null && backgroundColor == null;
+    final foreground =
+        usesBrandGradient ? Colors.white : color ?? context.appPrimary;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: backgroundColor ?? foreground.withValues(alpha: 0.12),
+        color: usesBrandGradient
+            ? null
+            : backgroundColor ?? foreground.withValues(alpha: 0.12),
+        gradient: usesBrandGradient ? context.appPrimaryGradient : null,
         borderRadius: BorderRadius.circular(size * 0.28),
+        border: Border.all(
+          color: usesBrandGradient
+              ? Colors.white.withValues(alpha: 0.16)
+              : foreground.withValues(alpha: 0.10),
+        ),
+        boxShadow: usesBrandGradient
+            ? [
+                BoxShadow(
+                  color: context.appAction.withValues(alpha: 0.16),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
       child: Icon(icon, color: foreground, size: iconSize),
     );
@@ -260,24 +271,14 @@ class IosSegmentedTabBar extends StatelessWidget {
         height: height,
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          color: context.appSeparator.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.black.withValues(alpha: 0.04),
+          color: context.appPrimaryContainer.withValues(
+            alpha:
+                Theme.of(context).brightness == Brightness.dark ? 0.58 : 0.72,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                alpha: Theme.of(context).brightness == Brightness.dark
-                    ? 0.24
-                    : 0.07,
-              ),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: context.appPrimary.withValues(alpha: 0.12),
+          ),
         ),
         child: TabBar(
           controller: controller,
@@ -287,15 +288,9 @@ class IosSegmentedTabBar extends StatelessWidget {
           dividerColor: Colors.transparent,
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
-            color: context.appPrimary,
-            borderRadius: BorderRadius.circular(7),
-            boxShadow: [
-              BoxShadow(
-                color: context.appPrimary.withValues(alpha: 0.24),
-                blurRadius: 7,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            gradient: context.appPrimaryGradient,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
           ),
           labelColor: Colors.white,
           unselectedLabelColor: context.appSecondaryText,
@@ -381,16 +376,15 @@ class IosBottomSafeAction extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? context.appGroupedSurface,
         border: showTopBorder
-            ? Border(top: BorderSide(color: context.appSeparator, width: 0.5))
+            ? Border(top: BorderSide(color: context.appSeparator, width: 1))
             : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha:
-                  Theme.of(context).brightness == Brightness.dark ? 0.32 : 0.09,
-            ),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.18)
+                : context.appPrimary.withValues(alpha: 0.055),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
@@ -447,7 +441,7 @@ class IosSheetShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: context.appGroupedSurface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,

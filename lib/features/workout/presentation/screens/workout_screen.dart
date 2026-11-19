@@ -19,11 +19,29 @@ import 'package:body_calendar/features/calendar/presentation/widgets/rest_fab_ov
 import 'package:body_calendar/features/profile/profile_feature.dart';
 import 'package:body_calendar/features/workout/presentation/screens/load_routine_screen.dart';
 import 'package:body_calendar/core/widgets/ios_widgets.dart';
+import 'package:body_calendar/core/theme/app_colors.dart';
 
 Color _workoutSurface(BuildContext context) =>
     Theme.of(context).colorScheme.surface;
 Color _workoutSoftSurface(BuildContext context) =>
     Theme.of(context).colorScheme.surfaceContainerHighest;
+LinearGradient _workoutCardGradient(
+  BuildContext context, {
+  Color? accent,
+}) {
+  final glow = accent ?? Theme.of(context).colorScheme.primary;
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      _workoutSurface(context),
+      glow.withValues(
+        alpha: Theme.of(context).brightness == Brightness.dark ? 0.11 : 0.055,
+      ),
+    ],
+  );
+}
+
 List<BoxShadow> _workoutCardShadow(BuildContext context) => [
       BoxShadow(
         color: Colors.black.withValues(
@@ -593,9 +611,25 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 14, vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: _workoutSoftSurface(context),
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              _workoutSoftSurface(context),
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                                  .withValues(alpha: 0.08),
+                                            ],
+                                          ),
                                           borderRadius:
                                               BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.10),
+                                          ),
                                         ),
                                         child: Column(
                                           crossAxisAlignment:
@@ -676,17 +710,23 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                                       width: 72,
                                       height: 72,
                                       decoration: BoxDecoration(
-                                        color: _workoutSoftSurface(context),
+                                        gradient: context.appPrimaryGradient,
                                         borderRadius: BorderRadius.circular(24),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.24),
+                                            blurRadius: 18,
+                                            offset: const Offset(0, 7),
+                                          ),
+                                        ],
                                       ),
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.fitness_center_rounded,
                                         size: 30,
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.color
-                                            ?.withValues(alpha: 0.58),
+                                        color: Colors.white,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
@@ -804,9 +844,37 @@ class _WorkoutScreenState extends State<WorkoutScreen>
               }
             },
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _addWorkout,
-            child: const Icon(Icons.add_rounded),
+          floatingActionButton: Container(
+            decoration: BoxDecoration(
+              gradient: context.appPrimaryGradient,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.28),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.34),
+                  blurRadius: 22,
+                  offset: const Offset(0, 9),
+                ),
+              ],
+            ),
+            child: FloatingActionButton.extended(
+              heroTag: 'workout-add-exercise',
+              elevation: 0,
+              highlightElevation: 0,
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              onPressed: _addWorkout,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text(
+                '운동 추가',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
           ),
         ),
         const RestFabOverlay(),
@@ -960,8 +1028,16 @@ class _WorkoutScreenState extends State<WorkoutScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: _workoutSoftSurface(context),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _workoutSoftSurface(context),
+              color.withValues(alpha: 0.09),
+            ],
+          ),
           borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: 0.16)),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.10),
@@ -976,10 +1052,21 @@ class _WorkoutScreenState extends State<WorkoutScreen>
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.14),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [color, AppColors.secondary],
+                ),
                 borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.24),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: color),
+              child: Icon(icon, color: Colors.white),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1178,13 +1265,11 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _workoutSurface(context),
+        gradient: _workoutCardGradient(context),
         borderRadius: BorderRadius.circular(22),
         boxShadow: _workoutCardShadow(context),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.07)
-              : Colors.white.withValues(alpha: 0.92),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
         ),
       ),
       child: Material(
@@ -1212,16 +1297,23 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.10),
+                        gradient: context.appPrimaryGradient,
                         borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.24),
+                            blurRadius: 11,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
                       child: Icon(
                         Icons.fitness_center_rounded,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -1268,8 +1360,22 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: _workoutSoftSurface(context),
+                    gradient: LinearGradient(
+                      colors: [
+                        _workoutSoftSurface(context),
+                        Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.065),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.09),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1318,14 +1424,14 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
   Widget _buildGroupedWorkoutCard(List<WorkoutRecord> workouts) {
     final first = workouts.first;
-    const accent = workoutGroupAccentColor;
+    final accent = context.appPrimary;
     final label = workoutGroupDisplayLabel(first.groupType);
     final groupBadge = first.groupLabel != null ? ' ${first.groupLabel}' : '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _workoutSurface(context),
+        gradient: _workoutCardGradient(context, accent: accent),
         borderRadius: BorderRadius.circular(22),
         boxShadow: _workoutCardShadow(context),
         border: Border.all(color: accent.withValues(alpha: 0.55)),
@@ -1353,8 +1459,16 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.14),
+                        gradient: LinearGradient(
+                          colors: [
+                            accent.withValues(alpha: 0.28),
+                            accent.withValues(alpha: 0.12),
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.22),
+                        ),
                       ),
                       child: Text(
                         '$label$groupBadge',
@@ -1384,8 +1498,18 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: _workoutSoftSurface(context),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            _workoutSoftSurface(context),
+                            accent.withValues(alpha: 0.07),
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.10),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -1394,13 +1518,17 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                             height: 32,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: accent.withValues(alpha: 0.12),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [accent, AppColors.secondary],
+                              ),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '${first.groupLabel ?? ''}${index + 1}',
                               style: TextStyle(
-                                color: accent,
+                                color: Colors.white,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),

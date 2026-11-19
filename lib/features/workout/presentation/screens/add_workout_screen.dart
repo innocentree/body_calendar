@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../workout/domain/models/exercise.dart';
 
 class AddWorkoutScreen extends StatefulWidget {
@@ -58,10 +59,20 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Container(
-          height: 44,
+          height: 48,
           decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).cardTheme.color ??
+                    Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.14),
+            ),
           ),
           child: TextField(
             controller: _searchController,
@@ -86,48 +97,20 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           children: [
             // 최상단 탭 표시
             Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              height: 56,
+              padding: const EdgeInsets.symmetric(vertical: 7),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    SizedBox(width: 10),
-                    Text('분류',
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold)),
-                    SizedBox(width: 20),
-                    Text('전체',
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant)),
-                    SizedBox(width: 20),
-                    Text('최근 30일',
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant)),
-                    SizedBox(width: 20),
-                    Text('즐겨찾기',
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant)),
-                    SizedBox(width: 20),
-                    Text('커스텀',
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant)),
-                    SizedBox(width: 20),
-                    Text('유산소',
-                        style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant)),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 12),
+                    _buildTopFilter(context, '분류', true),
+                    _buildTopFilter(context, '전체', false),
+                    _buildTopFilter(context, '최근 30일', false),
+                    _buildTopFilter(context, '즐겨찾기', false),
+                    _buildTopFilter(context, '커스텀', false),
+                    _buildTopFilter(context, '유산소', false),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ),
@@ -179,16 +162,52 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(18),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Theme.of(context).cardTheme.color ??
+                                      Theme.of(context).colorScheme.surface,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.12),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.16),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.09),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
                             ),
                             child: Center(
-                              child: Text(
-                                muscle.substring(0, 1),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  gradient: context.appPrimaryGradient,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Text(
+                                  muscle.substring(0, 1),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ),
                             ),
@@ -257,14 +276,38 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(72, 48),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: context.appPrimaryGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.28),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const FittedBox(child: Text('완료')),
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(78, 48),
+                        elevation: 0,
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const FittedBox(
+                        child: Text(
+                          '완료',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -283,8 +326,19 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+            ),
           ),
           child: Icon(Icons.close,
               color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -297,6 +351,36 @@ class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
               fontSize: 12),
         ),
       ],
+    );
+  }
+
+  Widget _buildTopFilter(
+    BuildContext context,
+    String label,
+    bool selected,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+      decoration: BoxDecoration(
+        color: selected ? null : Colors.transparent,
+        gradient: selected ? context.appPrimaryGradient : null,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: selected
+              ? Colors.white.withValues(alpha: 0.26)
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: selected
+              ? Colors.white
+              : Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+        ),
+      ),
     );
   }
 }

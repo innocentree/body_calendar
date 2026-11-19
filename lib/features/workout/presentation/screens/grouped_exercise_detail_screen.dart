@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
 import 'package:body_calendar/core/widgets/ios_widgets.dart';
+import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/timer/presentation/rest_timer_cue_player.dart';
@@ -19,6 +20,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+Color _detailSuccessColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF6EE7A8)
+        : const Color(0xFF147A45);
 
 class GroupedExerciseDetailScreen extends StatefulWidget {
   final List<WorkoutRecord> workouts;
@@ -1076,7 +1082,8 @@ class _GroupedExerciseDetailScreenState
       isDone: isDone,
       isResting: isResting,
     );
-    final statusColor = isDone && !isResting ? Colors.greenAccent : accent;
+    final statusColor =
+        isDone && !isResting ? _detailSuccessColor(context) : accent;
 
     final toggle = Semantics(
       button: true,
@@ -1148,6 +1155,10 @@ class _GroupedExerciseDetailScreenState
       style: TextButton.styleFrom(
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 10),
+        foregroundColor: accent,
+        backgroundColor: accent.withValues(alpha: 0.09),
+        side: BorderSide(color: accent.withValues(alpha: 0.24)),
+        shape: const StadiumBorder(),
       ),
       icon: const Icon(Icons.timer_outlined, size: 18),
       label: Text(_formatDuration(rest)),
@@ -1159,6 +1170,12 @@ class _GroupedExerciseDetailScreenState
             tooltip: '라운드 삭제',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             color: Colors.redAccent,
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.10),
+              side: BorderSide(
+                color: Colors.redAccent.withValues(alpha: 0.24),
+              ),
+            ),
             icon: const Icon(Icons.delete_outline),
           )
         : null;
@@ -1168,7 +1185,14 @@ class _GroupedExerciseDetailScreenState
             onPressed: () => _toggleRoundCompletion(roundIndex),
             tooltip: '라운드 완료 취소',
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            color: Colors.greenAccent,
+            color: _detailSuccessColor(context),
+            style: IconButton.styleFrom(
+              backgroundColor:
+                  _detailSuccessColor(context).withValues(alpha: 0.10),
+              side: BorderSide(
+                color: _detailSuccessColor(context).withValues(alpha: 0.24),
+              ),
+            ),
             icon: const Icon(Icons.check_circle_rounded),
           )
         : null;
@@ -1178,7 +1202,19 @@ class _GroupedExerciseDetailScreenState
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
+        color:
+            isCurrent || isResting ? null : Theme.of(context).cardTheme.color,
+        gradient: isCurrent || isResting
+            ? LinearGradient(
+                colors: [
+                  accent.withValues(alpha: 0.12),
+                  Theme.of(context)
+                      .colorScheme
+                      .tertiary
+                      .withValues(alpha: 0.06),
+                ],
+              )
+            : null,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isCurrent || isResting
@@ -1295,23 +1331,37 @@ class _GroupedExerciseDetailScreenState
             _restTimerCuePlayer.handleState(state);
           }
         },
-        child: useCompactLayout
-            ? FloatingActionButton(
-                key: const ValueKey('add-round'),
-                onPressed: _isLoading ? null : _addRound,
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                tooltip: '라운드 추가',
-                child: const Icon(Icons.add),
-              )
-            : FloatingActionButton.extended(
-                key: const ValueKey('add-round'),
-                onPressed: _isLoading ? null : _addRound,
-                backgroundColor: accent,
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add),
-                label: const Text('라운드 추가'),
-              ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: context.appPrimaryGradient,
+            borderRadius: BorderRadius.circular(useCompactLayout ? 18 : 20),
+          ),
+          child: useCompactLayout
+              ? FloatingActionButton(
+                  key: const ValueKey('add-round'),
+                  onPressed: _isLoading ? null : _addRound,
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  tooltip: '라운드 추가',
+                  child: const Icon(Icons.add),
+                )
+              : FloatingActionButton.extended(
+                  key: const ValueKey('add-round'),
+                  onPressed: _isLoading ? null : _addRound,
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('라운드 추가'),
+                ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1401,7 +1451,7 @@ class _GroupedExerciseDetailScreenState
                               _InfoPill(
                                 label:
                                     '완료 라운드 $_completedRoundCount/$roundCount',
-                                color: Colors.greenAccent,
+                                color: _detailSuccessColor(context),
                               ),
                             ],
                           ),
@@ -1454,18 +1504,14 @@ class _GroupedExerciseDetailScreenState
                             );
                           } else {
                             final currentRoundIndex = _currentRoundIndex;
-                            child = FilledButton.tonalIcon(
+                            child = _GroupGradientAction(
                               key: ValueKey(
                                   'complete-current-round-$currentRoundIndex'),
                               onPressed: () => _toggleRoundCompletion(
                                 currentRoundIndex,
                               ),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: accent.withValues(alpha: 0.16),
-                                foregroundColor: accent,
-                              ),
-                              icon: const Icon(Icons.done_all_rounded),
-                              label: Text('${currentRoundIndex + 1}라운드 완료'),
+                              icon: Icons.done_all_rounded,
+                              label: '${currentRoundIndex + 1}라운드 완료',
                             );
                           }
 
@@ -1728,6 +1774,54 @@ class _ExerciseRoundCard extends StatelessWidget {
   }
 }
 
+class _GroupGradientAction extends StatelessWidget {
+  const _GroupGradientAction({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: context.appPrimaryGradient,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        icon: Icon(icon, size: 20),
+        label: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AdjustChip extends StatelessWidget {
   final String label;
   final String value;
@@ -1745,63 +1839,107 @@ class _AdjustChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 44,
+            width: 48,
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: scheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(width: 4),
-          IconButton(
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+          _AdjustIconButton(
+            tooltip: '$label 감소',
             onPressed: onMinus,
-            icon: Icon(Icons.remove_circle_outline,
-                color: Theme.of(context).iconTheme.color),
+            icon: Icons.remove_circle_outline,
           ),
+          const SizedBox(width: 6),
           Expanded(
-            child: GestureDetector(
-              onTap: onTapValue,
-              child: Text(
-                value,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  fontWeight: FontWeight.w700,
+            child: Material(
+              color: scheme.primary.withValues(alpha: 0.08),
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: scheme.primary.withValues(alpha: 0.20),
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTapValue,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 42),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        value,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          IconButton(
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+          const SizedBox(width: 6),
+          _AdjustIconButton(
+            tooltip: '$label 증가',
             onPressed: onPlus,
-            icon: Icon(Icons.add_circle_outline,
-                color: Theme.of(context).iconTheme.color),
+            icon: Icons.add_circle_outline,
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AdjustIconButton extends StatelessWidget {
+  const _AdjustIconButton({
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: tooltip,
+      constraints: const BoxConstraints.tightFor(width: 42, height: 42),
+      padding: EdgeInsets.zero,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        foregroundColor: scheme.primary,
+        disabledForegroundColor: scheme.onSurfaceVariant.withValues(alpha: 0.4),
+        backgroundColor: scheme.primary.withValues(alpha: 0.10),
+        disabledBackgroundColor:
+            scheme.onSurfaceVariant.withValues(alpha: 0.06),
+        side: BorderSide(color: scheme.primary.withValues(alpha: 0.22)),
+      ),
+      icon: Icon(icon, size: 21),
     );
   }
 }
@@ -1909,11 +2047,17 @@ class _InlineRoundRestTimer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(20);
+    final scheme = Theme.of(context).colorScheme;
     return ClipRRect(
       borderRadius: radius,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.08),
+          gradient: LinearGradient(
+            colors: [
+              accent.withValues(alpha: 0.10),
+              scheme.tertiary.withValues(alpha: 0.07),
+            ],
+          ),
           borderRadius: radius,
           border: Border.all(color: accent.withValues(alpha: 0.35)),
         ),
@@ -1926,8 +2070,15 @@ class _InlineRoundRestTimer extends StatelessWidget {
                 key: const ValueKey('round-timer-gauge'),
                 widthFactor: progress.clamp(0.0, 1.0),
                 heightFactor: 1,
-                child: ColoredBox(
-                  color: accent.withValues(alpha: 0.18),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        accent.withValues(alpha: 0.28),
+                        scheme.tertiary.withValues(alpha: 0.22),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1970,6 +2121,12 @@ class _InlineRoundRestTimer extends StatelessWidget {
                             width: 32, height: 44),
                         padding: EdgeInsets.zero,
                         onPressed: onPauseResume,
+                        style: IconButton.styleFrom(
+                          backgroundColor: accent.withValues(alpha: 0.12),
+                          side: BorderSide(
+                            color: accent.withValues(alpha: 0.24),
+                          ),
+                        ),
                         icon: Icon(
                           isPaused
                               ? Icons.play_arrow_rounded
@@ -1985,6 +2142,14 @@ class _InlineRoundRestTimer extends StatelessWidget {
                             width: 32, height: 44),
                         padding: EdgeInsets.zero,
                         onPressed: onReset,
+                        style: IconButton.styleFrom(
+                          foregroundColor: scheme.onSurface,
+                          backgroundColor:
+                              scheme.surface.withValues(alpha: 0.72),
+                          side: BorderSide(
+                            color: scheme.outlineVariant,
+                          ),
+                        ),
                         icon: const Icon(Icons.close_rounded, size: 20),
                       ),
                     ],
@@ -2006,22 +2171,29 @@ class _RoundCompletedIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final success = _detailSuccessColor(context);
     return Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.10),
+        gradient: LinearGradient(
+          colors: [
+            success.withValues(alpha: 0.14),
+            accent.withValues(alpha: 0.08),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: success.withValues(alpha: 0.28)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_rounded, color: Colors.greenAccent, size: 20),
-          SizedBox(width: 8),
+          Icon(Icons.check_rounded, color: success, size: 20),
+          const SizedBox(width: 8),
           Text(
             '라운드 완료',
             style: TextStyle(
-              color: Colors.greenAccent,
-              fontWeight: FontWeight.w700,
+              color: success,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

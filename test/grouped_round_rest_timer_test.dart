@@ -208,6 +208,12 @@ void main() {
     expect(headerAction, findsOneWidget);
     expect(
         find.byKey(const ValueKey('complete-current-round-1')), findsOneWidget);
+    final completeButton = find.descendant(
+      of: find.byKey(const ValueKey('complete-current-round-1')),
+      matching: find.byType(FilledButton),
+    );
+    expect(completeButton, findsOneWidget);
+    expect(tester.widget<FilledButton>(completeButton).onPressed, isNotNull);
     expect(
         find.byKey(const ValueKey('complete-current-round-0')), findsNothing);
     expect(
@@ -913,6 +919,57 @@ void main() {
 
     expect(routeObserver.pushedNames.last, '/exercise_detail');
     expect(find.byType(GroupedExerciseDetailScreen), findsNothing);
+    timerBloc.add(const TimerReset());
+    await tester.pump();
+  });
+
+  testWidgets('rest FAB fits 320px at 1.6x text scale above one minute',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final timerBloc = TimerBloc(ticker: const Ticker())
+      ..add(TimerStarted(
+        duration: 125,
+        exerciseName: '벤치 프레스',
+        selectedDate: selectedDate,
+      ));
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: Size(320, 700),
+              textScaler: TextScaler.linear(1.6),
+            ),
+            child: Scaffold(body: Stack(children: [RestFabOverlay()])),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final fabFinder = find.byKey(const ValueKey('rest-fab-overlay'));
+    final timeFinder = find.text('2:05');
+    expect(fabFinder, findsOneWidget);
+    expect(timeFinder, findsOneWidget);
+    expect(tester.getSize(fabFinder), const Size(128, 60));
+
+    final fabRect = tester.getRect(fabFinder);
+    final timeRect = tester.getRect(timeFinder);
+    expect(fabRect.left, greaterThanOrEqualTo(0));
+    expect(fabRect.right, lessThanOrEqualTo(320));
+    expect(timeRect.left, greaterThanOrEqualTo(fabRect.left));
+    expect(timeRect.right, lessThanOrEqualTo(fabRect.right));
+    expect(timeRect.top, greaterThanOrEqualTo(fabRect.top));
+    expect(timeRect.bottom, lessThanOrEqualTo(fabRect.bottom));
+    expect(tester.takeException(), isNull);
+
     timerBloc.add(const TimerReset());
     await tester.pump();
   });

@@ -377,21 +377,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).cardTheme.color
-              : Colors.transparent,
+          color: isSelected ? null : Colors.transparent,
+          gradient: isSelected ? context.appPrimaryGradient : null,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.28)
-                : Colors.transparent,
+                ? Colors.white.withValues(alpha: 0.30)
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.28),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           text,
           style: TextStyle(
             color: isSelected
-                ? Theme.of(context).textTheme.bodyLarge?.color
+                ? Colors.white
                 : Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -412,33 +423,46 @@ class _CalendarScreenState extends State<CalendarScreen> {
     required bool isToday,
   }) {
     final hasEvent = _getEventsForDay(day).isNotEmpty;
-    final backgroundColor = isSelected
-        ? Theme.of(context).cardTheme.color
-        : (isToday
-            ? Theme.of(context).cardTheme.color?.withValues(alpha: 0.82)
-            : Colors.transparent);
+    final backgroundColor = isToday
+        ? Theme.of(context).cardTheme.color?.withValues(alpha: 0.82)
+        : Colors.transparent;
     final borderColor = isSelected
         ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.28)
         : (isToday
             ? _calendarBorderColor
             : _calendarBorderColor.withValues(alpha: 0.72));
-    final textColor = isSelected || isToday
-        ? Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white
-        : Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.color
-                ?.withValues(alpha: 0.72) ??
-            Colors.grey;
+    final textColor = isSelected
+        ? Colors.white
+        : isToday
+            ? Theme.of(context).textTheme.bodyLarge?.color ?? Colors.white
+            : Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.color
+                    ?.withValues(alpha: 0.72) ??
+                Colors.grey;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: isSelected ? null : backgroundColor,
+        gradient: isSelected ? context.appPrimaryGradient : null,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: borderColor, width: 1),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.24),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -500,7 +524,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     final BoxDecoration? dateDecoration = isSelected
         ? BoxDecoration(
-            color: theme.colorScheme.primary,
+            color: context.appAction,
             shape: BoxShape.circle,
           )
         : isToday
@@ -663,11 +687,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                     decoration: BoxDecoration(
                       color: context.appGroupedSurface,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withValues(alpha: 0.07)
-                            : Colors.white.withValues(alpha: 0.92),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.16),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -677,8 +702,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     ? 0.36
                                     : 0.11,
                           ),
-                          blurRadius: 24,
-                          offset: const Offset(0, 10),
+                          blurRadius: 30,
+                          offset: const Offset(0, 13),
+                        ),
+                        BoxShadow(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
@@ -875,14 +908,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: context.appGroupedSurface,
-                                      borderRadius: BorderRadius.circular(18),
+                                      borderRadius: BorderRadius.circular(24),
                                       border: Border.all(
-                                        color: Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.07)
-                                            : Colors.white
-                                                .withValues(alpha: 0.92),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.14),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
@@ -945,14 +976,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     margin: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(
                                       color: context.appGroupedSurface,
-                                      borderRadius: BorderRadius.circular(18),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          context.appGroupedSurface,
+                                          Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.055),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(22),
                                       border: Border.all(
-                                        color: Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.07)
-                                            : Colors.white
-                                                .withValues(alpha: 0.92),
+                                        color: accent.withValues(alpha: 0.24),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
@@ -971,7 +1008,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     child: Material(
                                       color: Colors.transparent,
                                       child: InkWell(
-                                        borderRadius: BorderRadius.circular(18),
+                                        borderRadius: BorderRadius.circular(22),
                                         onTap: _openWorkoutScreen,
                                         child: Padding(
                                           padding: const EdgeInsets.all(18),
@@ -983,8 +1020,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                 decoration: BoxDecoration(
                                                   color: accent.withValues(
                                                       alpha: 0.16),
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                    colors: [
+                                                      accent.withValues(
+                                                          alpha: 0.24),
+                                                      accent.withValues(
+                                                          alpha: 0.10),
+                                                    ],
+                                                  ),
                                                   borderRadius:
-                                                      BorderRadius.circular(14),
+                                                      BorderRadius.circular(15),
+                                                  border: Border.all(
+                                                    color: accent.withValues(
+                                                        alpha: 0.22),
+                                                  ),
                                                 ),
                                                 child: Icon(
                                                   Icons.fitness_center_rounded,
@@ -1009,21 +1060,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                           ),
                                                     ),
                                                     const SizedBox(height: 4),
-                                                    Text(
-                                                      '운동 완료',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall
-                                                          ?.copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodySmall
-                                                                ?.color
-                                                                ?.withValues(
-                                                                  alpha: 0.86,
-                                                                ),
-                                                          ),
+                                                    Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons
+                                                              .check_circle_rounded,
+                                                          size: 15,
+                                                          color:
+                                                              AppColors.success,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 5),
+                                                        Text(
+                                                          '운동 완료',
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .bodySmall
+                                                                  ?.copyWith(
+                                                                    color: AppColors
+                                                                        .success,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w700,
+                                                                  ),
+                                                        ),
+                                                      ],
                                                     ),
                                                     const SizedBox(height: 12),
                                                     Container(
@@ -1063,9 +1125,37 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ],
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _openWorkoutScreen,
-            child: const Icon(Icons.add_rounded),
+          floatingActionButton: Container(
+            decoration: BoxDecoration(
+              gradient: context.appPrimaryGradient,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.28),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.34),
+                  blurRadius: 22,
+                  offset: const Offset(0, 9),
+                ),
+              ],
+            ),
+            child: FloatingActionButton.extended(
+              heroTag: 'calendar-add-workout',
+              elevation: 0,
+              highlightElevation: 0,
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              onPressed: _openWorkoutScreen,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text(
+                '운동 추가',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
           ),
         ),
         if (!isSameDay(_focusedDay, DateTime.now()))
@@ -1088,29 +1178,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .cardTheme
-                        .color
-                        ?.withValues(alpha: 0.96),
+                    gradient: context.appPrimaryGradient,
                     borderRadius: BorderRadius.circular(30),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .primaryColor
-                          .withValues(alpha: 0.35),
+                      color: Colors.white.withValues(alpha: 0.28),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.today,
-                        color: Theme.of(context).primaryColor,
+                        color: Colors.white,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '오늘로 이동',
                         style: TextStyle(
-                          color: Theme.of(context).primaryColor,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

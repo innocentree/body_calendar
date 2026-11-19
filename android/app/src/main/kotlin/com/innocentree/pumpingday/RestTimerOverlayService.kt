@@ -12,7 +12,9 @@ import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -36,6 +38,7 @@ class RestTimerOverlayService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var windowManager: WindowManager
     private var overlayView: TextView? = null
+    private var overlayProgressDrawable: ClipDrawable? = null
     private var timerActive = false
     private var paused = false
     private var appVisible = true
@@ -175,6 +178,7 @@ class RestTimerOverlayService : Service() {
         if (remaining == lastDisplayedRemaining) return
         lastDisplayedRemaining = remaining
         overlayView?.text = timerText(remaining)
+        overlayProgressDrawable?.level = progressLevel(remaining)
         val notificationManager =
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         try {
@@ -265,22 +269,42 @@ class RestTimerOverlayService : Service() {
             return
         }
 
+        val backgroundLayer = GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            intArrayOf(Color.rgb(79, 70, 229), Color.rgb(139, 92, 246)),
+        ).apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(28).toFloat()
+            setStroke(dp(1), Color.argb(84, 255, 255, 255))
+        }
+        val gaugeLayer = ClipDrawable(
+            GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(99).toFloat()
+                setColor(Color.argb(214, 255, 255, 255))
+            },
+            Gravity.START,
+            ClipDrawable.HORIZONTAL,
+        ).apply {
+            level = progressLevel(currentRemaining())
+        }
+        val layeredBackground = LayerDrawable(arrayOf(backgroundLayer, gaugeLayer)).apply {
+            setLayerInset(1, dp(6), dp(52), dp(6), dp(4))
+        }
+
         val pill = TextView(this).apply {
             text = timerText(currentRemaining())
             setTextColor(Color.WHITE)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            minHeight = dp(48)
-            setPadding(dp(18), dp(10), dp(18), dp(10))
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = dp(24).toFloat()
-                setColor(Color.rgb(0, 122, 255))
-                setStroke(dp(1), Color.argb(46, 255, 255, 255))
-            }
-            elevation = dp(8).toFloat()
+            minHeight = dp(60)
+            minWidth = dp(128)
+            setPadding(dp(17), dp(11), dp(17), dp(13))
+            background = layeredBackground
+            elevation = dp(12).toFloat()
         }
+        overlayProgressDrawable = gaugeLayer
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         } else {
@@ -370,6 +394,7 @@ class RestTimerOverlayService : Service() {
             }
         }
         overlayView = null
+        overlayProgressDrawable = null
     }
 
     private fun finishTimer() {
@@ -429,7 +454,13 @@ class RestTimerOverlayService : Service() {
         return true
     }
 
-    private fun timerText(seconds: Int): String = "⏱  ${formatDuration(seconds)}"
+    private fun timerText(seconds: Int): String = "REST  ${formatDuration(seconds)}"
+
+    private fun progressLevel(seconds: Int): Int {
+        if (initialDuration <= 0) return 0
+        return ((seconds.coerceIn(0, initialDuration).toFloat() / initialDuration) * 10_000)
+            .toInt()
+    }
 
     private fun formatDuration(seconds: Int): String {
         val safeSeconds = seconds.coerceAtLeast(0)

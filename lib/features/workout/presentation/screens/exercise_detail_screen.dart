@@ -71,6 +71,25 @@ class ExerciseRestActionPill extends StatelessWidget {
             fit: StackFit.expand,
             alignment: Alignment.center,
             children: [
+              DecoratedBox(
+                key: isRunning
+                    ? const ValueKey('exercise-rest-running-background')
+                    : null,
+                decoration: BoxDecoration(
+                  gradient: isRunning
+                      ? context.appPrimaryGradient
+                      : LinearGradient(
+                          colors: [
+                            colorScheme.primary.withValues(alpha: 0.08),
+                            colorScheme.tertiary.withValues(alpha: 0.05),
+                          ],
+                        ),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.28),
+                  ),
+                  borderRadius: radius,
+                ),
+              ),
               if (isRunning)
                 Align(
                   alignment: Alignment.centerLeft,
@@ -84,52 +103,66 @@ class ExerciseRestActionPill extends StatelessWidget {
                         widthFactor: value,
                         heightFactor: 1,
                         child: ColoredBox(
-                          color: colorScheme.primary.withValues(alpha: 0.8),
+                          color: Colors.black.withValues(alpha: 0.14),
                         ),
                       );
                     },
                   ),
                 ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  if (isRunning) ...[
-                    Text(
-                      _formatExerciseDuration(duration),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.skip_next, color: colorScheme.onSurface),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isRunning) ...[
+                        const Icon(Icons.timer_rounded,
+                            color: Colors.white, size: 20),
+                        const SizedBox(width: 7),
+                        Text(
+                          _formatExerciseDuration(duration),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        const Icon(Icons.skip_next_rounded,
+                            color: Colors.white),
                         const SizedBox(width: 4),
                         Text(
                           '휴식 완료',
                           style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ] else ...[
+                        Icon(
+                          allCompleted
+                              ? Icons.verified_rounded
+                              : Icons.done_all_rounded,
+                          color: colorScheme.primary,
+                          size: 21,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          allCompleted
+                              ? '모든 세트 완료'
+                              : '${currentSetIndex + 1}번 세트 완료',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ],
-                    ),
-                  ] else
-                    Text(
-                      allCompleted
-                          ? '모든 세트 완료'
-                          : '${currentSetIndex + 1}번 세트 완료',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -999,31 +1032,50 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
 
   Widget _buildUnitAdjuster(
       BuildContext context, String title, String value, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: _detailSoftSurface(context),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(color: _detailMutedText(context), fontSize: 12),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w700,
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: _detailSoftSurface(context),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    TextStyle(color: _detailMutedText(context), fontSize: 12),
               ),
-            ),
-          ],
+              const SizedBox(height: 5),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.tune_rounded, size: 15, color: scheme.primary),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1322,7 +1374,23 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: index == _currentSetIndex
+                            ? null
+                            : Theme.of(context).colorScheme.surface,
+                        gradient: index == _currentSetIndex
+                            ? LinearGradient(
+                                colors: [
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.10),
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .tertiary
+                                      .withValues(alpha: 0.05),
+                                ],
+                              )
+                            : null,
                         borderRadius: BorderRadius.circular(18),
                         boxShadow: [
                           BoxShadow(
@@ -1357,6 +1425,35 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                                   .textTheme
                                   .titleMedium
                                   ?.color,
+                            ),
+                          ),
+                          iconButtonTheme: IconButtonThemeData(
+                            style: IconButton.styleFrom(
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.10),
+                              shape: CircleBorder(
+                                side: BorderSide(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.20),
+                                ),
+                              ),
+                            ),
+                          ),
+                          textButtonTheme: TextButtonThemeData(
+                            style: TextButton.styleFrom(
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.08),
+                              shape: const StadiumBorder(),
                             ),
                           ),
                         ),
@@ -2278,59 +2375,57 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            if (_exercise?.needsWeight == true)
-                              _buildUnitAdjuster(context, '무게 단위',
-                                  '${_weightStep.toStringAsFixed(1)}${_unitStr(isLbs: _isLbs)}',
-                                  () {
+                            if (_exercise?.needsWeight == true) ...[
+                              Expanded(
+                                child: _buildUnitAdjuster(context, '무게 단위',
+                                    '${_weightStep.toStringAsFixed(1)}${_unitStr(isLbs: _isLbs)}',
+                                    () {
+                                  _showNumberInputDialog(
+                                    context,
+                                    '무게 단위 입력',
+                                    _weightStep,
+                                    (value) => setState(() =>
+                                        _weightStep = value.clamp(0.5, 10.0)),
+                                    isDouble: true,
+                                    showUnitToggle: true,
+                                  );
+                                }),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Expanded(
+                              child: _buildUnitAdjuster(
+                                  context, '횟수 단위', '$_repsStep회', () {
                                 _showNumberInputDialog(
                                   context,
-                                  '무게 단위 입력',
-                                  _weightStep,
+                                  '횟수 단위 입력',
+                                  _repsStep.toDouble(),
                                   (value) => setState(() =>
-                                      _weightStep = value.clamp(0.5, 10.0)),
-                                  isDouble: true,
-                                  showUnitToggle: true,
+                                      _repsStep = value.toInt().clamp(1, 100)),
                                 );
                               }),
-                            _buildUnitAdjuster(context, '횟수 단위', '$_repsStep회',
-                                () {
-                              _showNumberInputDialog(
-                                context,
-                                '횟수 단위 입력',
-                                _repsStep.toDouble(),
-                                (value) => setState(() =>
-                                    _repsStep = value.toInt().clamp(1, 100)),
-                              );
-                            }),
-                            _buildUnitAdjuster(
-                                context, '휴식 단위', '$_restTimeStep초', () {
-                              _showNumberInputDialog(
-                                context,
-                                '휴식시간 단위 입력(초)',
-                                _restTimeStep.toDouble(),
-                                (value) => setState(() => _restTimeStep =
-                                    value.toInt().clamp(5, 300)),
-                              );
-                            }),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildUnitAdjuster(
+                                  context, '휴식 단위', '$_restTimeStep초', () {
+                                _showNumberInputDialog(
+                                  context,
+                                  '휴식시간 단위 입력(초)',
+                                  _restTimeStep.toDouble(),
+                                  (value) => setState(() => _restTimeStep =
+                                      value.toInt().clamp(5, 300)),
+                                );
+                              }),
+                            ),
                           ],
                         ),
                       ),
-                      ElevatedButton(
+                      _DetailGradientButton(
                         onPressed: _addSet,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(50),
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text('세트 추가',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        icon: Icons.add_rounded,
+                        label: '세트 추가',
                       ),
                       const SizedBox(height: 8),
                       if (_sets.isNotEmpty)
@@ -2371,6 +2466,57 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       debugPrint('Error in build: $e\n$st');
       return const SizedBox.shrink();
     }
+  }
+}
+
+class _DetailGradientButton extends StatelessWidget {
+  const _DetailGradientButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: context.appPrimaryGradient,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: FilledButton.icon(
+          onPressed: onPressed,
+          style: FilledButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          icon: Icon(icon, size: 21),
+          label: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

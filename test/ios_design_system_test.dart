@@ -8,9 +8,15 @@ void main() {
   test('semantic colors follow light and dark brightness', () {
     expect(AppColors.primaryFor(Brightness.light), AppColors.primaryLight);
     expect(AppColors.primaryFor(Brightness.dark), AppColors.primaryDark);
+    expect(AppColors.actionFor(Brightness.light), AppColors.actionLight);
+    expect(AppColors.actionFor(Brightness.dark), AppColors.actionDark);
     expect(
       AppColors.groupedSurfaceFor(Brightness.dark),
       AppColors.groupedSurfaceDark,
+    );
+    expect(
+      AppColors.primaryGradientFor(Brightness.light).colors,
+      const [Color(0xFF4F46E5), Color(0xFF7C3AED)],
     );
   });
 
@@ -60,6 +66,25 @@ void main() {
                           title: '기록이 없어요',
                           message: '첫 운동을 추가해 보세요.',
                         ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            FilledButton(
+                              onPressed: () {},
+                              child: const Text('저장'),
+                            ),
+                            OutlinedButton(
+                              onPressed: () {},
+                              child: const Text('나중에'),
+                            ),
+                            IconButton(
+                              onPressed: () {},
+                              icon: const Icon(Icons.tune_rounded),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -88,13 +113,59 @@ void main() {
       );
       final decoration = hero.decoration! as BoxDecoration;
       expect(decoration.gradient, isA<LinearGradient>());
+
+      final iconBadge = tester.widget<Container>(
+        find
+            .descendant(
+              of: find.byType(IosIconBadge).first,
+              matching: find.byType(Container),
+            )
+            .first,
+      );
+      final iconBadgeDecoration = iconBadge.decoration! as BoxDecoration;
+      expect(iconBadgeDecoration.gradient, isA<LinearGradient>());
     });
   }
 
   test('dark palette has visible tonal separation', () {
     expect(AppColors.backgroundDark, isNot(AppColors.groupedSurfaceDark));
     expect(AppColors.groupedSurfaceDark, isNot(AppColors.elevatedSurfaceDark));
-    expect(AppColors.primaryDark, const Color(0xFF0066CC));
+    expect(AppColors.primaryDark, const Color(0xFFB6A3FF));
+  });
+
+  test('primary actions and text retain accessible contrast', () {
+    double contrastRatio(Color foreground, Color background) {
+      final lighter =
+          foreground.computeLuminance() > background.computeLuminance()
+              ? foreground.computeLuminance()
+              : background.computeLuminance();
+      final darker =
+          foreground.computeLuminance() > background.computeLuminance()
+              ? background.computeLuminance()
+              : foreground.computeLuminance();
+      return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    expect(
+        contrastRatio(Colors.white, AppColors.actionLight), greaterThan(4.5));
+    expect(contrastRatio(Colors.white, AppColors.actionDark), greaterThan(4.5));
+    for (final brightness in Brightness.values) {
+      for (final color in AppColors.primaryGradientFor(brightness).colors) {
+        expect(
+          contrastRatio(Colors.white, color),
+          greaterThan(4.5),
+          reason: '$brightness action gradient endpoint $color',
+        );
+      }
+    }
+    expect(
+      contrastRatio(AppColors.textPrimaryLight, AppColors.backgroundLight),
+      greaterThan(7),
+    );
+    expect(
+      contrastRatio(AppColors.textPrimaryDark, AppColors.backgroundDark),
+      greaterThan(7),
+    );
   });
 
   test('button themes retain intrinsic row sizing', () {
@@ -112,9 +183,9 @@ void main() {
     for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
       final elevation = theme.filledButtonTheme.style!.elevation!;
 
-      expect(elevation.resolve(<WidgetState>{}), 3);
-      expect(elevation.resolve(<WidgetState>{WidgetState.hovered}), 3);
-      expect(elevation.resolve(<WidgetState>{WidgetState.pressed}), 1);
+      expect(elevation.resolve(<WidgetState>{}), 1);
+      expect(elevation.resolve(<WidgetState>{WidgetState.hovered}), 1);
+      expect(elevation.resolve(<WidgetState>{WidgetState.pressed}), 0);
       expect(elevation.resolve(<WidgetState>{WidgetState.disabled}), 0);
       expect(
         elevation.resolve(
@@ -124,4 +195,85 @@ void main() {
       );
     }
   });
+
+  test('filled buttons keep distinct normal, pressed, and disabled states', () {
+    final light = AppTheme.lightTheme.filledButtonTheme.style!;
+    final dark = AppTheme.darkTheme.filledButtonTheme.style!;
+
+    expect(light.backgroundColor!.resolve({}), AppColors.actionLight);
+    expect(
+      light.backgroundColor!.resolve({WidgetState.pressed}),
+      AppColors.secondary,
+    );
+    expect(dark.backgroundColor!.resolve({}), AppColors.actionDark);
+    expect(
+      dark.backgroundColor!.resolve({WidgetState.pressed}),
+      const Color(0xFF5E46CF),
+    );
+    expect(
+      light.backgroundColor!.resolve({WidgetState.disabled}),
+      isNot(AppColors.actionLight),
+    );
+    expect(
+      dark.backgroundColor!.resolve({WidgetState.disabled}),
+      isNot(AppColors.actionDark),
+    );
+  });
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'rendered destructive button overrides the $brightness shared theme',
+      (tester) async {
+        final theme = brightness == Brightness.dark
+            ? AppTheme.darkTheme
+            : AppTheme.lightTheme;
+        final expectedAction = AppColors.actionFor(brightness);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Column(
+                children: [
+                  FilledButton(
+                    key: const Key('normal-button'),
+                    onPressed: () {},
+                    child: const Text('저장'),
+                  ),
+                  FilledButton(
+                    key: const Key('destructive-button'),
+                    onPressed: () {},
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                    ),
+                    child: const Text('삭제'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        Material buttonMaterial(String key) => tester.widget<Material>(
+              find
+                  .descendant(
+                    of: find.byKey(Key(key)),
+                    matching: find.byType(Material),
+                  )
+                  .first,
+            );
+
+        expect(buttonMaterial('normal-button').color, expectedAction);
+        expect(buttonMaterial('destructive-button').color, AppColors.error);
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const Key('destructive-button'))),
+        );
+        await tester.pump();
+        expect(buttonMaterial('destructive-button').color, AppColors.error);
+        await gesture.up();
+      },
+    );
+  }
 }

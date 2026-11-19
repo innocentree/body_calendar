@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show SemanticsFlag;
 
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
@@ -237,6 +238,17 @@ void main() {
       const MaterialApp(home: SelectExerciseScreen()),
     );
     await tester.pumpAndSettle();
+
+    final semantics = tester.ensureSemantics();
+    final categoryButton = find.descendant(
+      of: find.byType(GridView),
+      matching: find.bySemanticsLabel('어깨'),
+    );
+    expect(categoryButton, findsOneWidget);
+    final categorySemantics = tester.getSemantics(categoryButton);
+    expect(categorySemantics.label, '어깨');
+    expect(categorySemantics.hasFlag(SemanticsFlag.isButton), isTrue);
+    semantics.dispose();
 
     final cardioTab = find.descendant(
       of: find.byType(SingleChildScrollView),
