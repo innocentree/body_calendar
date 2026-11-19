@@ -107,4 +107,21 @@ void main() {
     expect(lightMinimum, const Size(64, 50));
     expect(darkMinimum, const Size(64, 50));
   });
+
+  test('filled button elevation follows interaction state', () {
+    for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
+      final elevation = theme.filledButtonTheme.style!.elevation!;
+
+      expect(elevation.resolve(<WidgetState>{}), 3);
+      expect(elevation.resolve(<WidgetState>{WidgetState.hovered}), 3);
+      expect(elevation.resolve(<WidgetState>{WidgetState.pressed}), 1);
+      expect(elevation.resolve(<WidgetState>{WidgetState.disabled}), 0);
+      expect(
+        elevation.resolve(
+          <WidgetState>{WidgetState.disabled, WidgetState.pressed},
+        ),
+        0,
+      );
+    }
+  });
 }

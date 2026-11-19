@@ -664,16 +664,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     decoration: BoxDecoration(
                       color: context.appGroupedSurface,
                       borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.07)
+                            : Colors.white.withValues(alpha: 0.92),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(
                             alpha:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? 0.24
-                                    : 0.07,
+                                    ? 0.36
+                                    : 0.11,
                           ),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                     ),
@@ -871,6 +876,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     decoration: BoxDecoration(
                                       color: context.appGroupedSurface,
                                       borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                                .withValues(alpha: 0.07)
+                                            : Colors.white
+                                                .withValues(alpha: 0.92),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.dark
+                                                    ? 0.30
+                                                    : 0.09,
+                                          ),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 7),
+                                        ),
+                                      ],
                                     ),
                                     child: Column(
                                       children: [
@@ -920,6 +946,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     decoration: BoxDecoration(
                                       color: context.appGroupedSurface,
                                       borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                                .withValues(alpha: 0.07)
+                                            : Colors.white
+                                                .withValues(alpha: 0.92),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.dark
+                                                    ? 0.30
+                                                    : 0.09,
+                                          ),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 7),
+                                        ),
+                                      ],
                                     ),
                                     child: Material(
                                       color: Colors.transparent,

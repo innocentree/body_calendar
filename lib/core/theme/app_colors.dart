@@ -15,16 +15,16 @@ class AppColors {
   static const Color neonCyan = secondary;
 
   // Backgrounds
-  static const Color backgroundLight = Color(0xFFF3F6FB);
-  static const Color backgroundDark = Color(0xFF0B0D12);
+  static const Color backgroundLight = Color(0xFFF1F4F9);
+  static const Color backgroundDark = Color(0xFF0A0C11);
 
   // Semantic grouped surfaces.
   static const Color groupedBackgroundLight = backgroundLight;
   static const Color groupedBackgroundDark = backgroundDark;
   static const Color groupedSurfaceLight = Color(0xFFFFFFFF);
-  static const Color groupedSurfaceDark = Color(0xFF181B22);
+  static const Color groupedSurfaceDark = Color(0xFF171B23);
   static const Color elevatedSurfaceLight = Color(0xFFFFFFFF);
-  static const Color elevatedSurfaceDark = Color(0xFF242833);
+  static const Color elevatedSurfaceDark = Color(0xFF242A35);
 
   // Surfaces
   static const Color background = backgroundDark;

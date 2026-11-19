@@ -80,15 +80,20 @@ class AppTheme {
         ThemeData.light().textTheme, AppColors.textPrimaryLight),
     cardTheme: CardThemeData(
       color: AppColors.surfaceLight,
-      elevation: 1,
-      shadowColor: const Color(0xFF173B67).withValues(alpha: 0.10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 4,
+      shadowColor: const Color(0xFF173B67).withValues(alpha: 0.16),
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Colors.white, width: 0.8),
+      ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryLight,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 3,
+        shadowColor: AppColors.primaryLight.withValues(alpha: 0.34),
         minimumSize: const Size(64, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle:
@@ -99,10 +104,17 @@ class AppTheme {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.primaryLight,
         foregroundColor: Colors.white,
+        shadowColor: AppColors.primaryLight.withValues(alpha: 0.34),
         minimumSize: const Size(64, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle:
             GoogleFonts.notoSansKr(fontWeight: FontWeight.w700, fontSize: 16),
+      ).copyWith(
+        elevation: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return 0;
+          if (states.contains(WidgetState.pressed)) return 1;
+          return 3;
+        }),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -125,7 +137,9 @@ class AppTheme {
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: AppColors.primaryLight,
       foregroundColor: Colors.white,
-      elevation: 0,
+      elevation: 6,
+      focusElevation: 8,
+      hoverElevation: 8,
       shape: CircleBorder(),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -153,11 +167,11 @@ class AppTheme {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: Color(0xFFE3E8F0), width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: Color(0xFFE3E8F0), width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -168,6 +182,7 @@ class AppTheme {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Colors.white,
+      elevation: 8,
       indicatorColor: AppColors.primaryLight.withValues(alpha: 0.14),
       iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
             color: states.contains(WidgetState.selected)
@@ -193,12 +208,16 @@ class AppTheme {
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.surfaceLight,
       surfaceTintColor: Colors.transparent,
+      elevation: 12,
+      shadowColor: Color(0x33000000),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surfaceLight,
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.18),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
     switchTheme: SwitchThemeData(
@@ -250,16 +269,21 @@ class AppTheme {
         _buildTextTheme(ThemeData.dark().textTheme, AppColors.textPrimaryDark),
     cardTheme: CardThemeData(
       color: AppColors.cardDark,
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.35),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 5,
+      shadowColor: Colors.black.withValues(alpha: 0.55),
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+      ),
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryDark,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.45),
         minimumSize: const Size(64, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle:
@@ -270,10 +294,17 @@ class AppTheme {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.primaryDark,
         foregroundColor: Colors.white,
+        shadowColor: Colors.black.withValues(alpha: 0.45),
         minimumSize: const Size(64, 50),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle:
             GoogleFonts.notoSansKr(fontWeight: FontWeight.w700, fontSize: 16),
+      ).copyWith(
+        elevation: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return 0;
+          if (states.contains(WidgetState.pressed)) return 1;
+          return 3;
+        }),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -295,7 +326,9 @@ class AppTheme {
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: AppColors.primaryDark,
       foregroundColor: Colors.white,
-      elevation: 0,
+      elevation: 7,
+      focusElevation: 9,
+      hoverElevation: 9,
       shape: CircleBorder(),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -309,6 +342,7 @@ class AppTheme {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.groupedSurfaceDark,
+      elevation: 8,
       indicatorColor: AppColors.primaryDark.withValues(alpha: 0.18),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
@@ -346,11 +380,11 @@ class AppTheme {
       fillColor: AppColors.customSurface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: AppColors.separatorDark, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: AppColors.separatorDark, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -370,12 +404,16 @@ class AppTheme {
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.surfaceDark,
       surfaceTintColor: Colors.transparent,
+      elevation: 12,
+      shadowColor: Colors.black,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surfaceDark,
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: 0.58),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
     switchTheme: SwitchThemeData(

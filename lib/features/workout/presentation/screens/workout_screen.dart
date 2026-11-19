@@ -27,10 +27,17 @@ Color _workoutSoftSurface(BuildContext context) =>
 List<BoxShadow> _workoutCardShadow(BuildContext context) => [
       BoxShadow(
         color: Colors.black.withValues(
-          alpha: Theme.of(context).brightness == Brightness.dark ? 0.22 : 0.07,
+          alpha: Theme.of(context).brightness == Brightness.dark ? 0.34 : 0.10,
         ),
-        blurRadius: 18,
-        offset: const Offset(0, 7),
+        blurRadius: 22,
+        offset: const Offset(0, 8),
+      ),
+      BoxShadow(
+        color: Colors.white.withValues(
+          alpha: Theme.of(context).brightness == Brightness.dark ? 0.025 : 0.8,
+        ),
+        blurRadius: 2,
+        offset: const Offset(0, -1),
       ),
     ];
 
@@ -1174,6 +1181,11 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         color: _workoutSurface(context),
         borderRadius: BorderRadius.circular(22),
         boxShadow: _workoutCardShadow(context),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.white.withValues(alpha: 0.92),
+        ),
       ),
       child: Material(
         color: Colors.transparent,

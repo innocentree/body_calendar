@@ -26,24 +26,36 @@ class IosGroupedSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = color ?? context.appGroupedSurface;
     return Container(
       margin: margin,
       padding: padding,
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: color ?? context.appGroupedSurface,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: showBorder ? Border.all(color: context.appSeparator) : null,
+        border: Border.all(
+          color: showBorder
+              ? context.appSeparator
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.075)
+                  : Colors.white.withValues(alpha: 0.92)),
+          width: showBorder ? 1 : 0.8,
+        ),
         boxShadow: showShadow
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: Theme.of(context).brightness == Brightness.dark
-                        ? 0.22
-                        : 0.07,
-                  ),
-                  blurRadius: 18,
-                  offset: const Offset(0, 7),
+                  color: Colors.black.withValues(alpha: isDark ? 0.34 : 0.10),
+                  blurRadius: isDark ? 22 : 18,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.025)
+                      : Colors.white.withValues(alpha: 0.80),
+                  blurRadius: 2,
+                  offset: const Offset(0, -1),
                 ),
               ]
             : null,
@@ -86,9 +98,14 @@ class IosHeroSurface extends StatelessWidget {
         border: Border.all(color: context.appPrimary.withValues(alpha: 0.22)),
         boxShadow: [
           BoxShadow(
-            color: context.appPrimary.withValues(alpha: isDark ? 0.12 : 0.14),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: isDark ? 0.36 : 0.12),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: context.appPrimary.withValues(alpha: isDark ? 0.12 : 0.10),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -245,6 +262,22 @@ class IosSegmentedTabBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.appSeparator.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(9),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.04),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: Theme.of(context).brightness == Brightness.dark
+                    ? 0.24
+                    : 0.07,
+              ),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: TabBar(
           controller: controller,
@@ -350,6 +383,16 @@ class IosBottomSafeAction extends StatelessWidget {
         border: showTopBorder
             ? Border(top: BorderSide(color: context.appSeparator, width: 0.5))
             : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha:
+                  Theme.of(context).brightness == Brightness.dark ? 0.32 : 0.09,
+            ),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
