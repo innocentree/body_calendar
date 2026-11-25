@@ -4,6 +4,7 @@ import 'package:body_calendar/core/theme/app_colors.dart';
 import 'package:body_calendar/core/theme/app_theme.dart';
 import 'package:body_calendar/core/utils/ticker.dart';
 import 'package:body_calendar/core/widgets/horizontal_dial_picker.dart';
+import 'package:body_calendar/features/cloud_sync/data/services/cloud_sync_service.dart';
 import 'package:body_calendar/features/timer/bloc/timer_bloc.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise.dart';
 import 'package:body_calendar/features/workout/domain/models/exercise_category.dart';
@@ -44,6 +45,42 @@ class _FakeExerciseRepository implements ExerciseRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const exerciseName = '인클라인 프레스: 덤벨';
+  const setsKey = 'exercise_sets_인클라인 프레스: 덤벨_2026-09-28';
+
+  Future<SharedPreferences> pumpExerciseDetail(
+    WidgetTester tester,
+    List<ExerciseSet> sets,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({
+      setsKey: sets.map((set) => jsonEncode(set.toJson())).toList(),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    GetIt.I.registerSingleton<CloudSyncService>(CloudSyncService(prefs));
+    final timerBloc = TimerBloc(ticker: const Ticker());
+    addTearDown(timerBloc.close);
+
+    await tester.pumpWidget(
+      BlocProvider.value(
+        value: timerBloc,
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: ExerciseDetailScreen(
+            exerciseName: exerciseName,
+            selectedDate: DateTime(2026, 9, 28),
+            initialWeight: 20,
+            initialSets: sets.length,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return prefs;
+  }
 
   setUp(() async {
     await GetIt.I.reset();
@@ -235,6 +272,108 @@ void main() {
     expect(saved.first.reps, greaterThan(10));
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+      'deleting an expanded fourth set keeps the shifted fifth set editable',
+      (tester) async {
+    final sets = List.generate(
+      5,
+      (index) => ExerciseSet(
+        weight: 20 + index.toDouble(),
+        reps: 10,
+        restTime: Duration.zero,
+      ),
+    );
+    final prefs = await pumpExerciseDetail(tester, sets);
+
+    for (var setNumber = 1; setNumber <= 3; setNumber++) {
+      await tester.tap(find.text('$setNumber번 세트 완료'));
+      await tester.pumpAndSettle();
+    }
+
+    final fourthSet = find.text('23.0kg × 10회');
+    await tester.scrollUntilVisible(
+      fourthSet,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(fourthSet);
+    await tester.pumpAndSettle();
+    final fourthTile = find.ancestor(
+      of: fourthSet,
+      matching: find.byType(ExpansionTile),
+    );
+    final fourthDelete = find.descendant(
+      of: fourthTile,
+      matching: find.byIcon(Icons.delete),
+    );
+    await tester.tap(fourthDelete);
+    await tester.pumpAndSettle();
+
+    expect(find.text('23.0kg × 10회'), findsNothing);
+    expect(find.text('24.0kg × 10회'), findsOneWidget);
+    final savedSets = prefs
+        .getStringList(setsKey)!
+        .map((raw) => ExerciseSet.fromJson(jsonDecode(raw)))
+        .toList();
+    expect(savedSets.map((set) => set.weight), [20, 21, 22, 24]);
+    expect(savedSets.map((set) => set.isCompleted), [true, true, true, false]);
+    final shiftedLastSet = find.text('24.0kg × 10회');
+    await tester.ensureVisible(shiftedLastSet);
+    await tester.tap(shiftedLastSet);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('set-editor-weight-label-3')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('set-editor-reps-value-3')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('set-editor-weight-label-3')).hitTestable(),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('deleting an earlier set keeps the logical current set selected',
+      (tester) async {
+    final sets = List.generate(
+      5,
+      (index) => ExerciseSet(
+        weight: 20 + index.toDouble(),
+        reps: 10,
+        restTime: Duration.zero,
+        isCompleted: index < 3,
+      ),
+    );
+    final prefs = await pumpExerciseDetail(tester, sets);
+
+    final secondSet = find.text('21.0kg × 10회');
+    final secondTile = find.ancestor(
+      of: secondSet,
+      matching: find.byType(ExpansionTile),
+    );
+    await tester.tap(find.descendant(
+      of: secondTile,
+      matching: find.byIcon(Icons.delete),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3번 세트 완료'), findsOneWidget);
+    await tester.tap(find.text('3번 세트 완료'));
+    await tester.pumpAndSettle();
+
+    final savedSets = prefs
+        .getStringList(setsKey)!
+        .map((raw) => ExerciseSet.fromJson(jsonDecode(raw)))
+        .toList();
+    expect(savedSets.map((set) => set.weight), [20, 22, 23, 24]);
+    expect(savedSets.map((set) => set.isCompleted), [true, true, true, false]);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('gradient add action remains keyboard activatable',

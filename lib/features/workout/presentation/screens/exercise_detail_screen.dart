@@ -489,7 +489,9 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
     setState(() {
       _sets.removeAt(index);
       _tileControllers.removeAt(index);
-      if (_currentSetIndex >= _sets.length) {
+      if (index < _currentSetIndex) {
+        _currentSetIndex--;
+      } else if (_currentSetIndex >= _sets.length) {
         _currentSetIndex = _sets.isEmpty ? 0 : _sets.length - 1;
       }
     });
@@ -1371,6 +1373,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
                   itemBuilder: (context, index) {
                     final set = _sets[index];
                     return Container(
+                      key: ObjectKey(_tileControllers[index]),
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
